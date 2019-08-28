@@ -7,7 +7,12 @@ public static class MarchingCubes
 
     public struct Triangle
     {
-        public Vector3 a, b, c;
+        public Vector3[] points;
+
+        public Triangle(Vector3[] points)
+        {
+            this.points = points;
+        }
     }
 
     public static void GenerateMesh(Chunk chunk, out List<Triangle> triangles, float isoLevel = 0.5f)
@@ -60,22 +65,16 @@ public static class MarchingCubes
                     for (int i = 0; triangulation[i] != -1; i += 3)
                     {
 
-                        var triangle = new Triangle();
+                        var points = new Vector3[3];
 
-                        var a0 = Lookup.cornerIndexAFromEdge[triangulation[i]];
-                        var b0 = Lookup.cornerIndexBFromEdge[triangulation[i]];
-                        triangle.a = (cubeDensity[a0] * cubeVectors[a0] + cubeDensity[b0] * cubeVectors[b0]) / (cubeDensity[a0] + cubeDensity[b0]);
+                        for (int j = 0; j < 3; j++)
+                        {
+                            var a0 = Lookup.cornerIndexAFromEdge[triangulation[i + j]];
+                            var b0 = Lookup.cornerIndexBFromEdge[triangulation[i + j]];
+                            points[j] = Vector3.Lerp(cubeVectors[a0], cubeVectors[b0], (isoLevel - cubeDensity[a0]) / (cubeDensity[b0] - cubeDensity[a0]));
+                        }
 
-                        var a1 = Lookup.cornerIndexAFromEdge[triangulation[i + 1]];
-                        var b1 = Lookup.cornerIndexBFromEdge[triangulation[i + 1]];
-                        triangle.b = (cubeDensity[a1] * cubeVectors[a1] + cubeDensity[b1] * cubeVectors[b1]) / (cubeDensity[a1] + cubeDensity[b1]);
-
-                        var a2 = Lookup.cornerIndexAFromEdge[triangulation[i + 2]];
-                        var b2 = Lookup.cornerIndexBFromEdge[triangulation[i + 2]];
-                        triangle.c = (cubeDensity[a2] * cubeVectors[a2] + cubeDensity[b2] * cubeVectors[b2]) / (cubeDensity[a2] + cubeDensity[b2]);
-                        //triangle.c = (cubeVectors[a2] + cubeVectors[b2]) / 2;
-
-                        triangles.Add(triangle);
+                        triangles.Add(new Triangle(points));
                     }
 
                 }

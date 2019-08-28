@@ -24,9 +24,9 @@ public class VoxelWorld : MonoBehaviour
             Mathf.RoundToInt(target.position.z / chunkSize)
         );
 
-        for (int x = -5; x < 5; x++)
-            for (int y = -5; y < 5; y++)
-                for (int z = -5; z < 5; z++)
+        for (int x = -searchRadius; x < searchRadius; x++)
+            for (int y = -searchRadius; y < searchRadius; y++)
+                for (int z = -searchRadius; z < searchRadius; z++)
                 {
                     var coord = targetCoords + new Vector3Int(x, y, z);
                     if (!chunks.ContainsKey(coord))
@@ -54,11 +54,11 @@ public class VoxelWorld : MonoBehaviour
         int triIndex = 0;
         foreach (var triangle in triangles)
         {
-            verts.Add(triangle.a);
+            verts.Add(triangle.points[0]);
             tris.Add(triIndex + 2);
-            verts.Add(triangle.b);
+            verts.Add(triangle.points[1]);
             tris.Add(triIndex + 1);
-            verts.Add(triangle.c);
+            verts.Add(triangle.points[2]);
             tris.Add(triIndex);
 
             triIndex += 3;

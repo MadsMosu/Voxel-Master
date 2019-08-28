@@ -25,7 +25,7 @@ public class Chunk
             for (int y = 0; y < size + 1; y++)
                 for (int z = 0; z < size + 1; z++)
                 {
-                    voxels[x, y, z].Density = Perlin.Noise(((chunkCoordinates.x * size) + x) * 0.01f, ((chunkCoordinates.y * size) + y) * 0.01f, ((chunkCoordinates.z * size) + z) * 0.01f) * 2;
+                    voxels[x, y, z].Density = Perlin.Noise(((chunkCoordinates.x * size) + x) * 0.05f, ((chunkCoordinates.y * size) + y) * 0.05f, ((chunkCoordinates.z * size) + z) * 0.05f) * 2;
                 }
     }
 
