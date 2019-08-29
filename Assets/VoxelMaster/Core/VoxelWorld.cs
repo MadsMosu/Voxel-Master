@@ -36,8 +36,6 @@ public class VoxelWorld : MonoBehaviour
                         GenerateMesh(c);
                     }
                 }
-
-
     }
 
 
