@@ -96,7 +96,8 @@ LightmapSettings:
     m_PVRFilteringAtrousPositionSigmaAO: 1
     m_ExportTrainingData: 0
     m_TrainingDataDestination: TrainingData
-  m_LightingDataAsset: {fileID: 0}
+  m_LightingDataAsset: {fileID: 112000000, guid: dce9861000820264cb7902f01a353572,
+    type: 2}
   m_UseShadowmask: 1
 --- !u!196 &4
 NavMeshSettings:
@@ -422,9 +423,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 421096020}
-  searchRadius: 5
+  searchRadius: 2
   material: {fileID: 2100000, guid: a20edc25fa363ad41920ee99c6b3804c, type: 2}
-  chunkSize: 16
+  chunkSize: 32
 --- !u!4 &644038402
 Transform:
   m_ObjectHideFlags: 0

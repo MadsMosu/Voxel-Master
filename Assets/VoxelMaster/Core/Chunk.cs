@@ -6,6 +6,8 @@ public class Chunk
 {
 
     public Vector3Int chunkCoordinates;
+    public int size;
+
 
     private Voxel[,,] voxels;
     private Chunk[] neighborChunks;
@@ -26,14 +28,19 @@ public class Chunk
     public Chunk(Vector3Int coordinates, int size)
     {
         chunkCoordinates = coordinates;
-
-        voxels = new Voxel[size + 1, size + 1, size + 1];
+        this.size = size;
     }
 
 
     public void SetVoxel(Vector3Int p, Voxel v)
     {
         voxels[p.x, p.y, p.z] = v;
+    }
+
+
+    public void SetVoxels(Voxel[,,] voxels)
+    {
+        this.voxels = voxels;
     }
 
     //public int Index(int x, int y, int z)

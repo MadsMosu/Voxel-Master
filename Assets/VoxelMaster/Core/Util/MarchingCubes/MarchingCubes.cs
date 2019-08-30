@@ -5,27 +5,18 @@ using System.Collections.Generic;
 public static class MarchingCubes
 {
 
-    public struct Triangle
-    {
-        public Vector3[] points;
-
-        public Triangle(Vector3[] points)
-        {
-            this.points = points;
-        }
-    }
 
     public static void GenerateMesh(Chunk chunk, out List<Triangle> triangles, float isoLevel = 0.5f)
     {
 
         triangles = new List<Triangle>();
-        int lod = 8;
+        int lod = 1;
 
         for (int x = 0; x < (chunk.Voxels.GetLength(0) - 1) / lod; x++)
             for (int y = 0; y < (chunk.Voxels.GetLength(1) - 1) / lod; y++)
                 for (int z = 0; z < (chunk.Voxels.GetLength(2) - 1) / lod; z++)
                 {
-                    
+
 
                     float[] cubeDensity = new float[]
                     {

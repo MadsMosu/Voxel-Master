@@ -15,9 +15,21 @@ public class VoxelWorld : MonoBehaviour
 
     Dictionary<Vector3Int, Chunk> chunks = new Dictionary<Vector3Int, Chunk>();
 
+    WorldGenerator worldGenerator = new WorldGenerator(new WorldSettings());
+    MeshGenerator meshGenerator = new MeshGenerator(new MeshSettings());
 
     private void Update()
     {
+        UpdateChunks();
+
+        worldGenerator.MainThreadUpdate();
+        meshGenerator.MainThreadUpdate();
+
+    }
+
+    void UpdateChunks()
+    {
+
         var targetCoords = new Vector3Int(
             Mathf.RoundToInt(target.position.x / chunkSize),
             Mathf.RoundToInt(target.position.y / chunkSize),
@@ -33,50 +45,35 @@ public class VoxelWorld : MonoBehaviour
                     {
                         var c = new Chunk(coord, chunkSize);
                         chunks.Add(coord, c);
-                        GenerateMesh(c);
+                        worldGenerator.RequestChunkData(c, OnChunkData);
                     }
                 }
+
+    }
+
+    void OnChunkData(ChunkData data)
+    {
+        var chunk = chunks[data.coords];
+        chunk.SetVoxels(data.voxels);
+        meshGenerator.RequestMeshData(chunk, OnMeshData);
     }
 
 
-    void GenerateMesh(Chunk chunk)
+    void OnMeshData(MeshData data)
     {
-
-
-        List<Triangle> triangles;
-        MarchingCubes.GenerateMesh(chunk, out triangles);
-
-        var verts = new List<Vector3>();
-        var tris = new List<int>();
-
-        int triIndex = 0;
-        foreach (var triangle in triangles)
-        {
-            verts.Add(triangle.points[0]);
-            tris.Add(triIndex + 2);
-            verts.Add(triangle.points[1]);
-            tris.Add(triIndex + 1);
-            verts.Add(triangle.points[2]);
-            tris.Add(triIndex);
-
-            triIndex += 3;
-
-        }
-
-
         var mesh = new Mesh();
-        mesh.SetVertices(verts);
-        mesh.SetTriangles(tris, 0);
-
+        mesh.vertices = data.vertices;
+        mesh.triangles = data.triangles;
         mesh.RecalculateNormals();
 
-        var go = new GameObject("Chunk");
-        go.transform.position = chunk.chunkCoordinates * chunkSize;
+        var go = new GameObject($"Chunk({data.coords})");
+        go.transform.position = data.coords * chunkSize;
         var meshFilter = go.AddComponent<MeshFilter>();
         var meshRenderer = go.AddComponent<MeshRenderer>();
 
         meshFilter.mesh = mesh;
         meshRenderer.material = material;
+
 
     }
 
