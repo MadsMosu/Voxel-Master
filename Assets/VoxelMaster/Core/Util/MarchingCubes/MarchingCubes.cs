@@ -19,7 +19,7 @@ public static class MarchingCubes
     {
 
         triangles = new List<Triangle>();
-        int lod = 1;
+        int lod = 8;
 
         for (int x = 0; x < (chunk.Voxels.GetLength(0) - 1) / lod; x++)
             for (int y = 0; y < (chunk.Voxels.GetLength(1) - 1) / lod; y++)

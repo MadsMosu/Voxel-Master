@@ -28,13 +28,6 @@ public class Chunk
         chunkCoordinates = coordinates;
 
         voxels = new Voxel[size + 1, size + 1, size + 1];
-
-        for (int x = 0; x < size + 1; x++)
-            for (int y = 0; y < size + 1; y++)
-                for (int z = 0; z < size + 1; z++)
-                {
-                    voxels[x, y, z].Density = Perlin.Noise(((chunkCoordinates.x * size) + x) * 0.05f, ((chunkCoordinates.y * size) + y) * 0.05f, ((chunkCoordinates.z * size) + z) * 0.05f) * 2;
-                }
     }
 
 
