@@ -18,6 +18,43 @@ public class VoxelWorld : MonoBehaviour
     WorldGenerator worldGenerator = new WorldGenerator(new WorldSettings());
     MeshGenerator meshGenerator = new MeshGenerator(new MeshSettings());
 
+    List<int> LODLevels;
+
+    void MapSizeToLODLevels()
+    {
+        LODLevels = new List<int>();
+        for (int i = 1; i <= chunkSize; i++)
+        {
+            if (chunkSize % i == 0)
+            {
+                LODLevels.Add(i);
+            }
+        }
+    }
+
+    int FindLOD(Vector3Int targetCoords, Vector3Int chunkCoords)
+    {
+        float dist = Vector3Int.Distance(targetCoords, chunkCoords);
+        for (int i = 1; i <= LODLevels.Count + 1; i++)
+        {
+            if (dist < (searchRadius * 0.4 * i))
+            {
+                return LODLevels[i - 1];
+            }
+            else
+            {
+                return LODLevels[LODLevels.Count - 1];
+            }
+
+        }
+        return 1;
+    }
+
+    private void Start()
+    {
+        MapSizeToLODLevels();
+    }
+
     private void Update()
     {
         UpdateChunks();
@@ -29,7 +66,6 @@ public class VoxelWorld : MonoBehaviour
 
     void UpdateChunks()
     {
-
         var targetCoords = new Vector3Int(
             Mathf.RoundToInt(target.position.x / chunkSize),
             Mathf.RoundToInt(target.position.y / chunkSize),
@@ -41,10 +77,12 @@ public class VoxelWorld : MonoBehaviour
                 for (int z = -searchRadius; z < searchRadius; z++)
                 {
                     var coord = targetCoords + new Vector3Int(x, y, z);
+
                     if (!chunks.ContainsKey(coord))
                     {
                         var c = new Chunk(coord, chunkSize);
                         chunks.Add(coord, c);
+                        int lod = FindLOD(targetCoords, coord);
                         worldGenerator.RequestChunkData(c, OnChunkData);
                     }
                 }
