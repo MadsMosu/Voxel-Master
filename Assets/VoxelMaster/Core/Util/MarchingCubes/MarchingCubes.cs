@@ -8,7 +8,7 @@ public static class MarchingCubes
 
     public static void GenerateMesh(Chunk chunk, out List<Triangle> triangles, float isoLevel = 0.5f)
     {
-        int lod = 1;
+        int lod = 1 << chunk.lod;
         triangles = new List<Triangle>();
 
         for (int x = 0; x < (chunk.Voxels.GetLength(0) - 1) / lod; x++)

@@ -7,6 +7,7 @@ public class Chunk
 
     public Vector3Int chunkCoordinates;
     public int size;
+    public int lod;
 
 
     private Voxel[,,] voxels;
@@ -16,11 +17,18 @@ public class Chunk
         get { return voxels; }
     }
 
+    public int LOD
+    {
+        get { return lod; }
+        set { lod = value;  }
+    }
 
-    public Chunk(Vector3Int coordinates, int size)
+
+    public Chunk(Vector3Int coordinates, int size, int lod)
     {
         chunkCoordinates = coordinates;
         this.size = size;
+        this.lod = lod;
     }
 
 

@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class PlayerMover : MonoBehaviour
 {
+    public int speed = 20;
     // Start is called before the first frame update
     void Start()
     {
@@ -14,7 +15,7 @@ public class PlayerMover : MonoBehaviour
     void Update()
     {
 
-        transform.position += new Vector3(0, 0, 10 * Time.deltaTime);
+        transform.position += new Vector3(0, 0, speed * Time.deltaTime);
 
 
     }

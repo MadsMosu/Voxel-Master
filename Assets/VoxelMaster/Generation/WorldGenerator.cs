@@ -66,7 +66,7 @@ public class WorldGenerator
 
 
                 }
-        return new ChunkData() { coords = chunk.chunkCoordinates, voxels = voxels };
+        return new ChunkData() { coords = chunk.chunkCoordinates, voxels = voxels, lod = chunk.LOD };
     }
 
     struct GenerationEvent

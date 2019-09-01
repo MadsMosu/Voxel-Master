@@ -12,42 +12,45 @@ public class VoxelWorld : MonoBehaviour
     public Material material;
 
     public int chunkSize = 16;
+    public int LODLevels = 3;
+
+    private List<int> levels;
 
     Dictionary<Vector3Int, Chunk> chunks = new Dictionary<Vector3Int, Chunk>();
 
     WorldGenerator worldGenerator = new WorldGenerator(new WorldSettings());
     MeshGenerator meshGenerator = new MeshGenerator(new MeshSettings());
 
-    List<int> LODLevels;
-
-    void MapSizeToLODLevels()
-    {
-        LODLevels = new List<int>();
-        for (int i = 1; i <= chunkSize; i++)
-        {
-            if (chunkSize % i == 0)
-            {
-                LODLevels.Add(i);
-            }
-        }
-    }
 
     int FindLOD(Vector3Int targetCoords, Vector3Int chunkCoords)
     {
         float dist = Vector3Int.Distance(targetCoords, chunkCoords);
-        for (int i = 1; i <= LODLevels.Count + 1; i++)
+        for (int i = levels.Count; i > 1; i--)
         {
-            if (dist < (searchRadius * 0.4 * i))
+            if (dist > (searchRadius * i))
             {
-                return LODLevels[i - 1];
+                return levels[i-1];
             }
-            else
-            {
-                return LODLevels[LODLevels.Count - 1];
-            }
-
         }
         return 1;
+    }
+
+    void MapSizeToLODLevels()
+    {
+        levels = new List<int>();
+        for (int i = 1; i < LODLevels + 1; i++)
+        {
+            for (int j = 1*i; j <= chunkSize; j++)
+            {
+                if (chunkSize % j == 0)
+                {
+                    levels.Add(j);
+                    Debug.Log(j);
+                    break;
+                }
+            }
+        }
+        //levels.TrimExcess();
     }
 
     private void Start()
@@ -77,12 +80,18 @@ public class VoxelWorld : MonoBehaviour
                 for (int z = -searchRadius; z < searchRadius; z++)
                 {
                     var coord = targetCoords + new Vector3Int(x, y, z);
+                    int lod = FindLOD(targetCoords, coord);
 
                     if (!chunks.ContainsKey(coord))
                     {
-                        var c = new Chunk(coord, chunkSize);
+                        var c = new Chunk(coord, chunkSize, lod);
                         chunks.Add(coord, c);
-                        int lod = FindLOD(targetCoords, coord);
+                        worldGenerator.RequestChunkData(c, OnChunkData);
+                    }
+                    else
+                    {
+                        var c = chunks[coord];
+                        c.LOD = lod;
                         worldGenerator.RequestChunkData(c, OnChunkData);
                     }
                 }
