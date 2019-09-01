@@ -12,7 +12,6 @@ public class VoxelWorld : MonoBehaviour
     public Material material;
 
     public int chunkSize = 16;
-    public int LODLevels = 3;
 
     private List<int> levels;
 
@@ -38,16 +37,12 @@ public class VoxelWorld : MonoBehaviour
     void MapSizeToLODLevels()
     {
         levels = new List<int>();
-        for (int i = 1; i < LODLevels + 1; i++)
+        for (int j = 1; j <= chunkSize; j++)
         {
-            for (int j = 1*i; j <= chunkSize; j++)
+            if (chunkSize % j == 0)
             {
-                if (chunkSize % j == 0)
-                {
-                    levels.Add(j);
-                    Debug.Log(j);
-                    break;
-                }
+                levels.Add(j);
+                Debug.Log(j);
             }
         }
         //levels.TrimExcess();
