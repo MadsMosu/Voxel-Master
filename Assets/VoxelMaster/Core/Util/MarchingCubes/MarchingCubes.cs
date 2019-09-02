@@ -30,14 +30,14 @@ public static class MarchingCubes
 
                     Vector3[] cubeVectors = new Vector3[]
                     {
-                        new Vector3(x , y , z ),
-                        new Vector3((x + 1) , y , z ),
-                        new Vector3((x + 1) , y , (z + 1) ),
-                        new Vector3(x , y , (z + 1) ),
-                        new Vector3(x , (y + 1) , z ),
-                        new Vector3((x + 1) , (y  + 1) , z ),
-                        new Vector3((x + 1) , (y + 1) , (z + 1) ),
-                        new Vector3(x , (y + 1) , (z  + 1) ),
+                        new Vector3(x , y , z ) * chunk.voxelSize,
+                        new Vector3((x + 1) , y , z )  * chunk.voxelSize,
+                        new Vector3((x + 1) , y , (z + 1) )  * chunk.voxelSize,
+                        new Vector3(x , y , (z + 1) )  * chunk.voxelSize,
+                        new Vector3(x , (y + 1) , z )  * chunk.voxelSize,
+                        new Vector3((x + 1) , (y  + 1) , z )  * chunk.voxelSize,
+                        new Vector3((x + 1) , (y + 1) , (z + 1) )  * chunk.voxelSize,
+                        new Vector3(x , (y + 1) , (z  + 1) )  * chunk.voxelSize,
                     };
 
 

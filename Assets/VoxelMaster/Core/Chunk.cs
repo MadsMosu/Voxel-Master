@@ -20,11 +20,12 @@ public class Chunk
 
     public Vector3Int coords;
     public int size;
+    public float voxelSize;
     public int lod;
 
     LODLevel[] lodLevels;
     LODMesh[] lodMeshes;
-    private int prevLodIndex;
+    private int prevLodIndex = -1;
     private bool chunkDataReceived;
     private bool meshDataReceived;
 
@@ -44,10 +45,11 @@ public class Chunk
     }
 
 
-    public Chunk(Vector3Int coordinates, int size, WorldGenerator worldGenerator, MeshGenerator meshGenerator, Material mat, LODLevel[] lodLevels, Transform viewer)
+    public Chunk(Vector3Int coordinates, int size, float voxelSize, WorldGenerator worldGenerator, MeshGenerator meshGenerator, Material mat, LODLevel[] lodLevels, Transform viewer)
     {
         coords = coordinates;
         this.size = size;
+        this.voxelSize = voxelSize;
 
         this.worldGenerator = worldGenerator;
         this.MeshGenerator = meshGenerator;
@@ -74,11 +76,7 @@ public class Chunk
     {
         if (chunkDataReceived)
         {
-            float viewerDistance = Vector3Int.Distance(coords, new Vector3Int(
-                (int)viewer.position.x,
-                (int)viewer.position.y,
-                (int)viewer.position.z
-            ));
+            float viewerDistance = 3;
 
             if (Visibility == true)
             {
@@ -86,7 +84,7 @@ public class Chunk
 
                 for (int i = 0; i < lodLevels.Length; i++)
                 {
-                    if (viewerDistance > lodLevels[i].distance) lodIndex = i + 1;
+                    if (viewerDistance > lodLevels[i].distance) lodIndex = i;
                     else break;
                 }
 

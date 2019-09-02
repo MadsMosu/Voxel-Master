@@ -46,28 +46,37 @@ public class WorldGenerator
             callback = callback,
             data = chunkData
         };
-        generatedChunkQueue.Enqueue(generationEvent);
+        lock (generatedChunkQueue)
+        {
+            generatedChunkQueue.Enqueue(generationEvent);
+        }
 
     }
 
     ChunkData GenerateChunkData(Chunk chunk)
     {
-        var voxelGridSize = chunk.size + 1;
+        var voxelGridSize = Mathf.CeilToInt((chunk.size + 1) * (1 / chunk.voxelSize));
         var voxels = new Voxel[voxelGridSize, voxelGridSize, voxelGridSize];
         for (int x = 0; x < voxelGridSize; x++)
             for (int y = 0; y < voxelGridSize; y++)
                 for (int z = 0; z < voxelGridSize; z++)
                 {
                     voxels[x, y, z].Density = Perlin.Noise(
-                        ((chunk.coords.x * chunk.size) + x) * 0.05f,
-                        ((chunk.coords.y * chunk.size) + y) * 0.05f,
-                        ((chunk.coords.z * chunk.size) + z) * 0.05f
-                        );
+                        ((chunk.coords.x * chunk.size) + x * chunk.voxelSize) * 0.05f,
+                        ((chunk.coords.y * chunk.size) + y * chunk.voxelSize) * 0.05f,
+                        ((chunk.coords.z * chunk.size) + z * chunk.voxelSize) * 0.05f
+                    ) * Mathf.Clamp01(((chunk.coords.y * chunk.size) + y * chunk.voxelSize));
 
+                    if (((chunk.coords.y * chunk.size) + y * chunk.voxelSize) <= 0)
+                    {
+                        voxels[x, y, z].Density = 1;
+                    }
 
                 }
         return new ChunkData() { coords = chunk.coords, voxels = voxels };
     }
+
+
 
     struct GenerationEvent
     {

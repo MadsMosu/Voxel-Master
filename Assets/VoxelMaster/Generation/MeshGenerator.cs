@@ -46,7 +46,11 @@ public class MeshGenerator
             callback = callback,
             data = chunkData
         };
-        generatedChunkQueue.Enqueue(generationEvent);
+
+        lock (generatedChunkQueue)
+        {
+            generatedChunkQueue.Enqueue(generationEvent);
+        }
 
     }
 

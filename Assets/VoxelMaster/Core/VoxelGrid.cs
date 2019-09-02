@@ -14,6 +14,7 @@ public class VoxelGrid : MonoBehaviour
     public Material material;
 
     public int chunkSize = 16;
+    public float voxelSize = 2f;
 
     [SerializeField]
     private LODLevel[] lodLevels;
@@ -81,13 +82,12 @@ public class VoxelGrid : MonoBehaviour
     {
         if (!chunks.ContainsKey(coords))
         {
-            var c = new Chunk(coords, chunkSize, worldGenerator, meshGenerator, material, lodLevels, target);
+            var c = new Chunk(coords, chunkSize, voxelSize, worldGenerator, meshGenerator, material, lodLevels, target);
             chunks.Add(coords, c);
             visibleChunks.Add(c);
             c.Load();
         }
     }
-
 
 }
 
