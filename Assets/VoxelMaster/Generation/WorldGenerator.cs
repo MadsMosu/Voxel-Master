@@ -59,14 +59,14 @@ public class WorldGenerator
                 for (int z = 0; z < voxelGridSize; z++)
                 {
                     voxels[x, y, z].Density = Perlin.Noise(
-                        ((chunk.chunkCoordinates.x * chunk.size) + x) * 0.05f,
-                        ((chunk.chunkCoordinates.y * chunk.size) + y) * 0.05f,
-                        ((chunk.chunkCoordinates.z * chunk.size) + z) * 0.05f
+                        ((chunk.coords.x * chunk.size) + x) * 0.05f,
+                        ((chunk.coords.y * chunk.size) + y) * 0.05f,
+                        ((chunk.coords.z * chunk.size) + z) * 0.05f
                         );
 
 
                 }
-        return new ChunkData() { coords = chunk.chunkCoordinates, voxels = voxels, lod = chunk.LOD };
+        return new ChunkData() { coords = chunk.coords, voxels = voxels };
     }
 
     struct GenerationEvent

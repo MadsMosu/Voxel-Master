@@ -8,37 +8,36 @@ public static class MarchingCubes
 
     public static void GenerateMesh(Chunk chunk, out List<Triangle> triangles, float isoLevel = 0.5f)
     {
-        int lod = 1 << chunk.lod;
         triangles = new List<Triangle>();
 
-        for (int x = 0; x < (chunk.Voxels.GetLength(0) - 1) / lod; x++)
-            for (int y = 0; y < (chunk.Voxels.GetLength(1) - 1) / lod; y++)
-                for (int z = 0; z < (chunk.Voxels.GetLength(2) - 1) / lod; z++)
+        for (int x = 0; x < (chunk.Voxels.GetLength(0) - 1); x++)
+            for (int y = 0; y < (chunk.Voxels.GetLength(1) - 1); y++)
+                for (int z = 0; z < (chunk.Voxels.GetLength(2) - 1); z++)
                 {
 
 
                     float[] cubeDensity = new float[]
                     {
-                        chunk.Voxels[x * lod, y * lod, z * lod].Density,
-                        chunk.Voxels[(x + 1) * lod, y * lod, z * lod].Density,
-                        chunk.Voxels[(x + 1) * lod, y * lod, (z + 1) * lod].Density,
-                        chunk.Voxels[x * lod, y * lod, (z + 1) * lod].Density,
-                        chunk.Voxels[x * lod, (y + 1) * lod, z * lod].Density,
-                        chunk.Voxels[(x + 1) * lod, (y  + 1) * lod, z * lod].Density,
-                        chunk.Voxels[(x + 1) * lod, (y + 1) * lod, (z + 1) * lod].Density,
-                        chunk.Voxels[x * lod, (y + 1) * lod, (z  + 1) * lod].Density
+                        chunk.Voxels[x , y , z ].Density,
+                        chunk.Voxels[(x + 1) , y , z ].Density,
+                        chunk.Voxels[(x + 1) , y , (z + 1) ].Density,
+                        chunk.Voxels[x , y , (z + 1) ].Density,
+                        chunk.Voxels[x , (y + 1) , z ].Density,
+                        chunk.Voxels[(x + 1) , (y  + 1) , z ].Density,
+                        chunk.Voxels[(x + 1) , (y + 1) , (z + 1) ].Density,
+                        chunk.Voxels[x , (y + 1) , (z  + 1) ].Density
                     };
 
                     Vector3[] cubeVectors = new Vector3[]
                     {
-                        new Vector3(x * lod, y * lod, z * lod),
-                        new Vector3((x + 1) * lod, y * lod, z * lod),
-                        new Vector3((x + 1) * lod, y * lod, (z + 1) * lod),
-                        new Vector3(x * lod, y * lod, (z + 1) * lod),
-                        new Vector3(x * lod, (y + 1) * lod, z * lod),
-                        new Vector3((x + 1) * lod, (y  + 1) * lod, z * lod),
-                        new Vector3((x + 1) * lod, (y + 1) * lod, (z + 1) * lod),
-                        new Vector3(x * lod, (y + 1) * lod, (z  + 1) * lod),
+                        new Vector3(x , y , z ),
+                        new Vector3((x + 1) , y , z ),
+                        new Vector3((x + 1) , y , (z + 1) ),
+                        new Vector3(x , y , (z + 1) ),
+                        new Vector3(x , (y + 1) , z ),
+                        new Vector3((x + 1) , (y  + 1) , z ),
+                        new Vector3((x + 1) , (y + 1) , (z + 1) ),
+                        new Vector3(x , (y + 1) , (z  + 1) ),
                     };
 
 

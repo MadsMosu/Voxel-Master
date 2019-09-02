@@ -419,13 +419,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 644038400}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b9982e141753ea342af9f27ded5b629c, type: 3}
+  m_Script: {fileID: 11500000, guid: 016f4d8118858464cbb10cb5ce380a76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 421096020}
-  searchRadius: 2
+  searchRadius: 1
   material: {fileID: 2100000, guid: a20edc25fa363ad41920ee99c6b3804c, type: 2}
   chunkSize: 32
+  lodLevels:
+  - lod: 0
+    distance: 10
 --- !u!4 &644038402
 Transform:
   m_ObjectHideFlags: 0

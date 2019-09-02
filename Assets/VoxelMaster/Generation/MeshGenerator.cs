@@ -54,7 +54,7 @@ public class MeshGenerator
     {
 
         List<Triangle> triangles;
-        MarchingCubes.GenerateMesh(chunk, out triangles, 0.1f);
+        MarchingCubes.GenerateMesh(chunk, out triangles, 0.4f);
 
         var verts = new List<Vector3>();
         var tris = new List<int>();
@@ -76,7 +76,7 @@ public class MeshGenerator
 
         return new MeshData()
         {
-            coords = chunk.chunkCoordinates,
+            coords = chunk.coords,
             vertices = verts.ToArray(),
             triangles = tris.ToArray()
         };
