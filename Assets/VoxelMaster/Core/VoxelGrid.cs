@@ -74,7 +74,7 @@ public class VoxelGrid : MonoBehaviour
 
         foreach (var chunk in visibleChunks)
         {
-            chunk.Visibility = (Vector3Int.Distance(chunk.coords, targetCoords) < searchRadius * 2);
+            chunk.Visibility = (Vector3Int.Distance(chunk.coords, targetCoords) < searchRadius + searchRadius * 10);
         }
     }
 

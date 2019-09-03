@@ -423,15 +423,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 421096020}
-  searchRadius: 6
+  searchRadius: 3
   material: {fileID: 2100000, guid: a20edc25fa363ad41920ee99c6b3804c, type: 2}
-  chunkSize: 16
+  chunkSize: 32
   voxelSize: 1
   lodLevels:
   - lod: 0
     distance: 2
-  - lod: 1
-    distance: 6
 --- !u!4 &644038402
 Transform:
   m_ObjectHideFlags: 0

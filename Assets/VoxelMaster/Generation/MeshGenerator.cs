@@ -20,13 +20,11 @@ public class MeshGenerator
 
     public void RequestMeshData(Chunk chunk, Action<MeshData> callback)
     {
-
-        ThreadStart threadStart = delegate
+        ThreadPool.QueueUserWorkItem(delegate
         {
             ChunkGenerationThread(chunk, callback);
-        };
+        });
 
-        new Thread(threadStart).Start();
     }
 
     public void MainThreadUpdate()
@@ -58,7 +56,7 @@ public class MeshGenerator
     {
 
         List<Triangle> triangles;
-        MarchingCubes.GenerateMesh(chunk, out triangles, 0.4f);
+        MarchingCubes.GenerateMesh(chunk, out triangles, 0.2f);
 
         var verts = new List<Vector3>();
         var tris = new List<int>();

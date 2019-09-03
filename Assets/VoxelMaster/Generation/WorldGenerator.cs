@@ -8,25 +8,23 @@ public class WorldGenerator
 {
 
     WorldSettings worldSettings;
+    FastNoise fastNoise;
 
     Queue<GenerationEvent> generatedChunkQueue = new Queue<GenerationEvent>();
 
     public WorldGenerator(WorldSettings worldSettings)
     {
         this.worldSettings = worldSettings;
-
+        fastNoise = new FastNoise();
 
     }
 
     public void RequestChunkData(Chunk chunk, Action<ChunkData> callback)
     {
-
-        ThreadStart threadStart = delegate
+        ThreadPool.QueueUserWorkItem(delegate
         {
             ChunkGenerationThread(chunk, callback);
-        };
-
-        new Thread(threadStart).Start();
+        });
     }
 
     public void MainThreadUpdate()
@@ -61,16 +59,11 @@ public class WorldGenerator
             for (int y = 0; y < voxelGridSize; y++)
                 for (int z = 0; z < voxelGridSize; z++)
                 {
-                    voxels[x, y, z].Density = Perlin.Noise(
-                        ((chunk.coords.x * chunk.size) + x * chunk.voxelSize) * 0.05f,
-                        ((chunk.coords.y * chunk.size) + y * chunk.voxelSize) * 0.05f,
-                        ((chunk.coords.z * chunk.size) + z * chunk.voxelSize) * 0.05f
-                    ) * Mathf.Clamp01(((chunk.coords.y * chunk.size) + y * chunk.voxelSize));
-
-                    if (((chunk.coords.y * chunk.size) + y * chunk.voxelSize) <= 0)
-                    {
-                        voxels[x, y, z].Density = 1;
-                    }
+                    voxels[x, y, z].Density = fastNoise.GetPerlinFractal(
+                        ((chunk.coords.x * chunk.size) + x * chunk.voxelSize) * 4f,
+                        ((chunk.coords.y * chunk.size) + y * chunk.voxelSize) * 4f,
+                        ((chunk.coords.z * chunk.size) + z * chunk.voxelSize) * 4f
+                    ) + .25f;
 
                 }
         return new ChunkData() { coords = chunk.coords, voxels = voxels };
