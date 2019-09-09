@@ -8,14 +8,15 @@ public class WorldGenerator
 {
 
     WorldSettings worldSettings;
-    FastNoise fastNoise;
+    TerrainGraph terrainGraph;
+
 
     Queue<GenerationEvent> generatedChunkQueue = new Queue<GenerationEvent>();
 
-    public WorldGenerator(WorldSettings worldSettings)
+    public WorldGenerator(WorldSettings worldSettings, TerrainGraph terrainGraph)
     {
         this.worldSettings = worldSettings;
-        fastNoise = new FastNoise();
+        this.terrainGraph = terrainGraph;
 
     }
 
@@ -59,11 +60,13 @@ public class WorldGenerator
             for (int y = 0; y < voxelGridSize; y++)
                 for (int z = 0; z < voxelGridSize; z++)
                 {
-                    voxels[x, y, z].Density = fastNoise.GetPerlinFractal(
+                    var pos = new Vector3(
                         ((chunk.coords.x * chunk.size) + x * chunk.voxelSize) * 4f,
                         ((chunk.coords.y * chunk.size) + y * chunk.voxelSize) * 4f,
                         ((chunk.coords.z * chunk.size) + z * chunk.voxelSize) * 4f
-                    ) + .25f;
+                    );
+
+                    voxels[x, y, z].Density = terrainGraph.Evaluate(pos);
 
                 }
         return new ChunkData() { coords = chunk.coords, voxels = voxels };

@@ -6,7 +6,7 @@ using System.Linq;
 
 public class VoxelGrid : MonoBehaviour
 {
-
+    public TerrainGraph terrainGraph;
     public Transform target;
     private Vector3Int targetCoords;
     public int searchRadius = 5;
@@ -22,12 +22,13 @@ public class VoxelGrid : MonoBehaviour
     Dictionary<Vector3Int, Chunk> chunks = new Dictionary<Vector3Int, Chunk>();
     List<Chunk> visibleChunks = new List<Chunk>();
 
-    WorldGenerator worldGenerator = new WorldGenerator(new WorldSettings());
+    WorldGenerator worldGenerator;
     MeshGenerator meshGenerator = new MeshGenerator(new MeshSettings());
 
 
     private void Start()
     {
+        worldGenerator = new WorldGenerator(new WorldSettings(), terrainGraph);
     }
 
     private void Update()
@@ -88,6 +89,8 @@ public class VoxelGrid : MonoBehaviour
             c.Load();
         }
     }
+
+
 
 }
 
