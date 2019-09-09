@@ -1,23 +1,31 @@
 using System;
+using UnityEngine;
 
 [Serializable]
 public class AddNode : Node
 {
-
     public AddNode()
     {
-        this.inputs = new NodeInput[]{
+        nodeName = "Addition";
+        inputs = new NodeInput[]{
             new NodeInput{
-                name="a",
-                type=Type.ANY
+                name="A",
+                type=Type.ANY,
             },
             new NodeInput{
-                name="b",
-                type=Type.ANY
+                name="B",
+                type=Type.ANY,
+            },
+            new NodeInput{
+                name="C",
+                type=Type.ANY,
             },
         };
 
-        this.outputs = new NodeOutput[]{
+        outputs = new NodeOutput[]{
+            new NodeOutput{
+                name= "Result",
+            },
             new NodeOutput{
                 name= "Result",
             }
@@ -26,8 +34,8 @@ public class AddNode : Node
 
     public override void ProcessNode()
     {
-        var a = inputs[0].connection.value;
-        var b = inputs[1].connection.value;
+        var a = inputs[0].connection.node.outputs[inputs[0].connection.outputIndex].value;
+        var b = inputs[1].connection.node.outputs[inputs[1].connection.outputIndex].value;
         if (!CheckType(a) && !CheckType(b))
         {
             try
@@ -39,8 +47,6 @@ public class AddNode : Node
                 throw;
             }
         }
-
-
     }
 
     bool CheckType(dynamic obj)
