@@ -37,9 +37,9 @@ public class Chunk
 
     private Transform viewer;
 
-    private Voxel[,,] voxels;
+    private Voxel[] voxels;
 
-    public Voxel[,,] Voxels
+    public Voxel[] Voxels
     {
         get { return voxels; }
     }
@@ -117,22 +117,39 @@ public class Chunk
         worldGenerator.RequestChunkData(this, OnChunkData);
     }
 
-
-    public void SetVoxel(Vector3Int p, Voxel v)
+    public Voxel GetVoxel(int x, int y, int z)
     {
-        voxels[p.x, p.y, p.z] = v;
+        return voxels[MapIndexTo1D(x, y, z)];
+    }
+
+    public void SetVoxel(int x, int y, int z, Voxel v)
+    {
+        voxels[MapIndexTo1D(x, y, z)] = v;
     }
 
 
-    public void SetVoxels(Voxel[,,] voxels)
+    public void SetVoxels(Voxel[] voxels)
     {
         this.voxels = voxels;
+    }
+
+
+    public int MapIndexTo1D(int x, int y, int z)
+    {
+        return x + size * (y + size * z);
     }
 
     public void AddDensityInSphere(Vector3 origin, float radius, float falloff)
     {
         //TODO:
     }
+
+    public Voxel this[int x, int y, int z]
+    {
+        get { return GetVoxel(x, y, z); }
+        set { this.SetVoxel(x, y, z, value); }
+    }
+
 
     class LODMesh
     {

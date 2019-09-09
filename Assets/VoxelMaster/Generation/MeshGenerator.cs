@@ -39,11 +39,13 @@ public class MeshGenerator
     void ChunkGenerationThread(Chunk chunk, Action<MeshData> callback)
     {
         var chunkData = GenerateChunkData(chunk);
+
         var generationEvent = new GenerationEvent()
         {
             callback = callback,
             data = chunkData
         };
+
 
         lock (generatedChunkQueue)
         {
@@ -56,6 +58,7 @@ public class MeshGenerator
     {
 
         List<Triangle> triangles;
+
         MarchingCubes.GenerateMesh(chunk, out triangles, 0.2f);
 
         var verts = new List<Vector3>();

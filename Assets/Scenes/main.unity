@@ -424,9 +424,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   terrainGraph: {fileID: 11400000, guid: 69f4c76bc10087c49ae04429e613445c, type: 2}
   target: {fileID: 421096020}
-  searchRadius: 3
+  searchRadius: 1
   material: {fileID: 2100000, guid: a20edc25fa363ad41920ee99c6b3804c, type: 2}
-  chunkSize: 16
+  chunkSize: 8
   voxelSize: 1
   lodLevels:
   - lod: 0

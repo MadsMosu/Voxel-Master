@@ -55,7 +55,7 @@ public class WorldGenerator
     ChunkData GenerateChunkData(Chunk chunk)
     {
         var voxelGridSize = Mathf.CeilToInt((chunk.size + 1) * (1 / chunk.voxelSize));
-        var voxels = new Voxel[voxelGridSize, voxelGridSize, voxelGridSize];
+        var voxels = new Voxel[voxelGridSize * voxelGridSize * voxelGridSize];
         for (int x = 0; x < voxelGridSize; x++)
             for (int y = 0; y < voxelGridSize; y++)
                 for (int z = 0; z < voxelGridSize; z++)
@@ -66,7 +66,7 @@ public class WorldGenerator
                         ((chunk.coords.z * chunk.size) + z * chunk.voxelSize) * 4f
                     );
 
-                    voxels[x, y, z].Density = terrainGraph.Evaluate(pos);
+                    voxels[chunk.MapIndexTo1D(x, y, z)].Density = terrainGraph.Evaluate(pos);
 
                 }
         return new ChunkData() { coords = chunk.coords, voxels = voxels };

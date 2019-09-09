@@ -89,9 +89,6 @@ public class VoxelGrid : MonoBehaviour
             c.Load();
         }
     }
-
-
-
 }
 
 [System.Serializable]

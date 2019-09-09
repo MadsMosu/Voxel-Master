@@ -10,22 +10,22 @@ public static class MarchingCubes
     {
         triangles = new List<Triangle>();
 
-        for (int x = 0; x < (chunk.Voxels.GetLength(0) - 1); x++)
-            for (int y = 0; y < (chunk.Voxels.GetLength(1) - 1); y++)
-                for (int z = 0; z < (chunk.Voxels.GetLength(2) - 1); z++)
+        for (int x = 0; x < (chunk.size - 1); x++)
+            for (int y = 0; y < (chunk.size - 1); y++)
+                for (int z = 0; z < (chunk.size - 1); z++)
                 {
 
 
                     float[] cubeDensity = new float[]
                     {
-                        chunk.Voxels[x , y , z ].Density,
-                        chunk.Voxels[(x + 1) , y , z ].Density,
-                        chunk.Voxels[(x + 1) , y , (z + 1) ].Density,
-                        chunk.Voxels[x , y , (z + 1) ].Density,
-                        chunk.Voxels[x , (y + 1) , z ].Density,
-                        chunk.Voxels[(x + 1) , (y  + 1) , z ].Density,
-                        chunk.Voxels[(x + 1) , (y + 1) , (z + 1) ].Density,
-                        chunk.Voxels[x , (y + 1) , (z  + 1) ].Density
+                        chunk[x , y , z ].Density,
+                        chunk[(x + 1) , y , z ].Density,
+                        chunk[(x + 1) , y , (z + 1) ].Density,
+                        chunk[x , y , (z + 1) ].Density,
+                        chunk[x , (y + 1) , z ].Density,
+                        chunk[(x + 1) , (y  + 1) , z ].Density,
+                        chunk[(x + 1) , (y + 1) , (z + 1) ].Density,
+                        chunk[x , (y + 1) , (z  + 1) ].Density
                     };
 
                     Vector3[] cubeVectors = new Vector3[]
