@@ -49,21 +49,20 @@ public class WorldGenerator
         {
             generatedChunkQueue.Enqueue(generationEvent);
         }
-
     }
 
     ChunkData GenerateChunkData(Chunk chunk)
     {
-        var voxelGridSize = Mathf.CeilToInt((chunk.size + 1) * (1 / chunk.voxelSize));
+        var voxelGridSize = Mathf.CeilToInt((chunk.size) * (1 / chunk.voxelSize));
         var voxels = new Voxel[voxelGridSize * voxelGridSize * voxelGridSize];
         for (int x = 0; x < voxelGridSize; x++)
             for (int y = 0; y < voxelGridSize; y++)
                 for (int z = 0; z < voxelGridSize; z++)
                 {
                     var pos = new Vector3(
-                        ((chunk.coords.x * chunk.size) + x * chunk.voxelSize) * 4f,
-                        ((chunk.coords.y * chunk.size) + y * chunk.voxelSize) * 4f,
-                        ((chunk.coords.z * chunk.size) + z * chunk.voxelSize) * 4f
+                        ((chunk.coords.x * (chunk.size - 1)) + x * chunk.voxelSize) * 4f,
+                        ((chunk.coords.y * (chunk.size - 1)) + y * chunk.voxelSize) * 4f,
+                        ((chunk.coords.z * (chunk.size - 1)) + z * chunk.voxelSize) * 4f
                     );
 
                     voxels[chunk.MapIndexTo1D(x, y, z)].Density = terrainGraph.Evaluate(pos);

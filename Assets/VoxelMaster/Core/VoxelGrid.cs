@@ -20,7 +20,7 @@ public class VoxelGrid : MonoBehaviour
     private LODLevel[] lodLevels;
 
     Dictionary<Vector3Int, Chunk> chunks = new Dictionary<Vector3Int, Chunk>();
-    List<Chunk> visibleChunks = new List<Chunk>();
+    public List<Chunk> visibleChunks = new List<Chunk>();
 
     WorldGenerator worldGenerator;
     MeshGenerator meshGenerator = new MeshGenerator(new MeshSettings());
@@ -84,10 +84,35 @@ public class VoxelGrid : MonoBehaviour
         if (!chunks.ContainsKey(coords))
         {
             var c = new Chunk(coords, chunkSize, voxelSize, worldGenerator, meshGenerator, material, lodLevels, target);
+            c.GenerateLODMeshes();
             chunks.Add(coords, c);
             visibleChunks.Add(c);
             c.Load();
         }
+    }
+
+    Chunk GetChunkAddPosition(Vector3 position)
+    {
+        var x = Mathf.FloorToInt(position.x / (chunkSize * voxelSize));
+        var y = Mathf.FloorToInt(position.y / (chunkSize * voxelSize));
+        var z = Mathf.FloorToInt(position.z / (chunkSize * voxelSize));
+        return chunks[new Vector3Int(x, y, z)];
+    }
+
+    public void addDensity(Vector3 origin, float amount)
+    {
+        var chunk = GetChunkAddPosition(origin);
+        var chunkSpaceOrigin = new Vector3Int(
+            Mathf.FloorToInt(origin.x / chunk.size * voxelSize),
+            Mathf.FloorToInt(origin.y / chunk.size * voxelSize),
+            Mathf.FloorToInt(origin.y / chunk.size * voxelSize)
+        );
+        chunk.addDensity(chunkSpaceOrigin, amount);
+    }
+
+    public void reduceDensity(Vector3 origin)
+    {
+
     }
 }
 

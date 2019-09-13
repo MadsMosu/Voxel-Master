@@ -15,7 +15,6 @@ public static class MarchingCubes
                 for (int z = 0; z < (chunk.size - 1); z++)
                 {
 
-
                     float[] cubeDensity = new float[]
                     {
                         chunk[x , y , z ].Density,
@@ -31,13 +30,13 @@ public static class MarchingCubes
                     Vector3[] cubeVectors = new Vector3[]
                     {
                         new Vector3(x , y , z ) * chunk.voxelSize,
-                        new Vector3((x + 1) , y , z )  * chunk.voxelSize,
-                        new Vector3((x + 1) , y , (z + 1) )  * chunk.voxelSize,
-                        new Vector3(x , y , (z + 1) )  * chunk.voxelSize,
-                        new Vector3(x , (y + 1) , z )  * chunk.voxelSize,
-                        new Vector3((x + 1) , (y  + 1) , z )  * chunk.voxelSize,
-                        new Vector3((x + 1) , (y + 1) , (z + 1) )  * chunk.voxelSize,
-                        new Vector3(x , (y + 1) , (z  + 1) )  * chunk.voxelSize,
+                        new Vector3((x + 1) , y , z ) * chunk.voxelSize,
+                        new Vector3((x + 1) , y , (z + 1)) * chunk.voxelSize,
+                        new Vector3(x , y , (z + 1) ) * chunk.voxelSize,
+                        new Vector3(x , (y + 1) , z ) * chunk.voxelSize,
+                        new Vector3((x + 1) , (y  + 1) , z ) * chunk.voxelSize,
+                        new Vector3((x + 1) , (y + 1) , (z + 1) ) * chunk.voxelSize,
+                        new Vector3(x , (y + 1) , (z  + 1) ) * chunk.voxelSize,
                     };
 
 
