@@ -48,35 +48,32 @@ public class VoxelGrid : MonoBehaviour
             Mathf.RoundToInt(target.position.z / chunkSize)
         );
 
-        for (int i = 0; i < visibleChunks.Count; i++)
-        {
-            var chunk = visibleChunks[i];
-            if (Vector3Int.Distance(chunk.coords, targetCoords) > searchRadius * chunkSize)
-                chunk.Visibility = false;
-        }
-
         UpdateChunk(targetCoords);
+        UpdateFirstUnloadedChunkInSearchDistance();
 
-        Vector3Int[] chunksToBeUpdated = new Vector3Int[(int)Mathf.Pow(searchRadius * 2 + 1, 3)];
-
-        int index = 0;
-        for (int x = -searchRadius; x <= searchRadius; x++)
-            for (int y = -searchRadius; y <= searchRadius; y++)
-                for (int z = -searchRadius; z <= searchRadius; z++)
-                {
-                    var coords = targetCoords + new Vector3Int(x, y, z);
-                    chunksToBeUpdated[index++] = coords;
-                }
-
-        foreach (var chunk in chunksToBeUpdated.OrderBy(a => Vector3Int.Distance(a, targetCoords)))
-        {
-            UpdateChunk(chunk);
-        }
 
         foreach (var chunk in visibleChunks)
         {
             chunk.Visibility = (Vector3Int.Distance(chunk.coords, targetCoords) < searchRadius + searchRadius * 10);
         }
+    }
+
+
+    void UpdateFirstUnloadedChunkInSearchDistance()
+    {
+        for (int x = 0; x <= searchRadius; x++)
+            for (int y = 0; y <= searchRadius; y++)
+                for (int z = 0; z <= searchRadius; z++)
+                {
+                    var positive = targetCoords + new Vector3Int(x, y, z);
+                    var negative = targetCoords - new Vector3Int(x, y, z);
+                    if (!chunks.ContainsKey(positive) || !chunks.ContainsKey(negative))
+                    {
+                        UpdateChunk(positive);
+                        UpdateChunk(negative);
+                        return;
+                    }
+                }
     }
 
     void UpdateChunk(Vector3Int coords)

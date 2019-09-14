@@ -104,7 +104,7 @@ public class Chunk
                     {
                         prevLodIndex = lodIndex;
                         meshFilter.mesh = lodMesh.mesh;
-                        meshCollider.sharedMesh = lodMesh.mesh;
+                        // meshCollider.sharedMesh = lodMesh.mesh;
                     }
                     else
                     {
