@@ -134,6 +134,7 @@ GameObject:
   - component: {fileID: 421096018}
   - component: {fileID: 421096017}
   - component: {fileID: 421096021}
+  - component: {fileID: 421096022}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -345,6 +346,21 @@ MonoBehaviour:
     m_RotationOrder: 4
   rotationLerpTime: 0.01
   invertY: 0
+--- !u!114 &421096022
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 421096016}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9533017634cf9b74a975bf6e68343ecc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  camera: {fileID: 421096019}
+  amount: 0.1
+  voxelWorld: {fileID: 644038401}
 --- !u!1 &432495590
 GameObject:
   m_ObjectHideFlags: 0

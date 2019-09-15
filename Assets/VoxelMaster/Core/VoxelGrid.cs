@@ -100,9 +100,9 @@ public class VoxelGrid : MonoBehaviour
     {
         var chunk = GetChunkAddPosition(origin);
         var chunkSpaceOrigin = new Vector3Int(
-            Mathf.FloorToInt(origin.x / chunk.size * voxelSize),
-            Mathf.FloorToInt(origin.y / chunk.size * voxelSize),
-            Mathf.FloorToInt(origin.y / chunk.size * voxelSize)
+            Mathf.FloorToInt(origin.x / (chunk.size * voxelSize)),
+            Mathf.FloorToInt(origin.y / (chunk.size * voxelSize)),
+            Mathf.FloorToInt(origin.y / (chunk.size * voxelSize))
         );
         chunk.addDensity(chunkSpaceOrigin, amount);
     }

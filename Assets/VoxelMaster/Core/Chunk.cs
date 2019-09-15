@@ -1,6 +1,4 @@
-﻿
-
-using System;
+﻿using System;
 using UnityEngine;
 
 public class Chunk
@@ -170,7 +168,7 @@ public class Chunk
                     {
                         var voxel = GetVoxel(origin.x + x, origin.y + y, origin.z + z);
                         SetVoxel(origin.x + x, origin.y + y, origin.z + z, new Voxel { Density = voxel.Density + amount });
-                        Debug.Log("IT WORKS");
+                        voxel = GetVoxel(origin.x + x, origin.y + y, origin.z + z);
                     }
                     catch (IndexOutOfRangeException e)
                     {
@@ -178,7 +176,9 @@ public class Chunk
                     }
                 }
         GenerateLODMeshes();
+        prevLodIndex = -1;
         UpdateChunk();
+
     }
 
 
