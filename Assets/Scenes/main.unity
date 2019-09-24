@@ -134,7 +134,6 @@ GameObject:
   - component: {fileID: 421096018}
   - component: {fileID: 421096017}
   - component: {fileID: 421096021}
-  - component: {fileID: 421096022}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -346,21 +345,6 @@ MonoBehaviour:
     m_RotationOrder: 4
   rotationLerpTime: 0.01
   invertY: 0
---- !u!114 &421096022
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 421096016}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9533017634cf9b74a975bf6e68343ecc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  camera: {fileID: 421096019}
-  amount: 0.1
-  voxelWorld: {fileID: 644038401}
 --- !u!1 &432495590
 GameObject:
   m_ObjectHideFlags: 0
@@ -435,18 +419,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 644038400}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 016f4d8118858464cbb10cb5ce380a76, type: 3}
+  m_Script: {fileID: 11500000, guid: a95a7c548019daf428a4ad9f439ec608, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  terrainGraph: {fileID: 11400000, guid: 69f4c76bc10087c49ae04429e613445c, type: 2}
-  target: {fileID: 421096020}
-  searchRadius: 5
-  material: {fileID: 2100000, guid: a20edc25fa363ad41920ee99c6b3804c, type: 2}
-  chunkSize: 16
-  voxelSize: 1
-  lodLevels:
-  - lod: 0
-    distance: 2
+  viewer: {fileID: 421096020}
+  ChunkSize: 16
+  terrainGraph: {fileID: 11400000, guid: b1744b59da33a0345aa21c7e2de6e893, type: 2}
 --- !u!4 &644038402
 Transform:
   m_ObjectHideFlags: 0
