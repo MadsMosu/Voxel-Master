@@ -24,15 +24,17 @@ public class MeshGenerator
         {
             ChunkGenerationThread(chunk, callback);
         });
-
     }
 
     public void MainThreadUpdate()
     {
         if (generatedChunkQueue.Count > 0)
         {
-            var @event = generatedChunkQueue.Dequeue();
-            @event.callback.Invoke(@event.data);
+            lock (generatedChunkQueue)
+            {
+                var @event = generatedChunkQueue.Dequeue();
+                @event.callback.Invoke(@event.data);
+            }
         }
     }
 

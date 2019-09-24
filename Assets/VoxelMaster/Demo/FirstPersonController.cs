@@ -2,9 +2,6 @@ using UnityEngine;
 
 class FirstPersonController : MonoBehaviour
 {
-
-    //JEG GÅR UD FRA AT VI RAYCASTER..
-    int hitDistance = 10;
     public Camera camera;
 
     public float amount;

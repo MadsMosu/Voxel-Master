@@ -1,4 +1,5 @@
-﻿using System;
+﻿using System.Linq;
+using System;
 using UnityEngine;
 
 public class Chunk
@@ -26,6 +27,8 @@ public class Chunk
     private int prevLodIndex = -1;
     private bool chunkDataReceived;
     private bool meshDataReceived;
+    private bool requiresUpdate = false;
+    private bool processing = false;
 
     private WorldGenerator worldGenerator;
     private MeshGenerator meshGenerator;
@@ -69,59 +72,91 @@ public class Chunk
         this.viewer = viewer;
     }
 
-    public void GenerateLODMeshes()
+    private void GenerateLODMeshes(Action callback)
     {
         lodMeshes = new LODMesh[lodLevels.Length];
         for (int i = 0; i < lodLevels.Length; i++)
         {
             lodMeshes[i] = new LODMesh(lodLevels[i].lod, meshGenerator);
-            lodMeshes[i].updateCallback += UpdateChunk;
+            lodMeshes[i].callback += callback;
         }
     }
 
-    private void UpdateChunk()
+    public void UpdateChunk()
+    {
+        if (requiresUpdate && !processing)
+        {
+            processing = true;
+            GenerateLODMeshes(onResetMesh);
+            SetOrRequestMesh();
+        }
+        // else
+        // {
+        //     int lodIndex = FindLod();
+        //     if (lodIndex != prevLodIndex)
+        //     {
+        //         SetOrRequestMesh();
+        //     }
+        // }
+    }
+
+    private void onResetMesh()
+    {
+        SetOrRequestMesh();
+        requiresUpdate = false;
+        processing = false;
+    }
+
+    private int FindLod()
+    {
+        float viewerDistance = 3;
+        int lodIndex = 0;
+        if (Visibility)
+        {
+            for (int i = 0; i < lodLevels.Length; i++)
+            {
+                if (viewerDistance > lodLevels[i].distance) lodIndex = i;
+                else break;
+            }
+        }
+        return lodIndex;
+    }
+
+    private void SetOrRequestMesh()
+    {
+        int lodIndex = FindLod();
+        LODMesh lodMesh = lodMeshes[lodIndex];
+        if (lodMesh.hasMesh)
+        {
+            prevLodIndex = lodIndex;
+            meshFilter.mesh = lodMesh.mesh;
+            meshCollider.sharedMesh = lodMesh.mesh;
+        }
+        else
+        {
+            lodMesh.RequestMesh(this);
+        }
+    }
+
+    private void AddChunk()
     {
         if (chunkDataReceived)
         {
-            float viewerDistance = 3;
-
-            if (Visibility == true)
-            {
-                int lodIndex = 0;
-
-                for (int i = 0; i < lodLevels.Length; i++)
-                {
-                    if (viewerDistance > lodLevels[i].distance) lodIndex = i;
-                    else break;
-                }
-
-                if (lodIndex != prevLodIndex)
-                {
-                    LODMesh lodMesh = lodMeshes[lodIndex];
-                    if (lodMesh.hasMesh)
-                    {
-                        prevLodIndex = lodIndex;
-                        meshFilter.mesh = lodMesh.mesh;
-                        // meshCollider.sharedMesh = lodMesh.mesh;
-                    }
-                    else
-                    {
-                        lodMesh.RequestMesh(this);
-                    }
-                }
-            }
+            SetOrRequestMesh();
         }
     }
+
 
     private void OnChunkData(ChunkData data)
     {
         voxels = data.voxels;
         chunkDataReceived = true;
-        UpdateChunk();
+        SetOrRequestMesh();
     }
 
     public void Load()
     {
+        GenerateLODMeshes(AddChunk);
         worldGenerator.RequestChunkData(this, OnChunkData);
     }
 
@@ -147,9 +182,16 @@ public class Chunk
         return (x + size * (y + size * z));
     }
 
-    public void AddDensityInSphere(Vector3 origin, float radius, float falloff)
+    public void AddDensityInSphere(Vector3Int origin, float radius, float falloff, float amount)
     {
-        //TODO:
+        for (var x = -radius; x <= radius; x++)
+            for (var y = -radius; y <= radius; y++)
+                for (var z = -radius; z <= radius; z++)
+                {
+                    var voxel = GetVoxel(Mathf.FloorToInt(origin.x + x), Mathf.FloorToInt(origin.y + y), Mathf.FloorToInt(origin.z + z));
+                    amount = Mathf.Sqrt(Mathf.Pow(x, 2) + Mathf.Pow(y, 2) + Mathf.Pow(z, 2));
+                    SetVoxel(Mathf.FloorToInt(origin.x + x), Mathf.FloorToInt(origin.y + y), Mathf.FloorToInt(origin.z + z), new Voxel { Density = voxel.Density + amount });
+                }
     }
 
     public Voxel this[int x, int y, int z]
@@ -160,25 +202,9 @@ public class Chunk
 
     public void addDensity(Vector3Int origin, float amount)
     {
-        for (int x = -1; x < 1; x++)
-            for (int y = -1; y < 1; y++)
-                for (int z = -1; z < 1; z++)
-                {
-                    try
-                    {
-                        var voxel = GetVoxel(origin.x + x, origin.y + y, origin.z + z);
-                        SetVoxel(origin.x + x, origin.y + y, origin.z + z, new Voxel { Density = voxel.Density + amount });
-                        voxel = GetVoxel(origin.x + x, origin.y + y, origin.z + z);
-                    }
-                    catch (IndexOutOfRangeException e)
-                    {
-
-                    }
-                }
-        GenerateLODMeshes();
-        prevLodIndex = -1;
-        UpdateChunk();
-
+        var voxel = GetVoxel(origin.x, origin.y, origin.z);
+        SetVoxel(origin.x, origin.y, origin.z, new Voxel { Density = voxel.Density + amount });
+        requiresUpdate = true;
     }
 
 
@@ -191,7 +217,7 @@ public class Chunk
         bool hasRequestedMesh;
         public bool hasMesh;
 
-        public event Action updateCallback;
+        public event Action callback;
 
         public LODMesh(int lod, MeshGenerator meshGenerator)
         {
@@ -210,7 +236,7 @@ public class Chunk
             hasMesh = true;
             mesh = data.CreateMesh();
 
-            updateCallback();
+            callback();
         }
     }
 }

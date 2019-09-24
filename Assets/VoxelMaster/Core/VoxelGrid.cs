@@ -76,19 +76,44 @@ public class VoxelGrid : MonoBehaviour
                 }
     }
 
+
+
     void UpdateChunk(Vector3Int coords)
     {
         if (!chunks.ContainsKey(coords))
         {
             var c = new Chunk(coords, chunkSize, voxelSize, worldGenerator, meshGenerator, material, lodLevels, target);
-            c.GenerateLODMeshes();
             chunks.Add(coords, c);
             visibleChunks.Add(c);
             c.Load();
         }
+        else
+        {
+            var c = chunks[coords];
+            c.UpdateChunk();
+        }
     }
 
-    Chunk GetChunkAddPosition(Vector3 position)
+    public void AddDensityInSphere(Vector3 position, float radius, float falloff, float amount)
+    {
+        for (var x = -radius; x <= radius; x++)
+            for (var y = -radius; y <= radius; y++)
+                for (var z = -radius; z <= radius; z++)
+                {
+                    var chunk = GetChunkFromWorldPosition(position + new Vector3(x, y, z));
+                    var voxelOrigin = GetVoxelFromChunkOrigin(position + new Vector3(x, y, z));
+                    amount = Mathf.Sqrt(Mathf.Pow(x, 2) + Mathf.Pow(y, 2) + Mathf.Pow(z, 2));
+                    chunk.addDensity(new Vector3Int(
+                        Mathf.FloorToInt(voxelOrigin.x),
+                        Mathf.FloorToInt(voxelOrigin.y),
+                        Mathf.FloorToInt(voxelOrigin.z)), amount);
+                }
+    }
+
+    public void AddDensityInCircle(Vector3 position, float radius, float falloff, float amount) {
+    }
+
+    Chunk GetChunkFromWorldPosition(Vector3 position)
     {
         var x = Mathf.FloorToInt(position.x / (chunkSize * voxelSize));
         var y = Mathf.FloorToInt(position.y / (chunkSize * voxelSize));
@@ -96,18 +121,21 @@ public class VoxelGrid : MonoBehaviour
         return chunks[new Vector3Int(x, y, z)];
     }
 
-    public void addDensity(Vector3 origin, float amount)
+    Vector3Int GetVoxelFromChunkOrigin(Vector3 origin)
     {
-        var chunk = GetChunkAddPosition(origin);
-        var chunkSpaceOrigin = new Vector3Int(
-            Mathf.FloorToInt(origin.x / (chunk.size * voxelSize)),
-            Mathf.FloorToInt(origin.y / (chunk.size * voxelSize)),
-            Mathf.FloorToInt(origin.y / (chunk.size * voxelSize))
+        return new Vector3Int(
+            Mathf.FloorToInt(Mathf.Abs(origin.x) % (chunkSize * voxelSize)),
+            Mathf.FloorToInt(Mathf.Abs(origin.y) % (chunkSize * voxelSize)),
+            Mathf.FloorToInt(Mathf.Abs(origin.z) % (chunkSize * voxelSize))
         );
-        chunk.addDensity(chunkSpaceOrigin, amount);
     }
 
-    public void reduceDensity(Vector3 origin)
+    public void addDensity(Vector3 origin, float amount)
+    {
+        AddDensityInSphere(origin, 1, 0, amount);
+    }
+
+    public void reduceDensity(Vector3 origin, float amount)
     {
 
     }
