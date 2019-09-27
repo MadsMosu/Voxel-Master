@@ -8,7 +8,7 @@ public class Chunk
 
     public enum ChunkStatus
     {
-        CREATED, GENERATED_DATA, GENERATED_MESH
+        CREATED, GENERATING, GENERATED_DATA, GENERATED_MESH
     }
 
     public ChunkStatus Status = ChunkStatus.CREATED;
@@ -17,10 +17,13 @@ public class Chunk
     {
         this.Coords = coords;
         this.Size = size;
-        this.Voxels = new Voxel[size * size * size];
-
     }
 
+
+    public void InitVoxels()
+    {
+        this.Voxels = new Voxel[Size * Size * Size];
+    }
 
 
 }

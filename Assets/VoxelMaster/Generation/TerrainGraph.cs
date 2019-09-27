@@ -13,10 +13,13 @@ public class TerrainGraph : NodeGraph
     {
     }
 
+    private Output outputNode;
     public float Evaluate(Vector3 pos)
     {
+        if (outputNode == null)
+            outputNode = nodes.Find(x => x is Output) as Output;
+
         Thread.SetData(Thread.GetNamedDataSlot("voxelPosition"), pos);
-        var output = nodes.Find(x => x is Output) as Output;
-        return output.GetInputValue<float>("value", 0);
+        return outputNode.GetInputValue<float>("value", 0);
     }
 }

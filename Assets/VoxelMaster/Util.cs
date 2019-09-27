@@ -4,7 +4,7 @@ public static class Util
 {
     public static int Map3DTo1D(int x, int y, int z, int size)
     {
-        return (x + size * (y + size * z));
+        return x + size * (y + size * z);
     }
 
     public static Vector3Int Map1DTo3D(int i, int size)

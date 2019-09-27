@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-class MarchingCubesMeshGenerator : ChunkMeshGenerator
+public class MarchingCubesMeshGenerator : ChunkMeshGenerator
 {
 
 
@@ -12,11 +12,10 @@ class MarchingCubesMeshGenerator : ChunkMeshGenerator
         var vertices = new List<Vector3>();
         var triangles = new List<int>();
 
-        for (int x = 0; x < chunk.Size; x++)
-            for (int y = 0; y < chunk.Size; y++)
-                for (int z = 0; z < chunk.Size; z++)
+        for (int x = 0; x < chunk.Size - 1; x++)
+            for (int y = 0; y < chunk.Size - 1; y++)
+                for (int z = 0; z < chunk.Size - 1; z++)
                 {
-
                     float[] cubeDensity = new float[]
                     {
                         chunk.Voxels[Util.Map3DTo1D(x , y , z, chunk.Size)].Density,
