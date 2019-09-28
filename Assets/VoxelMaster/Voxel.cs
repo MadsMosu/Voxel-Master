@@ -1,10 +1,7 @@
 using System;
 using UnityEngine;
-public class Voxel
+public struct Voxel
 {
-    private float density = 0f;
-    public float Density {
-        get {return density; }
-        set {density = Mathf.Clamp01(value); }
-    }
+    public byte Density;
+
 }

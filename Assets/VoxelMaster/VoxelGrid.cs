@@ -10,6 +10,7 @@ public class VoxelGrid : MonoBehaviour
     public Transform viewer;
     private Vector3Int viewerCoords = Vector3Int.zero;
     public int ChunkSize = 16;
+    public int searchRadius = 6;
 
     public TerrainGraph terrainGraph;
     private ChunkMeshGenerator meshGenerator = new MarchingCubesMeshGenerator();
@@ -20,7 +21,7 @@ public class VoxelGrid : MonoBehaviour
     void Start()
     {
 
-        ThreadPool.SetMaxThreads(800, 200);
+        ThreadPool.SetMaxThreads(4, 4);
 
 
         chunkQueueProcessor = new Thread(new ThreadStart(
@@ -44,10 +45,10 @@ public class VoxelGrid : MonoBehaviour
             Mathf.FloorToInt(viewer.position.z / ChunkSize)
         );
 
-        var searchradius = 2;
-        for (int x = -searchradius; x < searchradius; x++)
-            for (int y = -searchradius; y < searchradius; y++)
-                for (int z = -searchradius; z < searchradius; z++)
+
+        for (int x = -searchRadius; x < searchRadius; x++)
+            for (int y = -searchRadius; y < searchRadius; y++)
+                for (int z = -searchRadius; z < searchRadius; z++)
                 {
                     var chunkCoords = viewerCoords + new Vector3Int(x, y, z);
                     if (chunks.GetChunk(chunkCoords) == null)
@@ -72,11 +73,12 @@ public class VoxelGrid : MonoBehaviour
                 if (chunkGenerationQueue.Count > 0)
                 {
                     var chunk = chunkGenerationQueue.Dequeue();
+
                     var cb = new WaitCallback(GenerateChunkDensity);
                     ThreadPool.QueueUserWorkItem(cb, chunk);
+                    Thread.Sleep(1);
                 }
             }
-            Thread.Sleep(1);
         }
     }
 
@@ -89,11 +91,12 @@ public class VoxelGrid : MonoBehaviour
         chunk.InitVoxels();
         for (int i = 0; i < chunk.Voxels.Length; i++)
         {
-            var voxelPosition = Util.Map1DTo3D(i, chunk.Size);
-            voxelPosition += chunk.Coords * chunk.Size;
+            // chunk.Voxels[i] = new Voxel();
+            // chunk.Voxels[i].Density = (byte)(terrainGraph.Evaluate(
+            //     Util.Map1DTo3D(i, chunk.Size) + chunk.Coords * chunk.Size
+            // ) * 255);
 
-            chunk.Voxels[i] = new Voxel();
-            chunk.Voxels[i].Density = terrainGraph.Evaluate(voxelPosition);
+
         }
 
         chunk.Status = Chunk.ChunkStatus.GENERATED_DATA;

@@ -199,6 +199,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   viewer: {fileID: 1687258585}
   ChunkSize: 16
+  searchRadius: 5
   terrainGraph: {fileID: 11400000, guid: b1744b59da33a0345aa21c7e2de6e893, type: 2}
 --- !u!4 &767134027
 Transform:
@@ -254,7 +255,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: be76e5f14cfee674cb30b491fb72b09b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  boost: 3.5
+  boost: 1
   positionLerpTime: 0.2
   mouseSensitivityCurve:
     serializedVersion: 2
