@@ -2,9 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Lookup
+namespace VoxelMaster
 {
-    public readonly static int[] edgeTable = new int[]{
+    public class Lookup
+    {
+        public readonly static int[] edgeTable = new int[]{
         0x0  , 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
         0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00,
         0x190, 0x99 , 0x393, 0x29a, 0x596, 0x49f, 0x795, 0x69c,
@@ -40,7 +42,7 @@ public class Lookup
     };
 
 
-    public readonly static int[][] triTabl = new int[][] {
+        public readonly static int[][] triTabl = new int[][] {
     new int[]{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
     new int[]{ 0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
     new int[]{ 0, 1, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
@@ -300,7 +302,7 @@ public class Lookup
     };
 
 
-    public readonly static int[] cornerIndexAFromEdge = new int[] {
+        public readonly static int[] cornerIndexAFromEdge = new int[] {
         0,
         1,
         2,
@@ -315,7 +317,7 @@ public class Lookup
         3
     };
 
-    public readonly static int[] cornerIndexBFromEdge = new int[] {
+        public readonly static int[] cornerIndexBFromEdge = new int[] {
         1,
         2,
         3,
@@ -330,4 +332,5 @@ public class Lookup
         7
     };
 
+    }
 }

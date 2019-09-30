@@ -1,18 +1,21 @@
 using UnityEngine;
 
-public static class Util
+namespace VoxelMaster
 {
-    public static int Map3DTo1D(int x, int y, int z, int size)
+    public static class Util
     {
-        return x + size * (y + size * z);
-    }
+        public static int Map3DTo1D(int x, int y, int z, int size)
+        {
+            return x + size * (y + size * z);
+        }
 
-    public static Vector3Int Map1DTo3D(int i, int size)
-    {
-        return new Vector3Int(
-                i / (size * size),
-                (i / size) % size,
-                i % size
-            );
+        public static Vector3Int Map1DTo3D(int i, int size)
+        {
+            return new Vector3Int(
+                    i / (size * size),
+                    (i / size) % size,
+                    i % size
+                );
+        }
     }
 }

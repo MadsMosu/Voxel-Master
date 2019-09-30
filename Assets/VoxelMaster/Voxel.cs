@@ -1,7 +1,11 @@
 using System;
 using UnityEngine;
-public struct Voxel
-{
-    public byte Density;
 
+namespace VoxelMaster
+{
+    public struct Voxel
+    {
+        public byte Density;
+
+    }
 }
