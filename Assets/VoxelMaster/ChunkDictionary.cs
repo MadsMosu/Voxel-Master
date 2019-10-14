@@ -18,7 +18,8 @@ namespace VoxelMaster
         public override Chunk GetChunk(Vector3Int coords)
         {
             Chunk chunk;
-            return chunks.TryGetValue(coords, out chunk) ? chunk : null;
+            chunks.TryGetValue(coords, out chunk);
+            return chunk;
         }
 
         public override void ForEach(Action<Chunk> func)
@@ -29,5 +30,9 @@ namespace VoxelMaster
             }
         }
 
+        public override bool ChunkExists(Vector3Int coords)
+        {
+            return chunks.ContainsKey(coords);
+        }
     }
 }

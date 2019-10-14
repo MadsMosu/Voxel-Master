@@ -1,11 +1,13 @@
+using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace VoxelMaster
 {
-    public class Chunk
+    public struct Chunk
     {
         public Vector3Int Coords { get; private set; }
-        public Voxel[] Voxels { get; private set; }
+        public NativeArray<byte> Voxels { get; private set; }
         public int Size { get; private set; }
 
         public enum ChunkStatus
@@ -13,20 +15,16 @@ namespace VoxelMaster
             CREATED, GENERATING, GENERATED_DATA, GENERATED_MESH
         }
 
-        public ChunkStatus Status = ChunkStatus.CREATED;
+        public ChunkStatus Status;
 
         public Chunk(Vector3Int coords, int size)
         {
             this.Coords = coords;
             this.Size = size;
+            this.Status = ChunkStatus.CREATED;
+
+            this.Voxels = new NativeArray<byte>(Size * Size * Size, Allocator.Persistent);
         }
-
-
-        public void InitVoxels()
-        {
-            this.Voxels = new Voxel[Size * Size * Size];
-        }
-
 
     }
 }

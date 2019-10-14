@@ -13,6 +13,8 @@ namespace VoxelMaster
 
         public abstract Chunk GetChunk(Vector3Int coords);
 
+        public abstract bool ChunkExists(Vector3Int coords);
+
         public abstract void AddChunk(Vector3Int coords, Chunk chunk);
 
         public abstract void ForEach(Action<Chunk> func);
