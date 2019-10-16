@@ -20,14 +20,14 @@ namespace VoxelMaster
                     {
                         float[] cubeDensity = new float[]
                         {
-                        // chunk.Voxels[Util.Map3DTo1D(x , y , z, chunk.Size)].Density,
-                        // chunk.Voxels[Util.Map3DTo1D((x + 1) , y , z , chunk.Size)].Density,
-                        // chunk.Voxels[Util.Map3DTo1D((x + 1) , y , (z + 1) , chunk.Size)].Density,
-                        // chunk.Voxels[Util.Map3DTo1D(x , y , (z + 1) , chunk.Size)].Density,
-                        // chunk.Voxels[Util.Map3DTo1D(x , (y + 1) , z , chunk.Size)].Density,
-                        // chunk.Voxels[Util.Map3DTo1D((x + 1) , (y  + 1) , z , chunk.Size)].Density,
-                        // chunk.Voxels[Util.Map3DTo1D((x + 1) , (y + 1) , (z + 1) , chunk.Size)].Density,
-                        // chunk.Voxels[Util.Map3DTo1D(x , (y + 1) , (z  + 1) , chunk.Size)].Density
+                        chunk.Voxels[Util.Map3DTo1D(x , y , z, chunk.Size)],
+                        chunk.Voxels[Util.Map3DTo1D((x + 1) , y , z , chunk.Size)],
+                        chunk.Voxels[Util.Map3DTo1D((x + 1) , y , (z + 1) , chunk.Size)],
+                        chunk.Voxels[Util.Map3DTo1D(x , y , (z + 1) , chunk.Size)],
+                        chunk.Voxels[Util.Map3DTo1D(x , (y + 1) , z , chunk.Size)],
+                        chunk.Voxels[Util.Map3DTo1D((x + 1) , (y  + 1) , z , chunk.Size)],
+                        chunk.Voxels[Util.Map3DTo1D((x + 1) , (y + 1) , (z + 1) , chunk.Size)],
+                        chunk.Voxels[Util.Map3DTo1D(x , (y + 1) , (z  + 1) , chunk.Size)]
                         };
 
                         Vector3[] cubeVectors = new Vector3[]
