@@ -7,7 +7,7 @@ namespace VoxelMaster
     public struct Chunk
     {
         public Vector3Int Coords { get; private set; }
-        public NativeArray<byte> Voxels { get; private set; }
+        public NativeArray<float> Voxels { get; private set; }
         public int Size { get; private set; }
 
         public enum ChunkStatus
@@ -23,7 +23,7 @@ namespace VoxelMaster
             this.Size = size;
             this.Status = ChunkStatus.CREATED;
 
-            this.Voxels = new NativeArray<byte>(Size * Size * Size, Allocator.Persistent);
+            this.Voxels = new NativeArray<float>(Size * Size * Size, Allocator.Persistent);
         }
 
     }
