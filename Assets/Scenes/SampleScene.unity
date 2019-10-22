@@ -14,7 +14,7 @@ OcclusionCullingSettings:
 RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 9
-  m_Fog: 1
+  m_Fog: 0
   m_FogColor: {r: 0.65080994, g: 0.666729, b: 0.7075472, a: 1}
   m_FogMode: 3
   m_FogDensity: 0.05
@@ -291,9 +291,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   viewer: {fileID: 1687258585}
-  ChunkSize: 16
-  searchRadius: 4
+  ChunkSize: 8
+  searchRadius: 8
   terrainGraph: {fileID: 11400000, guid: b1744b59da33a0345aa21c7e2de6e893, type: 2}
+  material: {fileID: 2100000, guid: a20edc25fa363ad41920ee99c6b3804c, type: 2}
   testMeshFilter: {fileID: 311110945}
 --- !u!4 &767134027
 Transform:

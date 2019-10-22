@@ -16,14 +16,17 @@ namespace VoxelMaster
         private ChunkDataStructure chunks = new ChunkDictionary();
         public Transform viewer;
         private Vector3Int viewerCoords = Vector3Int.zero;
-        public int ChunkSize = 4;
+        public int ChunkSize = 16;
         public int searchRadius = 6;
 
         public TerrainGraph terrainGraph;
         private ChunkMeshGenerator meshGenerator = new MarchingCubesMeshGenerator();
 
 
+        public Material material;
         public MeshFilter testMeshFilter;
+
+        public Dictionary<Chunk, Mesh> chunkMeshes = new Dictionary<Chunk, Mesh>();
 
         void Start()
         {
@@ -33,10 +36,17 @@ namespace VoxelMaster
         void Update()
         {
             CreateNearbyChunks();
+
+            RenderChunks();
         }
 
-
-
+        private void RenderChunks()
+        {
+            foreach (KeyValuePair<Chunk, Mesh> entry in chunkMeshes)
+            {
+                Graphics.DrawMesh(entry.Value, entry.Key.Coords * (entry.Key.Size - 1), Quaternion.identity, material, 0);
+            }
+        }
 
         int genThisFrame = 0;
         void CreateNearbyChunks()
@@ -96,8 +106,9 @@ namespace VoxelMaster
                                 mesh.vertices = vertices.ToArray();
                                 mesh.triangles = triangles.ToArray();
                                 mesh.RecalculateNormals();
+                                chunkMeshes.Add(chunk, mesh);
 
-                                testMeshFilter.mesh = mesh;
+                                // testMeshFilter.mesh = mesh;
                             }
 
                             vertices.Dispose();
@@ -134,15 +145,15 @@ namespace VoxelMaster
             public Vector3Int chunkCoords;
             public void Execute(int index)
             {
-                var voxelCoord = chunkCoords + Util.Map1DTo3D(index, chunkSize);
+                var voxelCoord = (chunkCoords * (chunkSize - 1)) + Util.Map1DTo3D(index, chunkSize);
 
                 var n = noise.cnoise(new float3(
-                    voxelCoord.x + .001f,
-                    voxelCoord.y + .001f,
-                    voxelCoord.z + .001f) / 10.001f
+                    voxelCoord.x,
+                    voxelCoord.y,
+                    voxelCoord.z) / 20.00f
                 );
 
-                densities[index] = math.unlerp(-1, 1, n) ;
+                densities[index] = math.unlerp(-1, 1, n);
 
             }
         }
