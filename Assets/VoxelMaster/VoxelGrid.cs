@@ -30,7 +30,6 @@ namespace VoxelMaster
 
         void Start()
         {
-            Debug.Log(Util.Map1DTo3D(500, 16));
         }
 
         void Update()
@@ -44,7 +43,7 @@ namespace VoxelMaster
         {
             foreach (KeyValuePair<Chunk, Mesh> entry in chunkMeshes)
             {
-                Graphics.DrawMesh(entry.Value, entry.Key.Coords * (entry.Key.Size), Quaternion.identity, material, 0);
+                Graphics.DrawMesh(entry.Value, entry.Key.Coords * (entry.Key.Size - 1), Quaternion.identity, material, 0);
             }
         }
 
@@ -77,15 +76,15 @@ namespace VoxelMaster
                             var job = new GenerateChunkDensityJob
                             {
                                 chunkCoords = chunkCoords,
-                                chunkSize = ChunkSize,
+                                chunkSize = chunk.Size,
                                 densities = chunk.Voxels,
                             };
                             var densityJob = job.Schedule(chunk.Voxels.Length, 64);
 
-                            var triangles = new NativeArray<Triangle>(5 * ((ChunkSize - 1) * (ChunkSize - 1) * (ChunkSize - 1)), Allocator.TempJob);
+                            var triangles = new NativeArray<Triangle>(5 * chunk.Voxels.Length, Allocator.TempJob);
                             var meshJob = new GenerateChunkMeshJob
                             {
-                                chunkSize = ChunkSize,
+                                chunkSize = chunk.Size,
                                 densities = chunk.Voxels,
                                 isoLevel = .5f,
                                 triangles = triangles,
@@ -93,7 +92,7 @@ namespace VoxelMaster
                                 cornerIndexAFromEdge = NativeLookup.cornerIndexAFromEdge,
                                 cornerIndexBFromEdge = NativeLookup.cornerIndexBFromEdge
                             };
-                            var meshJobHandle = meshJob.Schedule((chunk.Size - 1) * (chunk.Size - 1) * (chunk.Size - 1), 32, densityJob);
+                            var meshJobHandle = meshJob.Schedule(ChunkSize*ChunkSize*ChunkSize, 64, densityJob);
                             // densityJob.Complete();
                             // meshJob.Run();
                             meshJobHandle.Complete();
@@ -151,9 +150,10 @@ namespace VoxelMaster
             public NativeArray<float> densities;
             public int chunkSize;
             public Vector3Int chunkCoords;
+
             public void Execute(int index)
             {
-                var voxelCoord = (chunkCoords * (chunkSize )) + Util.Map1DTo3D(index, chunkSize);
+                var voxelCoord = (chunkCoords * (chunkSize - 1)) + Util.Map1DTo3D(index, chunkSize);
 
                 var n = noise.cnoise(new float3(
                     voxelCoord.x,
@@ -161,7 +161,8 @@ namespace VoxelMaster
                     voxelCoord.z) / 50.00f
                 );
 
-                densities[index] = math.unlerp(-1, 1, n);
+                densities[index] = n * 0.5f + 0.5f;
+                // densities[index] = math.unlerp(-1, 1, n);
 
             }
         }
@@ -181,15 +182,11 @@ namespace VoxelMaster
 
             int triangleIndex;
 
-            int Map3DTo1D(int x, int y, int z, int size)
-            {
-                return x + size * (y + size * z);
-            }
-
             public void Execute(int index)
             {
-                var coords = Util.Map1DTo3D(index, chunkSize);
+                var coords = Util.Map1DTo3D(index, chunkSize - 1);
                 var x = coords.x; var y = coords.y; var z = coords.z;
+                index = Util.Map3DTo1D(x, y, z, chunkSize);
 
                 var cubeDensity = new NativeArray<float>(8, Allocator.Temp);
                 cubeDensity[0] = densities[Util.Map3DTo1D(x, y, z, chunkSize)];
@@ -232,7 +229,6 @@ namespace VoxelMaster
                     {
                         var a0 = cornerIndexAFromEdge[triTable[i + j]];
                         var b0 = cornerIndexBFromEdge[triTable[i + j]];
-                        // vertices.Add(Vector3.Lerp(cubeVectors[a0], cubeVectors[b0], (isoLevel - cubeDensity[a0]) / (cubeDensity[b0] - cubeDensity[a0])));
                         triVerts[j] = Vector3.Lerp(cubeVectors[a0], cubeVectors[b0], (isoLevel - cubeDensity[a0]) / (cubeDensity[b0] - cubeDensity[a0]));
                     }
 
@@ -243,10 +239,10 @@ namespace VoxelMaster
                         b = triVerts[1],
                         c = triVerts[2],
                     };
-
-
+                    triVerts.Dispose();
                 }
-
+                cubeDensity.Dispose();
+                cubeVectors.Dispose();
 
             }
 

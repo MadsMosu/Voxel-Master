@@ -20,7 +20,7 @@ namespace VoxelMaster
         public Chunk(Vector3Int coords, int size)
         {
             this.Coords = coords;
-            this.Size = size;
+            this.Size = size + 1;
             this.Status = ChunkStatus.CREATED;
 
             this.Voxels = new NativeArray<float>(Size * Size * Size, Allocator.Persistent);
