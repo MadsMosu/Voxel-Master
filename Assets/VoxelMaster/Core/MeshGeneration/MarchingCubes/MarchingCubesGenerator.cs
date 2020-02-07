@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class MarchingCubesGenerator : VoxelMeshGenerator
 {
-    public override Mesh generateMesh(VoxelChunk chunk)
+    public override MeshData generateMesh(VoxelChunk chunk)
     {
         int numCells = chunk.size.x * chunk.size.y * chunk.size.z;
         var vertices = new List<Vector3>(5 * numCells * 3);
@@ -63,10 +63,6 @@ public class MarchingCubesGenerator : VoxelMeshGenerator
                     }
                 }
 
-        var mesh = new Mesh();
-        mesh.SetVertices(vertices);
-        mesh.SetTriangles(triangles, 0);
-        mesh.RecalculateNormals();
-        return mesh;
+        return new MeshData(vertices.ToArray(), triangles.ToArray());
     }
 }

@@ -3,7 +3,7 @@ using UnityEngine;
 public abstract class VoxelMeshGenerator
 {
     public float isoLevel = .4f;
-    public abstract Mesh generateMesh(VoxelChunk chunk);
+    public abstract MeshData generateMesh(VoxelChunk chunk);
 
 }
 

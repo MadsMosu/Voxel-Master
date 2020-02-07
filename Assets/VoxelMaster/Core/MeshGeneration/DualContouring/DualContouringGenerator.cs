@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class DualContouringGenerator : VoxelMeshGenerator
 {
-    public override Mesh generateMesh(VoxelChunk chunk)
+    public override MeshData generateMesh(VoxelChunk chunk)
     {
         throw new System.NotImplementedException();
     }
