@@ -4,14 +4,13 @@ using UnityEngine;
 
 public class VoxelChunk
 {
-    private VoxelDataStructure _voxels;
+    public VoxelDataStructure voxels;
 
     private List<VoxelMaterial> _materials = new List<VoxelMaterial>();
     public List<VoxelMaterial> materials { get => new List<VoxelMaterial>(_materials); private set { _materials = value; } }
 
-    public Vector3 size { get; private set; }
+    public Vector3Int size { get; private set; }
     public float voxelScale { get; private set; }
-
 
     public void AddDensity(Vector3 pos, float[][][] densities)
     {
