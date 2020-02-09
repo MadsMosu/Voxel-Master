@@ -11,10 +11,10 @@ public abstract class VoxelMeshGenerator
 public struct MeshData
 {
     public Vector3[] vertices;
-    public int[] triangles;
-    public MeshData(Vector3[] vertices, int[] triangles)
+    public int[] triangleIndicies;
+    public MeshData(Vector3[] vertices, int[] triangleIndicies)
     {
         this.vertices = vertices;
-        this.triangles = triangles;
+        this.triangleIndicies = triangleIndicies;
     }
 }

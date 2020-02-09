@@ -11,6 +11,15 @@ public class VoxelChunk
 
     public Vector3Int size { get; private set; }
     public float voxelScale { get; private set; }
+    public float isoLevel { get; private set; }
+
+    public VoxelChunk(Vector3Int size, float voxelScale, float isoLevel, VoxelDataStructure voxels)
+    {
+        this.size = size;
+        this.voxelScale = voxelScale;
+        this.isoLevel = isoLevel;
+        this.voxels = voxels;
+    }
 
     public void AddDensity(Vector3 pos, float[][][] densities)
     {
