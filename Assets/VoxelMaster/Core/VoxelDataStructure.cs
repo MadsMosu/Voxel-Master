@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[System.Serializable]
 public abstract class VoxelDataStructure
 {
     public abstract void Init(Vector3Int dimensions);

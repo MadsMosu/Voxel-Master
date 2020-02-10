@@ -9,8 +9,25 @@ public class VoxelWorld : MonoBehaviour
     public List<VoxelMaterial> materials { get => new List<VoxelMaterial>(_materials); private set { _materials = value; } }
 
     public float voxelScale { get; private set; }
+    public float isoLevel { get; private set; }
+
+    public IEnumerable<VoxelDataStructure> dataStructures = Util.GetEnumerableOfType<VoxelDataStructure>();
+
+    [HideInInspector]
+    public int dataStructure;
 
     private Dictionary<Vector3Int, VoxelChunk> chunks = new Dictionary<Vector3Int, VoxelChunk>();
+
+    void Start()
+    {
+
+    }
+
+    void Update()
+    {
+
+    }
+
 
     public void AddChunk(Vector3Int pos)
     {

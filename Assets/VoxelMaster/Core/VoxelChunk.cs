@@ -4,8 +4,7 @@ using UnityEngine;
 
 public class VoxelChunk
 {
-    public VoxelDataStructure voxels;
-
+    public VoxelDataStructure voxels { get; private set; }
     private List<VoxelMaterial> _materials = new List<VoxelMaterial>();
     public List<VoxelMaterial> materials { get => new List<VoxelMaterial>(_materials); private set { _materials = value; } }
 

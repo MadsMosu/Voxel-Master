@@ -40,6 +40,8 @@ public class MarchingCubesGPU : VoxelMeshGenerator
             }
         }
 
+        triangleBuffer.Dispose();
+        triangleIndiciesBuffer.Dispose();
         return new MeshData(vertices, triangleIndicies);
     }
 
