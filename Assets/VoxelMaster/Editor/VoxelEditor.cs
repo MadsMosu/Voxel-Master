@@ -12,6 +12,17 @@ public class VoxelEditor : Editor
         VoxelWorld voxelWorld = (VoxelWorld)target;
 
         GUIContent dataStructureLabel = new GUIContent("Data structure");
-        voxelWorld.dataStructure = EditorGUILayout.Popup(dataStructureLabel, voxelWorld.dataStructure, voxelWorld.dataStructures.Select(x => x.GetType().Name).ToArray());
+        voxelWorld.dataStructureIndex = EditorGUILayout.Popup(
+            dataStructureLabel,
+            voxelWorld.dataStructureIndex,
+            voxelWorld.dataStructures.Select(x => x.GetType().Name).ToArray()
+        );
+
+        GUIContent meshGeneratorLabel = new GUIContent("Mesh generator");
+        voxelWorld.meshGeneratorIndex = EditorGUILayout.Popup(
+            meshGeneratorLabel,
+            voxelWorld.meshGeneratorIndex,
+            voxelWorld.meshGenerators.Select(x => x.GetType().Name).ToArray()
+        );
     }
 }

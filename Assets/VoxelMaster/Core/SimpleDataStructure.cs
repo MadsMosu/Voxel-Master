@@ -3,17 +3,17 @@ using UnityEngine;
 [System.Serializable]
 public class SimpleDataStructure : VoxelDataStructure
 {
-    private Vector3Int dimensions;
+    private Vector3Int size;
     private Voxel[] voxels;
     private int Map3DTo1D(Vector3Int coords)
     {
-        return coords.x + dimensions.y * (coords.y + dimensions.z * coords.z);
+        return coords.x + size.y * (coords.y + size.z * coords.z);
     }
 
-    public override void Init(Vector3Int dimensions)
+    public override void Init(Vector3Int size)
     {
-        this.dimensions = dimensions;
-        this.voxels = new Voxel[dimensions.x * dimensions.y * dimensions.z];
+        this.size = size;
+        this.voxels = new Voxel[size.x * size.y * size.z];
     }
 
     public override Voxel GetVoxel(Vector3Int coords)

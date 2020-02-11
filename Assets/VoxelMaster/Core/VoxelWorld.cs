@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class VoxelWorld : MonoBehaviour
@@ -8,24 +9,56 @@ public class VoxelWorld : MonoBehaviour
     private List<VoxelMaterial> _materials = new List<VoxelMaterial>();
     public List<VoxelMaterial> materials { get => new List<VoxelMaterial>(_materials); private set { _materials = value; } }
 
-    public float voxelScale { get; private set; }
-    public float isoLevel { get; private set; }
+    public float voxelScale = 1f;
+    public float isoLevel = 0.5f;
+    public Vector3Int chunkSize;
+    public Material material;
+    private Dictionary<Vector3Int, VoxelChunk> chunks = new Dictionary<Vector3Int, VoxelChunk>();
+    private Dictionary<VoxelChunk, Mesh> chunkMeshes = new Dictionary<VoxelChunk, Mesh>();
 
     public IEnumerable<VoxelDataStructure> dataStructures = Util.GetEnumerableOfType<VoxelDataStructure>();
-
     [HideInInspector]
-    public int dataStructure;
+    public int dataStructureIndex = 0;
 
-    private Dictionary<Vector3Int, VoxelChunk> chunks = new Dictionary<Vector3Int, VoxelChunk>();
+    public IEnumerable<VoxelMeshGenerator> meshGenerators = Util.GetEnumerableOfType<VoxelMeshGenerator>();
+    [HideInInspector]
+    public int meshGeneratorIndex = 0;
+
+    private VoxelMeshGenerator meshGenerator;
+    private VoxelDataStructure dataStructure;
+    public Mesh mesh;
+
+
 
     void Start()
     {
+        dataStructure = dataStructures.Cast<VoxelDataStructure>().ElementAt(dataStructureIndex);
+        dataStructure.Init(chunkSize);
 
+        for (int x = 0; x < chunkSize.x; x++)
+            for (int y = 0; y < chunkSize.y; y++)
+                for (int z = 0; z < chunkSize.z; z++)
+                {
+                    dataStructure.SetVoxel(new Vector3Int(x, y, z), new Voxel { density = (byte)UnityEngine.Random.Range(0, 256) });
+                }
+
+        meshGenerator = meshGenerators.Cast<VoxelMeshGenerator>().ElementAt(meshGeneratorIndex);
+        VoxelChunk chunk = new VoxelChunk(chunkSize, voxelScale, isoLevel, dataStructure);
+        var meshData = meshGenerator.generateMesh(chunk);
+        Debug.Log(meshData.vertices.Length);
+        mesh = new Mesh();
+        mesh.SetVertices(meshData.vertices);
+        mesh.SetTriangles(meshData.triangleIndicies, 0);
+        mesh.RecalculateNormals();
     }
 
     void Update()
     {
+        if (mesh != null)
+        {
+            Graphics.DrawMesh(mesh, Vector3.zero, Quaternion.identity, material, 0);
 
+        }
     }
 
 

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MarchingCubesGenerator : VoxelMeshGenerator
+public class MarchingCubes : VoxelMeshGenerator
 {
     public override MeshData generateMesh(VoxelChunk chunk)
     {
@@ -16,14 +16,14 @@ public class MarchingCubesGenerator : VoxelMeshGenerator
                     Vector3Int cellPos = new Vector3Int(x, y, z);
                     float[] cubeDensity = new float[8]
                     {
-                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[0]).density,
-                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[0]).density,
-                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[0]).density,
-                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[0]).density,
-                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[0]).density,
-                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[0]).density,
-                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[0]).density,
-                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[0]).density,
+                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[0]).density / 256.00f,
+                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[1]).density / 256.00f,
+                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[2]).density / 256.00f,
+                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[3]).density / 256.00f,
+                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[4]).density / 256.00f,
+                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[5]).density / 256.00f,
+                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[6]).density / 256.00f,
+                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[7]).density / 256.00f,
                     };
 
                     int cubeindex = 0;
@@ -44,12 +44,13 @@ public class MarchingCubesGenerator : VoxelMeshGenerator
                         {
                             var a = Lookup.cornerIndexAFromEdge[triangulation[i + j]];
                             var b = Lookup.cornerIndexBFromEdge[triangulation[i + j]];
-                            vertices.Add(Vector3.Lerp(Lookup.cubeVertOffsets[a], Lookup.cubeVertOffsets[b], (chunk.isoLevel - cubeDensity[a]) / (cubeDensity[b] - cubeDensity[a])));
+                            var ver = Vector3.Lerp(Lookup.cubeVertOffsets[a], Lookup.cubeVertOffsets[b], (chunk.isoLevel - cubeDensity[a]) / (cubeDensity[b] - cubeDensity[a]));
+                            ver += cellPos;
+                            vertices.Add(ver);
                             triangleIndicies.Add(triangleIndex++);
                         }
                     }
                 }
-
         return new MeshData(vertices.ToArray(), triangleIndicies.ToArray());
     }
 }

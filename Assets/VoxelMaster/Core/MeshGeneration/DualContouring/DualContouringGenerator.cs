@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class DualContouringGenerator : VoxelMeshGenerator
+public class DualContouring : VoxelMeshGenerator
 {
     public override MeshData generateMesh(VoxelChunk chunk)
     {
