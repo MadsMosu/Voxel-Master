@@ -7,6 +7,7 @@ public class SimpleDataStructure : VoxelDataStructure
     private Voxel[] voxels;
     private int Map3DTo1D(Vector3Int coords)
     {
+        // return coords.x + coords.y * size.x + coords.z * size.x * size.y;
         return coords.x + size.y * (coords.y + size.z * coords.z);
     }
 

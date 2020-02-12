@@ -399,11 +399,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   voxelScale: 1
-  isoLevel: 0.5
+  isoLevel: 3
   chunkSize: {x: 16, y: 16, z: 16}
   material: {fileID: 2100000, guid: 40539cd6d3ae1104d8a518d7abb86a33, type: 2}
   dataStructureIndex: 0
   meshGeneratorIndex: 1
+  mesh: {fileID: 0}
 --- !u!4 &1114245770
 Transform:
   m_ObjectHideFlags: 0

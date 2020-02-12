@@ -9,8 +9,8 @@ public class VoxelWorld : MonoBehaviour
     private List<VoxelMaterial> _materials = new List<VoxelMaterial>();
     public List<VoxelMaterial> materials { get => new List<VoxelMaterial>(_materials); private set { _materials = value; } }
 
-    public float voxelScale = 1f;
-    public float isoLevel = 0.5f;
+    public float voxelScale;
+    public float isoLevel;
     public Vector3Int chunkSize;
     public Material material;
     private Dictionary<Vector3Int, VoxelChunk> chunks = new Dictionary<Vector3Int, VoxelChunk>();
@@ -30,22 +30,26 @@ public class VoxelWorld : MonoBehaviour
 
 
 
+    private float SignedDistanceSphere(Vector3 pos, Vector3 center, float radius)
+    {
+        return Vector3.Distance(pos, center) - radius;
+    }
     void Start()
     {
         dataStructure = dataStructures.Cast<VoxelDataStructure>().ElementAt(dataStructureIndex);
         dataStructure.Init(chunkSize);
 
-        for (int x = 0; x < chunkSize.x; x++)
-            for (int y = 0; y < chunkSize.y; y++)
-                for (int z = 0; z < chunkSize.z; z++)
+        for (int x = 0; x < chunkSize.x - 1; x++)
+            for (int y = 0; y < chunkSize.y - 1; y++)
+                for (int z = 0; z < chunkSize.z - 1; z++)
                 {
-                    dataStructure.SetVoxel(new Vector3Int(x, y, z), new Voxel { density = (byte)UnityEngine.Random.Range(0, 256) });
+                    dataStructure.SetVoxel(new Vector3Int(x, y, z), new Voxel { density = SignedDistanceSphere(new Vector3(x, y, z), new Vector3(8, 8, 8), 6) });
                 }
 
         meshGenerator = meshGenerators.Cast<VoxelMeshGenerator>().ElementAt(meshGeneratorIndex);
         VoxelChunk chunk = new VoxelChunk(chunkSize, voxelScale, isoLevel, dataStructure);
         var meshData = meshGenerator.generateMesh(chunk);
-        Debug.Log(meshData.vertices.Length);
+
         mesh = new Mesh();
         mesh.SetVertices(meshData.vertices);
         mesh.SetTriangles(meshData.triangleIndicies, 0);

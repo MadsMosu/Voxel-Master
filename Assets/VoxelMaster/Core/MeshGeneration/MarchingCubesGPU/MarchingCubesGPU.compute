@@ -1,18 +1,18 @@
 #pragma kernel MarchingCubes
 #include "Lookup.compute"
 
-
-float isoLevel;
-RWStructuredBuffer<float> densities;
-
 struct Triangle 
 {
     float3 a, b, c;
 };
 
+float isoLevel;
+float3 chunkSize;
+RWStructuredBuffer<float> densities;
 AppendStructuredBuffer<Triangle> triangleRW; 
 
-float3 VertexInterp(float3 vPos1, float3 vPos2, float density1, float density2)
+
+float3 vertexInterp(float3 vPos1, float3 vPos2, float density1, float density2)
 {
 	return lerp(vPos1, vPos2, (isoLevel - density1) / (density2 - density1));
 }
@@ -21,6 +21,10 @@ float3 VertexInterp(float3 vPos1, float3 vPos2, float density1, float density2)
 [numthreads(8, 8, 8)]
 void MarchingCubes(uint3 threadId : SV_DispatchThreadID) 
 {
+    if (threadId.x >= chunkSize.x - 1  || threadId.y >= chunkSize.y - 1|| threadId.z >= chunkSize.z - 1) {
+        return;
+    }
+
     float cubeDensity[8] = {
         densities[threadId + cubeVertOffsets[0]],
         densities[threadId + cubeVertOffsets[1]],
@@ -56,9 +60,9 @@ void MarchingCubes(uint3 threadId : SV_DispatchThreadID)
         int b2 = cornerIndexBFromEdge[triTable[cubeIndex][i + 2]];
 
         Triangle tri;
-        tri.a = VertexInterp((threadId + cubeVertOffsets[a0]), (threadId + cubeVertOffsets[b0]), cubeDensity[a0], cubeDensity[b0]);
-        tri.b = VertexInterp((threadId + cubeVertOffsets[a0]), (threadId + cubeVertOffsets[b0]), cubeDensity[a0], cubeDensity[b0]);
-        tri.c = VertexInterp((threadId + cubeVertOffsets[a0]), (threadId + cubeVertOffsets[b0]), cubeDensity[a0], cubeDensity[b0]); 
+        tri.a = vertexInterp((threadId + cubeVertOffsets[a0]), (threadId + cubeVertOffsets[b0]), cubeDensity[a0], cubeDensity[b0]);
+        tri.b = vertexInterp((threadId + cubeVertOffsets[a0]), (threadId + cubeVertOffsets[b0]), cubeDensity[a0], cubeDensity[b0]);
+        tri.c = vertexInterp((threadId + cubeVertOffsets[a0]), (threadId + cubeVertOffsets[b0]), cubeDensity[a0], cubeDensity[b0]); 
 
         triangleRW.Append(tri); 
     }
