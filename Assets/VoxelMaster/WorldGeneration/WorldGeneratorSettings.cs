@@ -1,4 +1,4 @@
-public class WorldGeneratorSettings
+public struct WorldGeneratorSettings
 {
-
+    public int worldSize;
 }
