@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 
 public class VoxelWorld : MonoBehaviour
@@ -23,6 +24,8 @@ public class VoxelWorld : MonoBehaviour
     public IEnumerable<VoxelMeshGenerator> meshGenerators = Util.GetEnumerableOfType<VoxelMeshGenerator>();
     [HideInInspector]
     public int meshGeneratorIndex = 0;
+
+    private ComputeShader[] meshGeneratorCSProperties;
 
     private VoxelMeshGenerator meshGenerator;
     private VoxelDataStructure dataStructure;
@@ -47,6 +50,7 @@ public class VoxelWorld : MonoBehaviour
                 }
 
         meshGenerator = meshGenerators.Cast<VoxelMeshGenerator>().ElementAt(meshGeneratorIndex);
+        // meshGeneratorCSProperties = Util.getEnumerableOfProperties(meshGenerator.GetType(), new StringBuilder("ComputeShader"));
         VoxelChunk chunk = new VoxelChunk(chunkSize, voxelScale, isoLevel, dataStructure);
         var meshData = meshGenerator.generateMesh(chunk);
 

@@ -1,0 +1,77 @@
+#pragma kernel MarchingCubes
+#include "Lookup.compute"
+
+struct Triangle 
+{
+    float3 a, b, c;
+};
+
+float isoLevel;
+int chunkLength;
+int chunkWidth;
+int chunkDepth;
+RWStructuredBuffer<float> densities;
+AppendStructuredBuffer<Triangle> triangles; 
+
+
+float3 vertexInterp(float3 vPos1, float3 vPos2, float density1, float density2)
+{
+	return lerp(vPos1, vPos2, (isoLevel - density1) / (density2 - density1));
+}
+
+int indexFromCoord(uint3 coords) {
+    return coords.x + chunkWidth * (coords.y + chunkDepth * coords.z);
+}
+
+
+[numthreads(8, 8, 8)]
+void MarchingCubes(uint3 threadId : SV_DispatchThreadID) 
+{
+    if (threadId.x >= chunkLength - 1  || threadId.y >= chunkWidth - 1|| threadId.z >= chunkDepth - 1) {
+        return;
+    }
+
+    float cubeDensity[8] = {
+        densities[indexFromCoord(threadId.xyz + cubeVertOffsets[0].xyz)],
+        densities[indexFromCoord(threadId.xyz + cubeVertOffsets[1].xyz)],
+        densities[indexFromCoord(threadId.xyz + cubeVertOffsets[2].xyz)],
+        densities[indexFromCoord(threadId.xyz + cubeVertOffsets[3].xyz)],
+        densities[indexFromCoord(threadId.xyz + cubeVertOffsets[4].xyz)],
+        densities[indexFromCoord(threadId.xyz + cubeVertOffsets[5].xyz)],
+        densities[indexFromCoord(threadId.xyz + cubeVertOffsets[6].xyz)],
+        densities[indexFromCoord(threadId.xyz + cubeVertOffsets[7].xyz)]
+    };
+
+
+    int cubeIndex = 0;
+	if (cubeDensity[0] < isoLevel) cubeIndex |= 1;
+	if (cubeDensity[1] < isoLevel) cubeIndex |= 2;
+	if (cubeDensity[2] < isoLevel) cubeIndex |= 4;
+	if (cubeDensity[3] < isoLevel) cubeIndex |= 8;
+	if (cubeDensity[4] < isoLevel) cubeIndex |= 16;
+	if (cubeDensity[5] < isoLevel) cubeIndex |= 32;
+	if (cubeDensity[6] < isoLevel) cubeIndex |= 64;
+	if (cubeDensity[7] < isoLevel) cubeIndex |= 128;
+
+    for (int i = 0; triTable[cubeIndex][i] != -1; i +=3) 
+    {
+
+        int a0 = cornerIndexAFromEdge[triTable[cubeIndex][i]];
+        int b0 = cornerIndexBFromEdge[triTable[cubeIndex][i]];
+
+        int a1 = cornerIndexAFromEdge[triTable[cubeIndex][i + 1]];
+        int b1 = cornerIndexBFromEdge[triTable[cubeIndex][i + 1]];
+
+        int a2 = cornerIndexAFromEdge[triTable[cubeIndex][i + 2]];
+        int b2 = cornerIndexBFromEdge[triTable[cubeIndex][i + 2]];
+
+        Triangle tri;
+        tri.a = vertexInterp((threadId.xyz + cubeVertOffsets[a0].xyz), (threadId.xyz + cubeVertOffsets[b0].xyz), cubeDensity[a0], cubeDensity[b0]);
+        tri.b = vertexInterp((threadId.xyz + cubeVertOffsets[a1].xyz), (threadId.xyz + cubeVertOffsets[b1].xyz), cubeDensity[a1], cubeDensity[b1]);
+        tri.c = vertexInterp((threadId.xyz + cubeVertOffsets[a2].xyz), (threadId.xyz + cubeVertOffsets[b2].xyz), cubeDensity[a2], cubeDensity[b2]); 
+
+        triangles.Append(tri); 
+    }
+}
+
+
