@@ -5,11 +5,7 @@ public class SimpleDataStructure : VoxelDataStructure
 {
     private Vector3Int size;
     private Voxel[] voxels;
-    private int Map3DTo1D(Vector3Int coords)
-    {
-        // return coords.x + coords.y * size.x + coords.z * size.x * size.y;
-        return coords.x + size.y * (coords.y + size.z * coords.z);
-    }
+
 
     public override void Init(Vector3Int size)
     {
@@ -19,11 +15,11 @@ public class SimpleDataStructure : VoxelDataStructure
 
     public override Voxel GetVoxel(Vector3Int coords)
     {
-        return voxels[Map3DTo1D(coords)];
+        return voxels[Util.Map3DTo1D(coords, size)];
     }
 
     public override void SetVoxel(Vector3Int coords, Voxel voxel)
     {
-        voxels[Map3DTo1D(coords)] = voxel;
+        voxels[Util.Map3DTo1D(coords, size)] = voxel;
     }
 }

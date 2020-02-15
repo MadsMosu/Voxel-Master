@@ -6,14 +6,14 @@ using System.Text;
 
 public static class Util
 {
-    public static IEnumerable<T> GetEnumerableOfType<T>(params object[] constructorArgs) where T : class
+    public static IEnumerable<Type> GetEnumerableOfType<T>() where T : class
     {
-        List<T> objects = new List<T>();
+        List<Type> objects = new List<Type>();
         foreach (Type type in
             Assembly.GetAssembly(typeof(T)).GetTypes()
             .Where(myType => myType.IsClass && !myType.IsAbstract && myType.IsSubclassOf(typeof(T))))
         {
-            objects.Add((T)Activator.CreateInstance(type, constructorArgs));
+            objects.Add(type);
         }
         return objects;
     }
@@ -23,6 +23,16 @@ public static class Util
         var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
         return classType.GetType().GetFields(bindingFlags).
             Where(field => field.FieldType.ToString() == propertyType.ToString()).ToArray();
+    }
+
+    public static int Map3DTo1D(UnityEngine.Vector3Int coords, UnityEngine.Vector3Int size)
+    {
+        return coords.x + size.y * (coords.y + size.z * coords.z);
+    }
+
+    public static int Map2DTo1D(UnityEngine.Vector2Int coords, UnityEngine.Vector2Int size)
+    {
+        return size.x * coords.x + coords.y;
     }
 }
 

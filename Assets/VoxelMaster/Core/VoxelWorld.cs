@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
+
 public class VoxelWorld : MonoBehaviour
 {
     private List<VoxelMaterial> _materials = new List<VoxelMaterial>();
@@ -16,21 +17,16 @@ public class VoxelWorld : MonoBehaviour
     public Material material;
     private Dictionary<Vector3Int, VoxelChunk> chunks = new Dictionary<Vector3Int, VoxelChunk>();
     private Dictionary<VoxelChunk, Mesh> chunkMeshes = new Dictionary<VoxelChunk, Mesh>();
-
-    public IEnumerable<VoxelDataStructure> dataStructures = Util.GetEnumerableOfType<VoxelDataStructure>();
-    [HideInInspector]
-    public int dataStructureIndex = 0;
-
-    public IEnumerable<VoxelMeshGenerator> meshGenerators = Util.GetEnumerableOfType<VoxelMeshGenerator>();
-    [HideInInspector]
-    public int meshGeneratorIndex = 0;
-
-    private ComputeShader[] meshGeneratorCSProperties;
-
-    private VoxelMeshGenerator meshGenerator;
-    private VoxelDataStructure dataStructure;
+    // [HideInInspector] public String dataStructureType;
+    // [HideInInspector] public String meshGeneratorType;
+    // [HideInInspector] public String heightmapGeneratorType;
+    [SerializeReference] public VoxelDataStructure dataStructure;
+    [SerializeReference] public VoxelMeshGenerator meshGenerator;
+    [SerializeReference] public HeightmapGenerator heightmapGenerator;
     public Mesh mesh;
 
+
+    public Texture2D sdfsddsfsdf;
 
 
     private float SignedDistanceSphere(Vector3 pos, Vector3 center, float radius)
@@ -39,18 +35,18 @@ public class VoxelWorld : MonoBehaviour
     }
     void Start()
     {
-        dataStructure = dataStructures.Cast<VoxelDataStructure>().ElementAt(dataStructureIndex);
         dataStructure.Init(chunkSize);
 
         for (int x = 0; x < chunkSize.x - 1; x++)
             for (int y = 0; y < chunkSize.y - 1; y++)
                 for (int z = 0; z < chunkSize.z - 1; z++)
                 {
-                    dataStructure.SetVoxel(new Vector3Int(x, y, z), new Voxel { density = SignedDistanceSphere(new Vector3(x, y, z), new Vector3(8, 8, 8), 6) });
+                    dataStructure.SetVoxel(new Vector3Int(x, y, z), new Voxel
+                    {
+                        density = SignedDistanceSphere(new Vector3(x, y, z), new Vector3(chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2), chunkSize.x / 2.33f)
+                    });
                 }
 
-        meshGenerator = meshGenerators.Cast<VoxelMeshGenerator>().ElementAt(meshGeneratorIndex);
-        // meshGeneratorCSProperties = Util.getEnumerableOfProperties(meshGenerator.GetType(), new StringBuilder("ComputeShader"));
         VoxelChunk chunk = new VoxelChunk(chunkSize, voxelScale, isoLevel, dataStructure);
         var meshData = meshGenerator.generateMesh(chunk);
 
