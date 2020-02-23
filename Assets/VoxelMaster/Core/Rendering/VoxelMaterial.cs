@@ -1,5 +1,6 @@
 using UnityEngine;
 
+
 public class VoxelMaterial
 {
     public string name { get; private set; }

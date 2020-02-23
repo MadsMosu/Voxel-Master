@@ -6,28 +6,27 @@ using System.Text;
 using UnityEngine;
 
 
+[ExecuteInEditMode]
 public class VoxelWorld : MonoBehaviour
 {
-    private List<VoxelMaterial> _materials = new List<VoxelMaterial>();
-    public List<VoxelMaterial> materials { get => new List<VoxelMaterial>(_materials); private set { _materials = value; } }
 
+    #region Parameters
     public float voxelScale;
     public float isoLevel;
     public Vector3Int chunkSize;
-    public Material material;
+    #endregion
+
     private Dictionary<Vector3Int, VoxelChunk> chunks = new Dictionary<Vector3Int, VoxelChunk>();
-    private Dictionary<VoxelChunk, Mesh> chunkMeshes = new Dictionary<VoxelChunk, Mesh>();
-    // [HideInInspector] public String dataStructureType;
-    // [HideInInspector] public String meshGeneratorType;
-    // [HideInInspector] public String heightmapGeneratorType;
-    [SerializeReference] public VoxelDataStructure dataStructure;
-    [SerializeReference] public VoxelMeshGenerator meshGenerator;
-    [SerializeReference] public HeightmapGenerator heightmapGenerator;
-    public Mesh mesh;
+    private List<VoxelMaterial> _materials = new List<VoxelMaterial>();
+    public List<VoxelMaterial> materials { get => new List<VoxelMaterial>(_materials); private set { _materials = value; } }
 
 
-    public Texture2D sdfsddsfsdf;
+    [HideInInspector] public String dataStructureType;
+    [HideInInspector] public String meshGeneratorType;
 
+    #region Debug variables
+    public Material material;
+    #endregion
 
     private float SignedDistanceSphere(Vector3 pos, Vector3 center, float radius)
     {
@@ -35,41 +34,65 @@ public class VoxelWorld : MonoBehaviour
     }
     void Start()
     {
-        dataStructure.Init(chunkSize);
 
-        for (int x = 0; x < chunkSize.x - 1; x++)
-            for (int y = 0; y < chunkSize.y - 1; y++)
-                for (int z = 0; z < chunkSize.z - 1; z++)
-                {
-                    dataStructure.SetVoxel(new Vector3Int(x, y, z), new Voxel
-                    {
-                        density = SignedDistanceSphere(new Vector3(x, y, z), new Vector3(chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2), chunkSize.x / 2.33f)
-                    });
-                }
 
-        VoxelChunk chunk = new VoxelChunk(chunkSize, voxelScale, isoLevel, dataStructure);
-        var meshData = meshGenerator.generateMesh(chunk);
+        Debug.Log("Generating chunks");
+        for (int i = 0; i < 16 * 16; i++)
+            AddChunk(Util.Map1DTo3D(i, Vector3Int.one * 16));
 
-        mesh = new Mesh();
-        mesh.SetVertices(meshData.vertices);
-        mesh.SetTriangles(meshData.triangleIndicies, 0);
-        mesh.RecalculateNormals();
+        var settings = new WorldGeneratorSettings
+        {
+            worldSize = 512
+        };
+
+
     }
 
     void Update()
     {
-        if (mesh != null)
-        {
-            Graphics.DrawMesh(mesh, Vector3.zero, Quaternion.identity, material, 0);
+        // if (mesh != null)
+        // {
+        //     // Graphics.DrawMesh(mesh, Vector3.zero, Quaternion.identity, material, 0);
 
-        }
+        // }
     }
 
+    // public void GenerateTerrain(WorldGeneratorSettings settings, float amplifier = 1)
+    // {
+    //     var data = heightmapGenerator.Generate(settings);
+    //     for (int x = 0; x < chunkSize.x; x++)
+    //         for (int y = 0; y < chunkSize.y; y++)
+    //             for (int z = 0; z < chunkSize.z; z++)
+    //             {
+    //                 float heightData = data[Util.Map2DTo1D(x, z, settings.worldSize)];
+    //                 float baseHeight = 2.001f;
+    //                 float desiredHeight = baseHeight + heightData * amplifier;
+    //                 float baseDensity = desiredHeight / (y * 1.001f);
+    //                 baseDensity += heightData;
+    //                 dataStructure.SetVoxel(new Vector3Int(x, y, z), new Voxel
+    //                 {
+    //                     density = baseDensity
+    //                 });
+    //             }
+
+    //     VoxelChunk chunk = new VoxelChunk(chunkSize, voxelScale, isoLevel, dataStructure);
+    //     var meshData = meshGenerator.generateMesh(chunk);
+
+    //     mesh = new Mesh();
+    //     mesh.SetVertices(meshData.vertices);
+    //     mesh.SetTriangles(meshData.triangleIndicies, 0);
+    //     mesh.Optimize();
+    //     mesh.RecalculateNormals();
+    // }
 
     public void AddChunk(Vector3Int pos)
     {
-        throw new NotImplementedException();
+        if (chunks.ContainsKey(pos)) return;
+
+        var dataStructure = Util.CreateInstance<VoxelDataStructure>(dataStructureType);
+        chunks.Add(pos, new VoxelChunk(chunkSize, voxelScale, isoLevel, dataStructure));
     }
+
     public void RemoveChunk(Vector3Int pos)
     {
         throw new NotImplementedException();
@@ -102,4 +125,5 @@ public class VoxelWorld : MonoBehaviour
     {
         throw new NotImplementedException();
     }
+
 }

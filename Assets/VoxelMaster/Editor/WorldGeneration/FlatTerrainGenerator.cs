@@ -5,6 +5,7 @@ using System.Security;
 using UnityEditor;
 using UnityEngine;
 
+
 class FlatTerrainGenerator : HeightmapGenerator
 {
 
@@ -23,8 +24,7 @@ class FlatTerrainGenerator : HeightmapGenerator
         for (int x = 0; x < worldSize; x++)
             for (int y = 0; y < worldSize; y++)
             {
-                var coord = new Vector2Int(x, y);
-                heightmap[Util.Map2DTo1D(coord, Vector2Int.one * worldSize)] = 0.5f;
+                heightmap[Util.Map2DTo1D(x, y, worldSize)] = 0.5f;
             }
         return heightmap;
     }
@@ -34,9 +34,9 @@ class FlatTerrainGenerator : HeightmapGenerator
         throw new System.NotImplementedException();
     }
 
-    public override void OnInspectorGUI()
+    public override bool OnInspectorGUI()
     {
 
-
+        return false;
     }
 }
