@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class MarchingCubes : VoxelMeshGenerator
 {
-    public override MeshData generateMesh(VoxelChunk chunk)
+
+    public override MeshData generateMesh(VoxelChunk chunk, Func<Vector3, float> densityFunction)
     {
         int numCells = chunk.size.x * chunk.size.y * chunk.size.z;
         var vertices = new List<Vector3>(5 * numCells * 3);

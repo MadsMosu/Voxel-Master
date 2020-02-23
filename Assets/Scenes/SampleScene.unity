@@ -456,7 +456,7 @@ MonoBehaviour:
     00000000:
       type: {class: SimpleDataStructure, ns: , asm: Assembly-CSharp}
     00000001:
-      type: {class: MarchingCubes, ns: , asm: Assembly-CSharp}
+      type: {class: DualContouring, ns: , asm: Assembly-CSharp}
       data:
         isoLevel: 0.4
     00000002:

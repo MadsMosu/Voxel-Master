@@ -27,12 +27,29 @@ public static class Util
 
     public static int Map3DTo1D(UnityEngine.Vector3Int coords, UnityEngine.Vector3Int size)
     {
-        return coords.x + size.y * (coords.y + size.z * coords.z);
+        return coords.x + size.x * (coords.y + size.y * coords.z);
     }
 
     public static int Map2DTo1D(UnityEngine.Vector2Int coords, UnityEngine.Vector2Int size)
     {
         return size.x * coords.x + coords.y;
+    }
+
+    public static UnityEngine.Vector3Int Map1DTo3D(int index, UnityEngine.Vector3Int size)
+    {
+        return new UnityEngine.Vector3Int(
+            index % size.x,
+            (index / size.x) % size.y,
+            index / (size.x * size.y)
+        );
+    }
+
+    public static UnityEngine.Vector2Int Map1DTo2D(int index, UnityEngine.Vector2Int size)
+    {
+        return new UnityEngine.Vector2Int(
+            index % size.y,
+            index / size.y
+        );
     }
 }
 

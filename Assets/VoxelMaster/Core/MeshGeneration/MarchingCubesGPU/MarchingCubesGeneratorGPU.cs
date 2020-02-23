@@ -1,4 +1,5 @@
 
+using System;
 using UnityEngine;
 
 public class MarchingCubesGPU : VoxelMeshGenerator
@@ -14,7 +15,7 @@ public class MarchingCubesGPU : VoxelMeshGenerator
         return coords.x + size.y * (coords.y + size.z * coords.z);
     }
 
-    public override MeshData generateMesh(VoxelChunk chunk)
+    public override MeshData generateMesh(VoxelChunk chunk, Func<Vector3, float> densityFunction)
     {
         marchingCubesCompute = (ComputeShader)Resources.Load("MarchingCubesGPU");
         kernelMC = marchingCubesCompute.FindKernel("MarchingCubes");

@@ -29,9 +29,19 @@ public class VoxelWorld : MonoBehaviour
     public Texture2D sdfsddsfsdf;
 
 
-    private float SignedDistanceSphere(Vector3 pos, Vector3 center, float radius)
+    private float SignedDistanceSphere(Vector3 pos)
     {
+        Vector3 center = new Vector3(chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2);
+        float radius = chunkSize.x / 2.33f;
         return Vector3.Distance(pos, center) - radius;
+    }
+    FastNoise noise = new FastNoise();
+    private float DensityFunction(Vector3 pos)
+    {
+        pos *= 1.0001f;
+        pos *= 4f;
+        return noise.GetPerlin(pos.x, pos.y, pos.z);
+        // return SignedDistanceSphere(pos);
     }
     void Start()
     {
@@ -43,17 +53,24 @@ public class VoxelWorld : MonoBehaviour
                 {
                     dataStructure.SetVoxel(new Vector3Int(x, y, z), new Voxel
                     {
-                        density = SignedDistanceSphere(new Vector3(x, y, z), new Vector3(chunkSize.x / 2, chunkSize.y / 2, chunkSize.z / 2), chunkSize.x / 2.33f)
+                        density = DensityFunction(new Vector3(x, y, z))
                     });
                 }
 
         VoxelChunk chunk = new VoxelChunk(chunkSize, voxelScale, isoLevel, dataStructure);
-        var meshData = meshGenerator.generateMesh(chunk);
+        var meshData = meshGenerator.generateMesh(chunk, DensityFunction);
 
         mesh = new Mesh();
         mesh.SetVertices(meshData.vertices);
         mesh.SetTriangles(meshData.triangleIndicies, 0);
-        mesh.RecalculateNormals();
+        if (meshData.normals == null || meshData.normals.Length == 0)
+        {
+            mesh.RecalculateNormals();
+        }
+        else
+        {
+            mesh.SetNormals(meshData.normals);
+        }
     }
 
     void Update()
