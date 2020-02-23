@@ -9,5 +9,4 @@ public class MaterialTool : VoxelTool
     {
         throw new System.NotImplementedException();
     }
-
 }

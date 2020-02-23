@@ -66,9 +66,9 @@ void MarchingCubes(uint3 threadId : SV_DispatchThreadID)
         int b2 = cornerIndexBFromEdge[triTable[cubeIndex][i + 2]];
 
         Triangle tri;
-        tri.a = vertexInterp((threadId.xyz + cubeVertOffsets[a2].xyz), (threadId.xyz + cubeVertOffsets[b2].xyz), cubeDensity[a2], cubeDensity[b2]); 
+        tri.a = vertexInterp((threadId.xyz + cubeVertOffsets[a0].xyz), (threadId.xyz + cubeVertOffsets[b0].xyz), cubeDensity[a0], cubeDensity[b0]);
         tri.b = vertexInterp((threadId.xyz + cubeVertOffsets[a1].xyz), (threadId.xyz + cubeVertOffsets[b1].xyz), cubeDensity[a1], cubeDensity[b1]);
-        tri.c = vertexInterp((threadId.xyz + cubeVertOffsets[a0].xyz), (threadId.xyz + cubeVertOffsets[b0].xyz), cubeDensity[a0], cubeDensity[b0]);
+        tri.c = vertexInterp((threadId.xyz + cubeVertOffsets[a2].xyz), (threadId.xyz + cubeVertOffsets[b2].xyz), cubeDensity[a2], cubeDensity[b2]); 
 
         triangles.Append(tri); 
     }
