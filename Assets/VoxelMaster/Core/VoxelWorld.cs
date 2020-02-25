@@ -20,6 +20,8 @@ public class VoxelWorld : MonoBehaviour {
     private List<VoxelMaterial> _materials = new List<VoxelMaterial> ();
     public List<VoxelMaterial> materials { get => new List<VoxelMaterial> (_materials); private set { _materials = value; } }
 
+    private float viewDistance = 300;
+    public Transform viewer;
     private Queue<Vector3Int> generationQueue = new Queue<Vector3Int> ();
     private Thread generationThread;
 
@@ -40,9 +42,9 @@ public class VoxelWorld : MonoBehaviour {
 
         Debug.Log ("Creating chunks");
 
-        var chunksToGenerate = new Vector3Int (80, 1, 80);
-        for (int i = 0; i < chunksToGenerate.x * chunksToGenerate.y * chunksToGenerate.z; i++)
-            AddChunk (Util.Map1DTo3D (i, chunksToGenerate));
+        // var chunksToGenerate = new Vector3Int (10, 1, 80);
+        // for (int i = 0; i < chunksToGenerate.x * chunksToGenerate.y * chunksToGenerate.z; i++)
+        //     AddChunk (Util.Map1DTo3D (i, chunksToGenerate));
 
         generationThread = new Thread (ProcessGenerationQueue);
         generationThread.Start ();
@@ -60,6 +62,16 @@ public class VoxelWorld : MonoBehaviour {
                 return;
             }
         }
+
+        int targetChunkX = Mathf.RoundToInt (viewer.position.x / chunkSize.x);
+        int targetChunkZ = Mathf.RoundToInt (viewer.position.z / chunkSize.z);
+
+        for (int zOffset = -5; zOffset < 5; zOffset++)
+            for (int yOffset = -5; yOffset < 5; yOffset++)
+                for (int xOffset = -5; xOffset < 5; xOffset++) {
+                    var chunkCoord = new Vector3Int (targetChunkX + xOffset, 0, targetChunkZ + zOffset);
+                    AddChunk (chunkCoord);
+                }
     }
 
     void RenderChunks () {
