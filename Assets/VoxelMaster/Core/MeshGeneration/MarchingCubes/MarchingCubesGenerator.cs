@@ -1,30 +1,26 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MarchingCubes : VoxelMeshGenerator
-{
-    public override MeshData generateMesh(VoxelChunk chunk)
-    {
+public class MarchingCubes : VoxelMeshGenerator {
+    public override MeshData GenerateMesh (VoxelChunk chunk) {
         int numCells = chunk.size.x * chunk.size.y * chunk.size.z;
-        var vertices = new List<Vector3>(5 * numCells * 3);
-        var triangleIndicies = new List<int>(5 * numCells * 3);
+        var vertices = new List<Vector3> (5 * numCells * 3);
+        var triangleIndicies = new List<int> (5 * numCells * 3);
         int triangleIndex = 0;
 
         for (int x = 0; x < chunk.size.x - 1; x++)
             for (int y = 0; y < chunk.size.y - 1; y++)
-                for (int z = 0; z < chunk.size.z - 1; z++)
-                {
-                    Vector3Int cellPos = new Vector3Int(x, y, z);
-                    float[] cubeDensity = new float[8]
-                    {
-                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[0]).density,
-                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[1]).density,
-                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[2]).density,
-                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[3]).density,
-                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[4]).density,
-                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[5]).density,
-                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[6]).density,
-                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[7]).density,
+                for (int z = 0; z < chunk.size.z - 1; z++) {
+                    Vector3Int cellPos = new Vector3Int (x, y, z);
+                    float[] cubeDensity = new float[8] {
+                        chunk.voxels.GetVoxel (cellPos + Lookup.cubeVertOffsets[0]).density,
+                        chunk.voxels.GetVoxel (cellPos + Lookup.cubeVertOffsets[1]).density,
+                        chunk.voxels.GetVoxel (cellPos + Lookup.cubeVertOffsets[2]).density,
+                        chunk.voxels.GetVoxel (cellPos + Lookup.cubeVertOffsets[3]).density,
+                        chunk.voxels.GetVoxel (cellPos + Lookup.cubeVertOffsets[4]).density,
+                        chunk.voxels.GetVoxel (cellPos + Lookup.cubeVertOffsets[5]).density,
+                        chunk.voxels.GetVoxel (cellPos + Lookup.cubeVertOffsets[6]).density,
+                        chunk.voxels.GetVoxel (cellPos + Lookup.cubeVertOffsets[7]).density,
                     };
 
                     int cubeindex = 0;
@@ -38,23 +34,21 @@ public class MarchingCubes : VoxelMeshGenerator
                     if (cubeDensity[7] < chunk.isoLevel) cubeindex |= 128;
 
                     int[] triangulation = Lookup.triTable[cubeindex];
-                    for (int i = 0; triangulation[i] != -1; i += 3)
-                    {
-                        for (int j = 0; j < 3; j++)
-                        {
+                    for (int i = 0; triangulation[i] != -1; i += 3) {
+                        for (int j = 0; j < 3; j++) {
                             var a = Lookup.cornerIndexAFromEdge[triangulation[i + j]];
                             var b = Lookup.cornerIndexBFromEdge[triangulation[i + j]];
 
                             Vector3Int aPos = cellPos + Lookup.cubeVertOffsets[a];
                             Vector3Int bPos = cellPos + Lookup.cubeVertOffsets[b];
                             float lerp = (chunk.isoLevel - cubeDensity[a]) / (cubeDensity[b] - cubeDensity[a]);
-                            var vertex = Vector3.Lerp(aPos, bPos, lerp);
+                            var vertex = Vector3.Lerp (aPos, bPos, lerp);
 
-                            vertices.Add(vertex);
-                            triangleIndicies.Add(triangleIndex++);
+                            vertices.Add (vertex);
+                            triangleIndicies.Add (triangleIndex++);
                         }
                     }
                 }
-        return new MeshData(vertices.ToArray(), triangleIndicies.ToArray());
+        return new MeshData (vertices.ToArray (), triangleIndicies.ToArray ());
     }
 }

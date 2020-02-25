@@ -1,4 +1,7 @@
-public struct WorldGeneratorSettings
+
+public class WorldGeneratorSettings
 {
-    public int worldSize;
+    public int seed;
+    public int worldSize = 64;
+    public float heightAmplifier = 1f;
 }
