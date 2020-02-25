@@ -43,13 +43,5 @@ public static class Util
             index / (size.x * size.y)
         );
     }
-
-    public static UnityEngine.Vector2Int Map1DTo2D(int index, UnityEngine.Vector2Int size)
-    {
-        return new UnityEngine.Vector2Int(
-            index % size.y,
-            index / size.y
-        );
-    }
 }
 

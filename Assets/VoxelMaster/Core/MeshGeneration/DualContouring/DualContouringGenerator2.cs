@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public class DualContouring2 : VoxelMeshGenerator
 {
@@ -47,13 +48,16 @@ public class DualContouring2 : VoxelMeshGenerator
         public bool processed;
         public float aDensity;
         public float bDensity;
+        public bool hasIntersection;
 
         public CellEdge(Vector3Int a, Vector3Int b, int m1, float aDensity, float bDensity, float isoLevel)
         {
+            hasIntersection = false;
             this.processed = true;
             this.cellPoints = new Vector3[4];
-            if (m1 == 0)
+            if (aDensity < isoLevel && bDensity > isoLevel)
             {
+                hasIntersection = true;
                 this.flip = false;
                 this.aDensity = aDensity;
                 this.bDensity = bDensity;
@@ -61,6 +65,7 @@ public class DualContouring2 : VoxelMeshGenerator
             }
             else
             {
+                hasIntersection = true;
                 this.flip = true;
                 this.bDensity = aDensity;
                 this.aDensity = bDensity;
@@ -73,16 +78,17 @@ public class DualContouring2 : VoxelMeshGenerator
     private List<int> triangleIndicies;
     private List<Vector3> normals;
     private List<CellEdge> surfaceEdges;
+    private List<CellEdge> activeEdges;
 
-    private CellEdge GetOrAdd(CellEdge ce)
+    private CellEdge GetOrAdd(CellEdge ce, List<CellEdge> edgeList)
     {
-        if (surfaceEdges.Contains(ce))
+        if (edgeList.Contains(ce))
         {
-            return surfaceEdges[surfaceEdges.IndexOf(ce)];
+            return edgeList[edgeList.IndexOf(ce)];
         }
         else
         {
-            surfaceEdges.Add(ce);
+            edgeList.Add(ce);
             return ce;
         }
     }
@@ -93,6 +99,8 @@ public class DualContouring2 : VoxelMeshGenerator
         triangleIndicies = new List<int>();
         normals = new List<Vector3>();
         var cellVertexIndicies = new int[chunk.size.x * chunk.size.y * chunk.size.z];
+        surfaceEdges = new List<CellEdge>();
+        activeEdges = new List<CellEdge>();
 
         // for each cell that exhibits a sign change, a vertex is generated and positioned at the edge with the lowest error (using QEF)
         for (int x = 0; x < chunk.size.x - 1; x++)
@@ -100,8 +108,6 @@ public class DualContouring2 : VoxelMeshGenerator
                 for (int z = 0; z < chunk.size.z - 1; z++)
                 {
                     Vector3Int cellPos = new Vector3Int(x, y, z);
-                    // Vector3Int[] cubeCorners = new Vector3Int[8];
-                    // float[] cubeDensities = new float[8];
                     CellEdge[] cubeEdges = new CellEdge[12];
                     int corners = 0;
 
@@ -127,21 +133,21 @@ public class DualContouring2 : VoxelMeshGenerator
                         int m1 = (corners >> edge.x) & 0b1;
                         int m2 = (corners >> edge.y) & 0b1;
 
-                        // check for zero crossing point. the point of where the sign function changes (eg. positive to negative or negative to positive)
-                        // only continue if there is no zero crossing (position of the surface). no need to make vertex inside the cube when there is no surface border
-                        if (m1 == m2) continue;
-
                         Vector3Int aPos = cellPos + vertOffsets[edge.x];
                         Vector3Int bPos = cellPos + vertOffsets[edge.y];
-
-                        // Vector3 aOffset = vertOffsets[edge.x];
-                        // Vector3 bOffset = vertOffsets[edge.y];
 
                         float aDensity = chunk.voxels.GetVoxel(aPos).density;
                         float bDensity = chunk.voxels.GetVoxel(bPos).density;
 
-                        // var intersectionPoint = (aOffset + (-aDensity) * (bOffset - aOffset) / (bDensity - aDensity));
                         CellEdge ce = new CellEdge(aPos, bPos, m1, aDensity, bDensity, chunk.isoLevel);
+                        // check for zero crossing point. the point of where the sign function changes (eg. positive to negative or negative to positive)
+                        // only continue if there is no zero crossing (position of the surface). no need to make vertex inside the cube when there is no surface border
+                        if (m1 == m2) continue;
+
+                        // Vector3 aOffset = vertOffsets[edge.x];
+                        // Vector3 bOffset = vertOffsets[edge.y];
+
+                        // var intersectionPoint = (aOffset + (-aDensity) * (bOffset - aOffset) / (bDensity - aDensity));
                         cubeEdges[i] = ce;
                         var normal = GetNormal(ce.intersectionPoint + cellPos, densityFunction);
                         averageNormal += normal;
@@ -152,59 +158,71 @@ public class DualContouring2 : VoxelMeshGenerator
 
                     //the vertex that is clostest to the surface
                     var vertex = qef.Solve() + cellPos;
+                    int k = 0;
+                    foreach (CellEdge ce in cubeEdges)
+                    {
+                        if (ce.hasIntersection)
+                        {
+                            CellEdge c = GetOrAdd(ce, surfaceEdges);
+                            c.cellPoints[k] = vertex;
+                        }
+                        k++;
+                        if (k > 3) k = 0;
+                    }
+
                     var averagedNormal = Vector3.Normalize(averageNormal / (float)qef.Intersections.Count);
                     Vector3 c_v = averagedNormal * 0.5f + Vector3.one * 0.5f;
                     c_v.Normalize();
                     normals.Add(averagedNormal);
 
-                    cellVertexIndicies[Util.Map3DTo1D(cellPos, chunk.size)] = vertices.Count;
-                    vertices.Add(vertex);
+                    // cellVertexIndicies[Util.Map3DTo1D(cellPos, chunk.size)] = vertices.Count;
+                    // vertices.Add(vertex);
                 }
 
+        foreach (CellEdge ce in surfaceEdges)
+        {
+            if (ce.cellPoints.Count(v => v != Vector3.zero) == 4)
+            {
+                GetOrAdd(ce, activeEdges);
+                surfaceEdges.Remove(ce);
+            }
+        }
 
-        // for each of the edges that went through a sign change, triangles are generated connecting the vertices of the four cubes adjacent to the edge
-        for (int x = 0; x < chunk.size.x - 1; x++)
-            for (int y = 0; y < chunk.size.y - 1; y++)
-                for (int z = 0; z < chunk.size.z - 1; z++)
-                {
-                    int v1 = cellVertexIndicies[Util.Map3DTo1D(new Vector3Int(x, y, z), chunk.size)];
-                    if (v1 == 0) continue;
+        foreach (CellEdge ce in activeEdges)
+        {
+            if (ce.flip)
+            {
+                vertices.Add(ce.cellPoints[0]);
+                vertices.Add(ce.cellPoints[2]);
+                vertices.Add(ce.cellPoints[1]);
 
-                    for (int i = 0; i < 3; i++)
-                    {
-                        for (int j = 0; j < i; j++)
-                        {
-                            int v2 = cellVertexIndicies[Util.Map3DTo1D(new Vector3Int(
-                                x + directions[i].x,
-                                y + directions[i].y,
-                                z + directions[i].z
-                            ), chunk.size)];
+                vertices.Add(ce.cellPoints[2]);
+                vertices.Add(ce.cellPoints[3]);
+                vertices.Add(ce.cellPoints[1]);
+            }
+            else
+            {
+                vertices.Add(ce.cellPoints[0]);
+                vertices.Add(ce.cellPoints[1]);
+                vertices.Add(ce.cellPoints[2]);
 
-                            int v3 = cellVertexIndicies[Util.Map3DTo1D(new Vector3Int(
-                                x + directions[j].x,
-                                y + directions[j].y,
-                                z + directions[j].z
-                            ), chunk.size)];
+                vertices.Add(ce.cellPoints[2]);
+                vertices.Add(ce.cellPoints[1]);
+                vertices.Add(ce.cellPoints[3]);
+            }
+        }
 
-                            int v4 = cellVertexIndicies[Util.Map3DTo1D(new Vector3Int(
-                                x + directions[i].x + directions[j].x,
-                                y + directions[i].y + directions[j].y,
-                                z + directions[i].z + directions[j].z
-                            ), chunk.size)];
-                            //if the indicies exists
-                            if (v2 == 0 || v3 == 0 || v4 == 0) continue;
+        for (int i = 0; i < vertices.Count; i += 3)
+        {
+            for (int j = 0; j < 3; j++)
+            {
+                triangleIndicies[i + j] = i + j;
 
-                            triangleIndicies.Add(v1);
-                            triangleIndicies.Add(v2);
-                            triangleIndicies.Add(v3);
+            }
+        }
 
-                            triangleIndicies.Add(v4);
-                            triangleIndicies.Add(v3);
-                            triangleIndicies.Add(v2);
-                        }
-                    }
-                }
-        return new MeshData(vertices.ToArray(), triangleIndicies.ToArray(), normals.ToArray());
+
+        return new MeshData(vertices.ToArray(), triangleIndicies.ToArray());
     }
 
     private Vector3 GetNormal(Vector3 v, Func<Vector3, float> densityFunction)
