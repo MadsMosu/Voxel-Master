@@ -36,7 +36,7 @@ public class DualContouring4 : VoxelMeshGenerator {
         new Vector3Int (1, 0, 0), new Vector3Int (0, 1, 0), new Vector3Int (0, 0, 1)
     };
 
-    public override MeshData generateMesh (VoxelChunk chunk, Func<Vector3, float> densityFunction) {
+    public override MeshData GenerateMesh (VoxelChunk chunk, Func<Vector3, float> densityFunction) {
         var vertices = new List<Vector3> ();
         var triangleIndicies = new List<int> ();
         var normals = new List<Vector3> ();

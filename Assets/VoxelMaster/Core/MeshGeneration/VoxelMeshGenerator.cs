@@ -4,10 +4,9 @@ using UnityEngine;
 public abstract class VoxelMeshGenerator
 {
     public float isoLevel = .4f;
-    public abstract MeshData generateMesh(VoxelChunk chunk, Func<Vector3, float> densityFunction);
+    public abstract MeshData GenerateMesh(VoxelChunk chunk, Func<Vector3, float> densityFunction);
 
 }
-
 
 public struct MeshData
 {

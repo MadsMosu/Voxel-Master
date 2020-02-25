@@ -4,6 +4,9 @@ using UnityEngine;
 
 public class VoxelChunk
 {
+
+    public ChunkStatus status { get; private set; } = ChunkStatus.Created;
+
     public VoxelDataStructure voxels { get; private set; }
     private List<VoxelMaterial> _materials = new List<VoxelMaterial>();
     public List<VoxelMaterial> materials { get => new List<VoxelMaterial>(_materials); private set { _materials = value; } }
@@ -12,9 +15,11 @@ public class VoxelChunk
     public float voxelScale { get; private set; }
     public float isoLevel { get; private set; }
 
+    private MeshData meshData;
+
     public VoxelChunk(Vector3Int size, float voxelScale, float isoLevel, VoxelDataStructure voxels)
     {
-        this.size = size;
+        this.size = size + Vector3Int.one;
         this.voxelScale = voxelScale;
         this.isoLevel = isoLevel;
         this.voxels = voxels;
@@ -50,4 +55,29 @@ public class VoxelChunk
         throw new NotImplementedException();
     }
 
+    public void GenerateMeshData(VoxelMeshGenerator generator, Func<Vector3, float> densityFunction)
+    {
+        status = ChunkStatus.Loading;
+        meshData = generator.GenerateMesh(this, densityFunction);
+        status = ChunkStatus.HasMeshData;
+    }
+
+    public Mesh BuildMesh()
+    {
+        var mesh = new Mesh();
+        mesh.SetVertices(meshData.vertices);
+        mesh.SetTriangles(meshData.triangleIndicies, 0);
+        mesh.RecalculateNormals();
+        status = ChunkStatus.Idle;
+        return mesh;
+    }
+
+}
+
+public enum ChunkStatus
+{
+    Created,
+    Loading,
+    HasMeshData,
+    Idle
 }

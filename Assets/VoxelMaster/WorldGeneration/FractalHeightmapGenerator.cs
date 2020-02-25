@@ -7,37 +7,46 @@ using UnityEditor;
 using UnityEngine;
 using System;
 
+
 [Serializable]
 class FractalHeightmapGenerator : HeightmapGenerator
 {
 
-    FastNoise noise;
+    float fractalNoiseScale = 1.001f;
+    float baseAmplitude = 1f;
+    float detailAmplitude = 1f;
+    bool islandShape = false;
 
-    float fractalNoiseScale = 1f;
-
-    public FractalHeightmapGenerator(int seed)
-    {
-        noise = new FastNoise(seed);
-    }
 
     public override float[] Generate(WorldGeneratorSettings settings)
     {
+        var noise = new FastNoise(settings.seed);
+
         var worldSize = settings.worldSize;
         var heightmap = new float[worldSize * worldSize];
 
-        for (int x = 0; x < worldSize; x++)
-            for (int y = 0; y < worldSize; y++)
-            {
-                var xs = x * fractalNoiseScale;
-                var ys = y * fractalNoiseScale;
+        var worldCenter = new Vector2(worldSize / 2f, worldSize / 2f);
 
-                var height = noise.GetPerlinFractal(xs, ys);
+        for (int i = 0; i < heightmap.Length; i++)
+        {
+            var coord = Util.Map1DTo2D(i, worldSize);
+            var x = coord.x;
+            var y = coord.y;
 
-                // height -= noise.GetCellular(xs, ys) * noise.GetCubicFractal(xs / 10.0f, ys / 10.0f);
+            var xs = (x - worldSize / 2) * fractalNoiseScale;
+            var ys = (y - worldSize / 2) * fractalNoiseScale;
 
-                var coord = new Vector2Int(x, y);
-                heightmap[Util.Map2DTo1D(coord, Vector2Int.one * worldSize)] = height;
-            }
+            var height = (noise.GetCubicFractal(xs, ys) + .5f) * baseAmplitude;
+            height += (noise.GetPerlinFractal(xs * 2f, ys * 2f)) * detailAmplitude;
+
+            height *= settings.heightAmplifier;
+
+            if (islandShape)
+                height *= Mathf.Clamp01((worldSize / 2f - Vector2.Distance(new Vector2(x, y), worldCenter)) / (worldSize / 2));
+
+            heightmap[i] = height;
+        }
+
         return heightmap;
     }
 
@@ -47,7 +56,7 @@ class FractalHeightmapGenerator : HeightmapGenerator
         var worldSize = settings.worldSize;
         var heightmapData = Generate(settings);
         Texture2D result = new Texture2D(settings.worldSize, settings.worldSize);
-        var colors = heightmapData.Select(h => Color.Lerp(Color.black, Color.white, h)).ToArray();
+        var colors = heightmapData.Select(h => Color.Lerp(Color.black, Color.white, h / settings.heightAmplifier)).ToArray();
         result.SetPixels(0, 0, worldSize, worldSize, colors);
         result.Apply();
         return result;
@@ -56,7 +65,10 @@ class FractalHeightmapGenerator : HeightmapGenerator
 
     public override void OnInspectorGUI()
     {
-        fractalNoiseScale = EditorGUILayout.Slider(fractalNoiseScale, .1f, 20f);
+        fractalNoiseScale = EditorGUILayout.Slider("Fractal noise scale", fractalNoiseScale, 0, 25);
+        baseAmplitude = EditorGUILayout.Slider("Base amplitude", baseAmplitude, 0, 1);
+        detailAmplitude = EditorGUILayout.Slider("Detail amplitude", detailAmplitude, 0, 1);
+        islandShape = EditorGUILayout.Toggle("Force island shape ", islandShape);
     }
 
 

@@ -4,8 +4,7 @@ using UnityEngine;
 
 public class MarchingCubes : VoxelMeshGenerator
 {
-
-    public override MeshData generateMesh(VoxelChunk chunk, Func<Vector3, float> densityFunction)
+    public override MeshData GenerateMesh(VoxelChunk chunk, Func<Vector3, float> densityFunction)
     {
         int numCells = chunk.size.x * chunk.size.y * chunk.size.z;
         var vertices = new List<Vector3>(5 * numCells * 3);
@@ -17,16 +16,15 @@ public class MarchingCubes : VoxelMeshGenerator
                 for (int z = 0; z < chunk.size.z - 1; z++)
                 {
                     Vector3Int cellPos = new Vector3Int(x, y, z);
-                    float[] cubeDensity = new float[8]
-                    {
-                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[0]).density,
-                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[1]).density,
-                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[2]).density,
-                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[3]).density,
-                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[4]).density,
-                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[5]).density,
-                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[6]).density,
-                        chunk.voxels.GetVoxel(cellPos + Lookup.cubeVertOffsets[7]).density,
+                    float[] cubeDensity = new float[8] {
+                        chunk.voxels.GetVoxel (cellPos + Lookup.cubeVertOffsets[0]).density,
+                        chunk.voxels.GetVoxel (cellPos + Lookup.cubeVertOffsets[1]).density,
+                        chunk.voxels.GetVoxel (cellPos + Lookup.cubeVertOffsets[2]).density,
+                        chunk.voxels.GetVoxel (cellPos + Lookup.cubeVertOffsets[3]).density,
+                        chunk.voxels.GetVoxel (cellPos + Lookup.cubeVertOffsets[4]).density,
+                        chunk.voxels.GetVoxel (cellPos + Lookup.cubeVertOffsets[5]).density,
+                        chunk.voxels.GetVoxel (cellPos + Lookup.cubeVertOffsets[6]).density,
+                        chunk.voxels.GetVoxel (cellPos + Lookup.cubeVertOffsets[7]).density,
                     };
 
                     int cubeindex = 0;
