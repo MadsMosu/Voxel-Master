@@ -67,7 +67,7 @@ public class VoxelWorld : MonoBehaviour {
         meshProvider.MainThreadUpdate ();
 
         RenderChunks ();
-        UpdateCollisionMeshes ();
+        // UpdateCollisionMeshes ();
 
         int targetChunkX = Mathf.RoundToInt (viewer.position.x / chunkSize.x);
         int targetChunkY = Mathf.RoundToInt (viewer.position.y / chunkSize.y);
@@ -113,8 +113,6 @@ public class VoxelWorld : MonoBehaviour {
     }
 
     public void AddChunk (Vector3Int pos) {
-        if (chunks.ContainsKey (pos)) return;
-
         var chunkVoxels = Util.CreateInstance<VoxelDataStructure> (dataStructureType);
         var chunk = new VoxelChunk (pos, chunkSize, voxelScale, isoLevel, chunkVoxels);
         chunks.Add (pos, chunk);
@@ -124,10 +122,12 @@ public class VoxelWorld : MonoBehaviour {
 
     private void OnChunkData (VoxelChunk chunk) {
         meshProvider.RequestChunkMesh (chunk, OnChunkMesh);
+        // Debug.Log ("OnChunkData");
     }
 
     private void OnChunkMesh (ChunkMeshGenerationData chunkMeshGenerationData) {
         chunkMeshGenerationData.voxelChunk.GenerateMesh ();
+        // Debug.Log ("OnChunkMesh");
     }
 
     FastNoise noise = new FastNoise (34535284);

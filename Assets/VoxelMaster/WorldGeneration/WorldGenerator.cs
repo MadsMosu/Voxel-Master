@@ -48,12 +48,12 @@ public class WorldGenerator {
     }
 
     void StartGenerationThread (VoxelChunk chunk, Action<VoxelChunk> onChunkData) {
-        ThreadPool.QueueUserWorkItem (delegate {
-            GenerateChunkDataThread (chunk, onChunkData);
-        });
-        // Task.Run (delegate {
+        // ThreadPool.QueueUserWorkItem (delegate {
         //     GenerateChunkDataThread (chunk, onChunkData);
         // });
+        Task.Run (delegate {
+            GenerateChunkDataThread (chunk, onChunkData);
+        });
     }
 
     FeatureGenerator featureGenerator = new BaseHeightmapGenerator ();
