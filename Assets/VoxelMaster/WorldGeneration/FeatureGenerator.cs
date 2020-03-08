@@ -1,4 +1,3 @@
-public abstract class FeatureGenerator
-{
-    public abstract void Generate(WorldGeneratorSettings settings);
+public abstract class FeatureGenerator {
+    public abstract void Generate (WorldGeneratorSettings settings, VoxelChunk chunk);
 }

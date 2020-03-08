@@ -1,4 +1,8 @@
 using System;
+using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 
 [System.Serializable]
@@ -26,4 +30,20 @@ public class SimpleDataStructure : VoxelDataStructure {
             function.Invoke (coord.x, coord.y, coord.z, voxels[i]);
         }
     }
+
+    public async override void Save (BufferedStream stream) {
+
+        var header = new FileHeader {
+            chunkSize = size
+        };
+
+        var formatter = new BinaryFormatter ();
+        formatter.Serialize (stream, header);
+
+    }
+}
+
+[StructLayout (LayoutKind.Sequential), Serializable]
+struct FileHeader {
+    public Vector3Int chunkSize;
 }

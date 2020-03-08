@@ -44,46 +44,6 @@ public static class Util {
         return new Vector2Int (x, y);
     }
 
-    public static Mesh GeneratePreviewPlane (float[] heights, WorldGeneratorSettings settings) {
-        var sizeX = settings.worldSize;
-        var sizeZ = settings.worldSize;
-
-        Mesh mesh = new Mesh ();
-
-        Vector3[] vertices = new Vector3[sizeX * sizeZ];
-        for (int i = 0, z = 0; z < sizeZ; z++) {
-            for (int x = 0; x < sizeX; x++, i++) {
-                float h;
-                try {
-                    h = heights[Util.Map2DTo1D (x, z, sizeX)];
-                } catch (System.Exception) {
-                    h = 0;
-                }
-                vertices[i] = new Vector3 (x, h * 5, z);
-            }
-        }
-        mesh.vertices = vertices;
-
-        sizeX -= 1;
-        sizeZ -= 1;
-
-        int[] triangles = new int[sizeX * sizeZ * 6];
-        for (int triangleIndex = 0, vertexIndex = 0, y = 0; y < sizeZ; y++, vertexIndex++) {
-            for (int x = 0; x < sizeX; x++, triangleIndex += 6, vertexIndex++) {
-                triangles[triangleIndex] = vertexIndex;
-                triangles[triangleIndex + 3] = triangles[triangleIndex + 2] = vertexIndex + 1;
-                triangles[triangleIndex + 4] = triangles[triangleIndex + 1] = vertexIndex + sizeX + 1;
-                triangles[triangleIndex + 5] = vertexIndex + sizeX + 2;
-            }
-        }
-        mesh.triangles = triangles;
-
-        mesh.RecalculateNormals ();
-        mesh.Optimize ();
-
-        return mesh;
-    }
-
     public static T CreateInstance<T> (String type) {
         return (T) Activator.CreateInstance (Type.GetType (type));
     }

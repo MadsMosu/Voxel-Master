@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using UnityEngine;
+using static ThreadedMeshProvider;
 
 // [ExecuteInEditMode]
 public class VoxelWorld : MonoBehaviour {
@@ -15,6 +16,8 @@ public class VoxelWorld : MonoBehaviour {
     public Vector3Int chunkSize = new Vector3Int (16, 16, 16);
     #endregion
 
+    private WorldGenerator worldGenerator;
+    private ThreadedMeshProvider meshProvider;
     private Dictionary<Vector3Int, VoxelChunk> chunks = new Dictionary<Vector3Int, VoxelChunk> ();
     private Dictionary<Vector3Int, Mesh> chunkMeshes = new Dictionary<Vector3Int, Mesh> ();
     private List<VoxelMaterial> _materials = new List<VoxelMaterial> ();
@@ -22,12 +25,12 @@ public class VoxelWorld : MonoBehaviour {
 
     private float viewDistance = 300;
     public Transform viewer;
-    private Queue<Vector3Int> generationQueue = new Queue<Vector3Int> ();
-    private Thread generationThread;
+    public int generationRadius = 3;
 
     [HideInInspector] public String dataStructureType;
     [HideInInspector] public String meshGeneratorType;
-    private VoxelMeshGenerator meshGenerator;
+
+    MeshCollider collider;
 
     #region Debug variables
     public Material material;
@@ -38,66 +41,93 @@ public class VoxelWorld : MonoBehaviour {
     }
     void Start () {
 
-        meshGenerator = Util.CreateInstance<VoxelMeshGenerator> (meshGeneratorType);
+        worldGenerator = new WorldGenerator (new WorldGeneratorSettings {
+            baseHeight = 0,
+                heightAmplifier = 20,
+                noiseScale = 1f,
+                seed = 45432345,
+                voxelScale = voxelScale
+        });
+
+        meshProvider = new ThreadedMeshProvider (Util.CreateInstance<VoxelMeshGenerator> (meshGeneratorType));
 
         Debug.Log ("Creating chunks");
+
+        collider = new GameObject ("Terrain collider").AddComponent<MeshCollider> ();
 
         // var chunksToGenerate = new Vector3Int (10, 1, 80);
         // for (int i = 0; i < chunksToGenerate.x * chunksToGenerate.y * chunksToGenerate.z; i++)
         //     AddChunk (Util.Map1DTo3D (i, chunksToGenerate));
 
-        generationThread = new Thread (ProcessGenerationQueue);
-        generationThread.Start ();
-
     }
 
     void Update () {
 
-        RenderChunks ();
+        worldGenerator.MainThreadUpdate ();
+        meshProvider.MainThreadUpdate ();
 
-        foreach (KeyValuePair<Vector3Int, VoxelChunk> entry in chunks) {
-            var chunk = entry.Value;
-            if (chunk.status == ChunkStatus.HasMeshData) {
-                chunkMeshes.Add (entry.Key, chunk.BuildMesh ());
-                return;
-            }
-        }
+        RenderChunks ();
+        UpdateCollisionMeshes ();
 
         int targetChunkX = Mathf.RoundToInt (viewer.position.x / chunkSize.x);
+        int targetChunkY = Mathf.RoundToInt (viewer.position.y / chunkSize.y);
         int targetChunkZ = Mathf.RoundToInt (viewer.position.z / chunkSize.z);
 
-        for (int zOffset = -5; zOffset < 5; zOffset++)
-            for (int yOffset = -5; yOffset < 5; yOffset++)
-                for (int xOffset = -5; xOffset < 5; xOffset++) {
-                    var chunkCoord = new Vector3Int (targetChunkX + xOffset, 0, targetChunkZ + zOffset);
-                    AddChunk (chunkCoord);
+        var chunksToAdd = new List<Vector3Int> ();
+
+        for (int zOffset = -generationRadius; zOffset < generationRadius; zOffset++)
+            for (int yOffset = 0; yOffset < 4; yOffset++)
+                for (int xOffset = -generationRadius; xOffset < generationRadius; xOffset++) {
+                    var chunkCoord = new Vector3Int (targetChunkX + xOffset, yOffset, targetChunkZ + zOffset);
+                    if (!chunks.ContainsKey (chunkCoord))
+                        chunksToAdd.Add (chunkCoord);
                 }
+
+        chunksToAdd.OrderBy (coord => Vector3Int.Distance (new Vector3Int (targetChunkX, targetChunkY, targetChunkZ), coord))
+            .ToList ().ForEach (coord => AddChunk (coord));
+
     }
 
     void RenderChunks () {
-        foreach (KeyValuePair<Vector3Int, Mesh> entry in chunkMeshes) {
+        foreach (KeyValuePair<Vector3Int, VoxelChunk> entry in chunks) {
             var pos = new Vector3 (
                 entry.Key.x * chunkSize.x,
                 entry.Key.y * chunkSize.y,
                 entry.Key.z * chunkSize.z
             );
-            Graphics.DrawMesh (entry.Value, pos, Quaternion.identity, material, 0);
+            if (entry.Value.mesh != null)
+                Graphics.DrawMesh (entry.Value.mesh, pos, Quaternion.identity, material, 0);
         }
     }
 
-    void ProcessGenerationQueue () {
-        while (true) {
-            if (generationQueue.Count > 0) {
-                GenerateChunk (generationQueue.Dequeue ());
-            }
-            // Thread.Sleep (1);
-        }
+    void UpdateCollisionMeshes () {
+
+        int targetChunkX = Mathf.RoundToInt (viewer.position.x / chunkSize.x);
+        int targetChunkY = Mathf.RoundToInt (viewer.position.y / chunkSize.y);
+        int targetChunkZ = Mathf.RoundToInt (viewer.position.z / chunkSize.z);
+
+        var coord = new Vector3Int (targetChunkX, targetChunkY, targetChunkZ);
+        if (chunks.ContainsKey (coord))
+            collider.sharedMesh = chunks[coord].mesh;
+
     }
 
     public void AddChunk (Vector3Int pos) {
         if (chunks.ContainsKey (pos)) return;
-        chunks.Add (pos, new VoxelChunk (chunkSize, voxelScale, isoLevel, Util.CreateInstance<VoxelDataStructure> (dataStructureType)));
-        generationQueue.Enqueue (pos);
+
+        var chunkVoxels = Util.CreateInstance<VoxelDataStructure> (dataStructureType);
+        var chunk = new VoxelChunk (pos, chunkSize, voxelScale, isoLevel, chunkVoxels);
+        chunks.Add (pos, chunk);
+
+        worldGenerator.RequestChunkData (chunk, OnChunkData);
+    }
+
+    private void OnChunkData (VoxelChunk chunk) {
+        meshProvider.RequestChunkMesh (chunk, OnChunkMesh);
+    }
+
+    private void OnChunkMesh (ChunkMeshGenerationData chunkMeshGenerationData) {
+        chunkMeshGenerationData.voxelChunk.GenerateMesh ();
     }
 
     FastNoise noise = new FastNoise (34535284);
@@ -112,19 +142,6 @@ public class VoxelWorld : MonoBehaviour {
         float height = baseHeight + Mathf.Pow ((noise.GetCubicFractal ((pos.x) / scale, (pos.z) / scale) + .5f) * heightAmplifier, 1.6f);
         float voxelDensity = ((pos.y) - height) / heightAmplifier;
         return voxelDensity;
-    }
-    private void GenerateChunk (Vector3Int pos) {
-        var chunk = chunks[pos];
-
-        chunk.voxels.Init (chunk.size);
-        var offset = new Vector3 (pos.x * chunkSize.x, pos.y * chunkSize.y, pos.z * chunkSize.z);
-
-        chunk.voxels.Traverse (delegate (int x, int y, int z, Voxel v) {
-            float voxelDensity = DensityFunction (new Vector3 (x, y, z) + offset);
-            chunk.voxels.SetVoxel (new Vector3Int (x, y, z), new Voxel { density = voxelDensity });
-        });
-
-        chunk.GenerateMeshData (meshGenerator, DensityFunction);
     }
 
     public void RemoveChunk (Vector3Int pos) {
@@ -152,27 +169,28 @@ public class VoxelWorld : MonoBehaviour {
         throw new NotImplementedException ();
     }
 
-    void OnDestroy () {
-        generationThread?.Abort ();
-    }
-
-    void OnDrawGizmosSelected () {
+    void OnDrawGizmos () {
         foreach (KeyValuePair<Vector3Int, VoxelChunk> entry in chunks) {
             switch (entry.Value.status) {
                 case ChunkStatus.Idle:
-                    // Gizmos.color = Color.green;
-                    // Gizmos.DrawWireCube (entry.Key * entry.Value.size + entry.Value.size / 2, entry.Value.size);
-                    break;
+                    continue;
                 case ChunkStatus.Loading:
                     Gizmos.color = Color.cyan;
-                    Gizmos.DrawWireCube (entry.Key * entry.Value.size + entry.Value.size / 2, entry.Value.size);
                     break;
                 default:
                     Gizmos.color = Color.gray;
-                    Gizmos.DrawWireCube (entry.Key * entry.Value.size + entry.Value.size / 2, entry.Value.size);
                     break;
             }
-        }
-    }
 
+            Gizmos.DrawWireCube (entry.Key * entry.Value.size, entry.Value.size);
+
+        }
+
+        int targetChunkX = Mathf.RoundToInt (viewer.position.x / chunkSize.x);
+        int targetChunkY = Mathf.RoundToInt (viewer.position.y / chunkSize.y);
+        int targetChunkZ = Mathf.RoundToInt (viewer.position.z / chunkSize.z);
+
+        Gizmos.color = new Color (1, 1, 1, .2f);
+        Gizmos.DrawCube (new Vector3Int (targetChunkX, targetChunkY, targetChunkZ) * chunkSize, chunkSize);
+    }
 }

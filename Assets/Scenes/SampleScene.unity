@@ -98,7 +98,7 @@ LightmapSettings:
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
   m_LightingDataAsset: {fileID: 0}
-  m_UseShadowmask: 1
+  m_UseShadowmask: 0
 --- !u!196 &4
 NavMeshSettings:
   serializedVersion: 2
@@ -477,7 +477,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 1935339057}
-  followOffset: {x: 0, y: 2, z: -10}
+  followOffset: {x: 0, y: 4, z: -10}
 --- !u!1 &1114245768
 GameObject:
   m_ObjectHideFlags: 0
@@ -509,8 +509,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   voxelScale: 1
   isoLevel: 0
-  chunkSize: {x: 24, y: 96, z: 24}
+  chunkSize: {x: 16, y: 16, z: 16}
   viewer: {fileID: 1935339057}
+  generationRadius: 12
   dataStructureType: SimpleDataStructure, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
     PublicKeyToken=null
   meshGeneratorType: MarchingCubes, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
@@ -666,7 +667,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1935339056}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 74.8, z: 0}
+  m_LocalPosition: {x: -0.82, y: 0, z: 62.09}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 1595141633}
@@ -685,6 +686,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4785dff6a2fab87409f873f7ae85b457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  forwardSpeed: 25
+  forwardSpeed: 20
   pitchSpeed: 50
   rollSpeed: 70
