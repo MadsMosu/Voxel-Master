@@ -514,7 +514,7 @@ MonoBehaviour:
   generationRadius: 12
   dataStructureType: SimpleDataStructure, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
     PublicKeyToken=null
-  meshGeneratorType: MarchingCubes, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+  meshGeneratorType: DualContouring, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
     PublicKeyToken=null
   material: {fileID: 2100000, guid: 40539cd6d3ae1104d8a518d7abb86a33, type: 2}
 --- !u!4 &1114245770
