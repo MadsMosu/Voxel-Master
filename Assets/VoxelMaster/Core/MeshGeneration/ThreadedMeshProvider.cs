@@ -52,7 +52,7 @@ class ThreadedMeshProvider {
     }
 
     void GenerateChunkDataThread (VoxelChunk chunk, Action<ChunkMeshGenerationData> onChunkData) {
-        MeshData meshData = meshGenerator.GenerateMesh (chunk, null);
+        MeshData meshData = meshGenerator.GenerateMesh (chunk);
         chunk.SetMeshData (meshData);
         lock (generatedChunkQueue) {
             generatedChunkQueue.Enqueue (new ChunkMeshGenerationData {

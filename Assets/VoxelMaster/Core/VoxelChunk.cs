@@ -60,7 +60,11 @@ public class VoxelChunk {
         mesh = new Mesh ();
         mesh.SetVertices (meshData.vertices);
         mesh.SetTriangles (meshData.triangleIndicies, 0);
-        mesh.RecalculateNormals ();
+        if (meshData.normals == null || meshData.normals.Length == 0) {
+            mesh.RecalculateNormals ();
+        } else {
+            mesh.SetNormals (meshData.normals);
+        }
         status = ChunkStatus.Idle;
     }
 
