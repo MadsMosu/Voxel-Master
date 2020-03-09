@@ -96,8 +96,22 @@ public class VoxelWorld : MonoBehaviour {
 
     public void AddChunk (Vector3Int pos) {
         if (chunks.ContainsKey (pos)) return;
-        chunks.Add (pos, new VoxelChunk (chunkSize, voxelScale, isoLevel, Util.CreateInstance<VoxelDataStructure> (dataStructureType)));
+        VoxelChunk chunk = new VoxelChunk (chunkSize, voxelScale, isoLevel, Util.CreateInstance<VoxelDataStructure> (dataStructureType));
+        AddChunkToNeighbors (pos, chunk);
+        chunks.Add (pos, chunk);
         generationQueue.Enqueue (pos);
+        // GenerateChunk (pos);
+    }
+
+    private void AddChunkToNeighbors (Vector3Int pos, VoxelChunk chunk) {
+        for (int x = -1; x <= 1; x++)
+            for (int y = -1; y <= +1; y++)
+                for (int z = -1; z <= 1; z++) {
+                    Vector3Int neighborPos = new Vector3Int (pos.x + x, pos.y + y, pos.z + z);
+                    if (chunks.ContainsKey (neighborPos)) {
+                        chunks[neighborPos].AddNeighbor (chunk, new Vector3Int (x, y, z));
+                    }
+                }
     }
 
     FastNoise noise = new FastNoise (34535284);

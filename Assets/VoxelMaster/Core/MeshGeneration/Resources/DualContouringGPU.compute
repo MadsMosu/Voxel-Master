@@ -1,0 +1,190 @@
+#pragma kernel GenerateCellVertices
+#pragma kernel ConnectCellVertices
+#pragma kernel GenerateTriangleIndices
+
+#include "QEF.compute"
+#define MAX_CROSSINGS 6
+
+struct Quad {
+    float3 vertex0, vertex1, vertex2, vertex3;
+    float3 normal0, normal1, normal2, normal3;
+};
+
+struct QuadIndices {
+    dword index1, index2, index3, index4, index5, index6;
+};
+
+struct Vertex {
+    float3 position, normal;
+};
+
+
+static const int3 vertOffsets[8] = {
+    int3(0, 0, 0),
+    int3(0, 0, 1),
+    int3(0, 1, 0),
+    int3(0, 1, 1),
+    int3(1, 0, 0),
+    int3(1, 0, 1),
+    int3(1, 1, 0),
+    int3(1, 1, 1)
+};
+
+static const int2 edges[12] = {
+    int2(0,1), int2(0,2), int2(0,4), int2(1,3),
+    int2(1,5), int2(2,3), int2(2,6), int2(4,5),
+    int2(4,6), int2(3,7), int2(6,7), int2(5,7)
+};
+
+static const int3 directions[3][3] = {
+    {int3(1, 0, 0), int3(1, 0, 1), int3(0, 0, 1)}, 
+    {int3(0, 1, 0), int3(1, 1, 0), int3(1, 0, 0)},
+    {int3(0, 0, 1), int3(0, 1, 1), int3(0, 1, 0)}
+};
+
+RWStructuredBuffer<float> DensitiesBuffer;
+RWStructuredBuffer<QuadIndices> IndicesBuffer;
+RWStructuredBuffer<Vertex> VerticesBuffer;
+
+AppendStructuredBuffer<Vertex> CellVerticesBuffer;
+AppendStructuredBuffer<Quad> QuadsBuffer;
+
+
+int chunkWidth;
+int chunkHeight;
+int chunkDepth;
+float isoLevel;
+
+SamplerState LinearClamp;
+Texture3D<float3> DensityTexture;
+
+
+
+static int IndexFromCoord(uint3 coords) {
+    return coords.x + coords.y * chunkWidth + coords.z * chunkWidth * chunkHeight;
+}
+
+
+[numthreads(8, 8, 8)]
+void GenerateCellVertices(uint3 cellPos : SV_DispatchThreadID) {
+    if (cellPos.x >= chunkWidth - 1  || cellPos.y >= chunkHeight - 1|| cellPos.z >= chunkDepth - 1) return;
+
+
+    float cellDensities[8];
+    int corners = 0;
+    for (int i = 0; i < 8; i++) {
+        float density = DensitiesBuffer[IndexFromCoord(cellPos + vertOffsets[i])];
+        cellDensities[i] = density;
+        if (density < isoLevel) {
+            corners |= 1 << i;
+        }
+    }
+
+    if (corners == 0 || corners == 255) return;
+
+    float4 pointaccum = float4(0, 0, 0, 0);
+    mat3x3_tri ATA = { 0, 0, 0, 0, 0, 0 };
+    float4 Atb = float4(0, 0, 0, 0);
+    float btb = 0;
+    float3 averageNormal;
+    int activeEdgesCount = 0;
+    for (int j = 0; j < 12 && activeEdgesCount <= MAX_CROSSINGS; j++) {
+        int2 edge = edges[j];
+        int m1 = (corners >> edge.x) & 1;
+        int m2 = (corners >> edge.y) & 1;
+
+        if (m1 == m2) continue;
+        float3 aOffset = vertOffsets[edge.x];
+        float3 bOffset = vertOffsets[edge.y];
+
+        float3 aPos = cellPos + aOffset;
+        float3 bPos = cellPos + bOffset;
+
+        float aDensity = cellDensities[edge.x];
+        float bDensity = cellDensities[edge.y];
+
+        float3 intersectionPoint = lerp(aPos, bPos, ((isoLevel - aDensity) / (bDensity - aDensity)));
+        // float3 uv = intersectionPoint / ((chunkWidth - 1) * (chunkHeight - 1) * (chunkDepth - 1))
+        float3 normal = DensityTexture.SampleLevel(LinearClamp, float3(1,1,1), 0);
+
+        qef_add(
+            float4(normal.x, normal.y, normal.z, 0),
+            float4(intersectionPoint.x, intersectionPoint.y, intersectionPoint.z, 0),
+            ATA, Atb, pointaccum, btb
+        );
+        averageNormal += normal;
+        activeEdgesCount++;
+    }
+    float4 vertexPosition = float4(0, 0, 0, 0);
+    float error = qef_solve(ATA, Atb, pointaccum, vertexPosition);
+    float3 averagedNormal = (averageNormal / asfloat(activeEdgesCount));
+
+    Vertex vert = {float3(vertexPosition.x, vertexPosition.y, vertexPosition.y), averagedNormal};
+    CellVerticesBuffer.Append(vert);
+}
+
+
+
+[numthreads(8, 8, 8)]
+void ConnectCellVertices(uint3 cellPos : SV_DispatchThreadID) {
+    int3 v0 = cellPos;
+
+    for (int i = 0; i < 3; i++) {
+        int3 v1 = v0 + directions[i][0];
+        int3 v2 = v0 + directions[i][1];
+        int3 v3 = v0 + directions[i][2];
+
+        Vertex vertex0 = VerticesBuffer[IndexFromCoord(v0)];
+        Vertex vertex1 = VerticesBuffer[IndexFromCoord(v1)];
+        Vertex vertex2 = VerticesBuffer[IndexFromCoord(v2)];
+        Vertex vertex3 = VerticesBuffer[IndexFromCoord(v3)];
+
+        if(
+            any(vertex0.position != float3(0,0,0)) &&
+            any(vertex1.position != float3(0,0,0)) &&
+            any(vertex2.position != float3(0,0,0)) &&
+            any(vertex3.position != float3(0,0,0)) 
+        ) {
+            if (DensitiesBuffer[IndexFromCoord(v2)] > isoLevel) {
+            Quad quad = {
+                vertex0.position, vertex1.position, vertex2.position, vertex3.position,
+                vertex0.normal, vertex1.normal, vertex2.normal, vertex3.normal
+            };
+            QuadsBuffer.Append(quad);
+
+            } else {
+                Quad quad = {
+                    vertex0.position, vertex3.position, vertex2.position, vertex1.position,
+                    vertex0.normal, vertex3.normal, vertex2.normal, vertex1.normal
+                };
+                QuadsBuffer.Append(quad);
+            }
+        }           
+    }
+}
+
+
+[numthreads(1, 1, 1)]
+void GenerateTriangleIndices(uint3 vertexPosition : SV_DispatchThreadID) {
+        int index = vertexPosition.x * 4;
+
+        QuadIndices indices = {
+            index,
+            index+1,
+            index+2,
+            index+2,
+            index+3,
+            index
+        };
+        IndicesBuffer[vertexPosition.x] = indices;
+}
+
+
+
+
+
+
+
+
+
+

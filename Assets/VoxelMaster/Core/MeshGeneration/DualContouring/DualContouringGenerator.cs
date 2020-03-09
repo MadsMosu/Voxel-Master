@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 public class DualContouring : VoxelMeshGenerator {
@@ -25,27 +24,33 @@ public class DualContouring : VoxelMeshGenerator {
     private readonly static Vector3Int[, ] directions = new Vector3Int[3, 3] { { new Vector3Int (1, 0, 0), new Vector3Int (1, 0, 1), new Vector3Int (0, 0, 1) }, { new Vector3Int (0, 1, 0), new Vector3Int (1, 1, 0), new Vector3Int (1, 0, 0) }, { new Vector3Int (0, 0, 1), new Vector3Int (0, 1, 1), new Vector3Int (0, 1, 0) }
     };
 
-    private Vector3 Lerp (Vector3 v0, Vector3 v1, float t) {
-        return (1 - t) * v0 + t * v1;
-    }
-
-    private float InverseLerp (float a, float b, float t) {
-        if (a != b) {
-            return (t - a / (b - a));
-        }
-        return 0;
-    }
-
     private List<Vector3> normals;
     private List<Vector3> vertices;
     private List<int> triangleIndicies;
     private Vector3[] cellPoints;
+    private Vector3[] verticeNormals;
+    private readonly static float QEF_ERROR = 1e-6f;
+    private readonly static int QEF_SWEEPS = 8;
+    // private Vector3[] normalField;
 
     public override MeshData GenerateMesh (VoxelChunk chunk, Func<Vector3, float> densityFunction) {
         vertices = new List<Vector3> ();
         triangleIndicies = new List<int> ();
         normals = new List<Vector3> ();
         cellPoints = new Vector3[chunk.size.x * chunk.size.y * chunk.size.z];
+        verticeNormals = new Vector3[chunk.size.x * chunk.size.y * chunk.size.z];
+        // normalField = new Vector3[chunk.size.x * chunk.size.y * chunk.size.z];
+
+        // chunk.voxels.Traverse (delegate (int x, int y, int z, Voxel v) {
+        //     Vector3Int cellPos = new Vector3Int (x, y, z);
+        //     if (cellPos.x >= chunk.size.x - 1 || cellPos.y >= chunk.size.y - 1 || cellPos.z >= chunk.size.z - 1) return;
+
+        //     float dx = v.density - chunk.voxels.GetVoxel (cellPos + new Vector3Int (1, 0, 0)).density;
+        //     float dy = v.density - chunk.voxels.GetVoxel (cellPos + new Vector3Int (0, 1, 0)).density;
+        //     float dz = v.density - chunk.voxels.GetVoxel (cellPos + new Vector3Int (0, 0, 1)).density;
+
+        //     normalField[Util.Map3DTo1D (cellPos, chunk.size)] = Vector3.Normalize (new Vector3 (dx, dy, dz));
+        // });
 
         //for each cube that exhibits a sign change, a vertex is generated positioned at the minimizer of the QEF
         chunk.voxels.Traverse (delegate (int x, int y, int z, Voxel v) {
@@ -66,15 +71,18 @@ public class DualContouring : VoxelMeshGenerator {
             triangleIndicies.Add (i + 3);
             triangleIndicies.Add (i);
         }
-        return new MeshData (vertices.ToArray (), triangleIndicies.ToArray ());
+
+        return new MeshData (vertices.ToArray (), triangleIndicies.ToArray (), normals.ToArray ());
     }
 
     private void GenerateCellVertex (Vector3Int cellPos, VoxelChunk chunk, Func<Vector3, float> densityFunction) {
         if (cellPos.x + 1 >= chunk.size.x || cellPos.y + 1 >= chunk.size.y || cellPos.z + 1 >= chunk.size.z) return;
 
         int corners = 0;
+        float[] cellDensities = new float[8];
         for (int i = 0; i < 8; i++) {
             float density = chunk.voxels.GetVoxel (cellPos + vertOffsets[i]).density;
+            cellDensities[i] = density;
             if (density < chunk.isoLevel) {
                 corners |= 1 << i;
             }
@@ -82,9 +90,11 @@ public class DualContouring : VoxelMeshGenerator {
         // if all of the corners are either outside or inside of surface boundary
         if (corners == 0 || corners == 255) return;
 
-        QEF3D qef = new QEF3D ();
+        QefSolver qef = new QefSolver ();
         Vector3 averageNormal = new Vector3 ();
-        for (int i = 0; i < edges.Length; i++) {
+        int activeEdges = 0;
+        int MAX_CROSSINGS = 6;
+        for (int i = 0; i < edges.Length && activeEdges <= MAX_CROSSINGS; i++) {
             Vector2Int edge = edges[i];
             int m1 = (corners >> edge.x) & 0b1;
             int m2 = (corners >> edge.y) & 0b1;
@@ -93,31 +103,32 @@ public class DualContouring : VoxelMeshGenerator {
             // only continue if there is no zero crossing (position of the surface). no need to make vertex inside the cube when there is no surface border
             if (m1 == m2) continue;
 
-            Vector3Int aPos = cellPos + vertOffsets[edge.x];
-            Vector3Int bPos = cellPos + vertOffsets[edge.y];
-
             Vector3 aOffset = vertOffsets[edge.x];
             Vector3 bOffset = vertOffsets[edge.y];
 
-            float aDensity = chunk.voxels.GetVoxel (aPos).density;
-            float bDensity = chunk.voxels.GetVoxel (bPos).density;
+            Vector3Int aPos = cellPos + vertOffsets[edge.x];
+            Vector3Int bPos = cellPos + vertOffsets[edge.y];
 
-            var intersectionPoint = Lerp (aPos, bPos, InverseLerp (aDensity, bDensity, chunk.isoLevel));
-            // var intersectionPoint = (aOffset + (-aDensity) * (bOffset - aOffset) / (bDensity - aDensity));
+            float aDensity = cellDensities[edge.x];
+            float bDensity = cellDensities[edge.y];
 
-            var normal = GetNormal (intersectionPoint, densityFunction);
+            float lerp = (chunk.isoLevel - aDensity) / (bDensity - aDensity);
+            var intersectionPoint = Vector3.Lerp (aOffset + cellPos, bOffset + cellPos, lerp);
+
+            var normal = new Vector3 (0, 0, 0);
+            // var normal = GetNormal (intersectionPoint, chunk);
             averageNormal += normal;
 
-            qef.Add (intersectionPoint, normal);
+            qef.add (intersectionPoint.x, intersectionPoint.y, intersectionPoint.z, normal.x, normal.y, normal.z);
+            activeEdges++;
         }
         //the vertex that is clostest to the surface
-        var vertex = qef.Solve ();
-        var averagedNormal = Vector3.Normalize (averageNormal / (float) qef.Intersections.Count);
-        Vector3 c_v = averagedNormal * 0.5f + Vector3.one * 0.5f;
-        c_v.Normalize ();
-        normals.Add (averagedNormal);
+        Vector3 qefPosition = Vector3.zero;
+        qef.solve (qefPosition, QEF_ERROR, QEF_SWEEPS, QEF_ERROR);
+        var vertex = qef.getMassPoint ();
 
         cellPoints[Util.Map3DTo1D (cellPos, chunk.size)] = vertex;
+        verticeNormals[Util.Map3DTo1D (cellPos, chunk.size)] = Vector3.Normalize (averageNormal / (float) activeEdges);
     }
 
     private void ConnectCellVertices (Vector3Int cellPos, VoxelChunk chunk) {
@@ -138,28 +149,68 @@ public class DualContouring : VoxelMeshGenerator {
                 value1 != Vector3.zero &&
                 value2 != Vector3.zero &&
                 value3 != Vector3.zero) {
-                if (chunk.voxels.GetVoxel (v2).density > 0) {
+
+                Vector3 normal0 = verticeNormals[Util.Map3DTo1D (v0, chunk.size)];
+                Vector3 normal1 = verticeNormals[Util.Map3DTo1D (v1, chunk.size)];
+                Vector3 normal2 = verticeNormals[Util.Map3DTo1D (v2, chunk.size)];
+                Vector3 normal3 = verticeNormals[Util.Map3DTo1D (v3, chunk.size)];
+
+                if (chunk.voxels.GetVoxel (v2).density > chunk.isoLevel) {
                     vertices.Add (value0);
                     vertices.Add (value1);
                     vertices.Add (value2);
                     vertices.Add (value3);
+
+                    normals.Add (normal0);
+                    normals.Add (normal1);
+                    normals.Add (normal2);
+                    normals.Add (normal3);
                 } else {
                     vertices.Add (value0);
                     vertices.Add (value3);
                     vertices.Add (value2);
                     vertices.Add (value1);
+
+                    normals.Add (normal0);
+                    normals.Add (normal3);
+                    normals.Add (normal2);
+                    normals.Add (normal1);
                 }
             }
         }
     }
 
-    private Vector3 GetNormal (Vector3 v, Func<Vector3, float> densityFunction) {
-        float offset = 0.001f;
-        float dx = densityFunction (new Vector3 (v.x + offset, v.y, v.z)) - densityFunction (new Vector3 (v.x - offset, v.y, v.z));
-        float dy = densityFunction (new Vector3 (v.x, v.y + offset, v.z)) - densityFunction (new Vector3 (v.x, v.y - offset, v.z));
-        float dz = densityFunction (new Vector3 (v.x, v.y, v.z + offset)) - densityFunction (new Vector3 (v.x, v.y, v.z - offset));
+    private Vector3 GetNormal (Vector3 v, VoxelChunk chunk) {
+        // Vector3Int vInt = Vector3Int.CeilToInt (v);
+        // int offset = 1;
 
-        var gradient = new Vector3 (-dx, -dy, -dz).normalized;
+        // float dx = chunk.voxels.GetVoxel (new Vector3Int (v.x + offset, v.y, v.z)).density - chunk.voxels.GetVoxel (new Vector3Int (v.x - offset, v.y, v.z)).density;
+        // float dy = chunk.voxels.GetVoxel (new Vector3Int (v.x, v.y + offset, v.z)).density - chunk.voxels.GetVoxel (new Vector3Int (v.x, v.y - offset, v.z)).density;
+        // float dz = chunk.voxels.GetVoxel (new Vector3Int (v.x, v.y, v.z + offset)).density - chunk.voxels.GetVoxel (new Vector3Int (v.x, v.y, v.z - offset)).density;
+
+        int xi = (int) (v.x + 0.5f);
+        float xf = v.x + 0.5f - xi;
+        float xd0 = chunk.voxels.GetVoxel (new Vector3Int (xi - 1, (int) v.y, (int) v.z)).density;
+        float xd1 = chunk.voxels.GetVoxel (new Vector3Int (xi, (int) v.y, (int) v.z)).density;
+        float xd2 = chunk.voxels.GetVoxel (new Vector3Int (xi + 1, (int) v.y, (int) v.z)).density;
+        float dx = (xd1 - xd0) * (1.0f - xf) + (xd2 - xd1) * xf;
+
+        int yi = (int) (v.y + 0.5f);
+        float yf = v.y + 0.5f - yi;
+        float yd0 = chunk.voxels.GetVoxel (new Vector3Int ((int) v.x, yi - 1, (int) v.z)).density;
+        float yd1 = chunk.voxels.GetVoxel (new Vector3Int ((int) v.x, yi, (int) v.z)).density;
+        float yd2 = chunk.voxels.GetVoxel (new Vector3Int ((int) v.x, yi + 1, (int) v.z)).density;
+        float dy = (yd1 - yd0) * (1.0f - yf) + (yd2 - yd1) * yf;
+
+        int zi = (int) (v.z + 0.5f);
+        float zf = v.z + 0.5f - zi;
+        float zd0 = chunk.voxels.GetVoxel (new Vector3Int ((int) v.x, (int) v.y, zi - 1)).density;
+        float zd1 = chunk.voxels.GetVoxel (new Vector3Int ((int) v.x, (int) v.y, zi)).density;
+        float zd2 = chunk.voxels.GetVoxel (new Vector3Int ((int) v.x, (int) v.y, zi + 1)).density;
+        float dz = (zd1 - zd0) * (1.0f - zf) + (zd2 - zd1) * zf;
+
+        var gradient = new Vector3 (dx, dy, dz);
+        gradient.Normalize ();
         return gradient;
     }
 }

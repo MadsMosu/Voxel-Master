@@ -1,0 +1,25 @@
+#pragma kernel CSMain
+
+RWStructuredBuffer<float> DensitiesBuffer;
+RWTexture3D<float3> DensityTexture;
+int chunkWidth, chunkHeight, chunkDepth;
+
+static int IndexFromCoord(uint3 coords) {
+    return coords.x + coords.y * chunkWidth + coords.z * chunkWidth * chunkHeight;
+}
+
+[numthreads(8,8,8)]
+void CSMain (uint3 cellPos : SV_DispatchThreadID) {
+    // if (cellPos.x >= chunkWidth - 1  || cellPos.y >= chunkHeight - 1|| cellPos.z >= chunkDepth - 1) return;
+
+	float v = DensitiesBuffer[IndexFromCoord(cellPos)];
+	
+	float dx = v - DensitiesBuffer[IndexFromCoord(cellPos + float3(1, 0, 0))];
+	
+	float dy = v - DensitiesBuffer[IndexFromCoord(cellPos + float3(0, 1, 0))];
+	
+	float dz = v - DensitiesBuffer[IndexFromCoord(cellPos + float3(0, 0, 1))];
+	
+	DensityTexture[cellPos] = normalize(float3(dx,dy,dz));
+
+}
