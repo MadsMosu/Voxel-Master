@@ -7,12 +7,12 @@ using UnityEngine;
 
 [System.Serializable]
 public class SimpleDataStructure : VoxelDataStructure {
-    private Vector3Int size;
+    private int size;
     private Voxel[] voxels;
 
-    public override void Init (Vector3Int size) {
+    public override void Init (int size) {
         this.size = size;
-        this.voxels = new Voxel[size.x * size.y * size.z];
+        this.voxels = new Voxel[size * size * size];
     }
 
     public override Voxel GetVoxel (Vector3Int coords) {
@@ -30,6 +30,14 @@ public class SimpleDataStructure : VoxelDataStructure {
             function.Invoke (coord.x, coord.y, coord.z, voxels[i]);
         }
     }
+    public override void TraverseZYX (Action<int, int, int, Voxel> function) {
+        for (int z = 0; z < size; z++)
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++) {
+                    function.Invoke (x, y, z, voxels[Util.Map3DTo1D (new Vector3Int (x, y, z), size)]);
+                }
+
+    }
 
     public async override void Save (BufferedStream stream) {
 
@@ -41,9 +49,10 @@ public class SimpleDataStructure : VoxelDataStructure {
         formatter.Serialize (stream, header);
 
     }
+
 }
 
 [StructLayout (LayoutKind.Sequential), Serializable]
 struct FileHeader {
-    public Vector3Int chunkSize;
+    public int chunkSize;
 }

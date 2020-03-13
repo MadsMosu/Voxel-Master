@@ -4,14 +4,14 @@ using UnityEngine;
 
 public class MarchingCubes : VoxelMeshGenerator {
     public override MeshData GenerateMesh (VoxelChunk chunk) {
-        int numCells = chunk.size.x * chunk.size.y * chunk.size.z;
+        int numCells = chunk.size * chunk.size * chunk.size;
         var vertices = new List<Vector3> (5 * numCells * 3);
         var triangleIndices = new List<int> (5 * numCells * 3);
         int triangleIndex = 0;
 
         chunk.voxels.Traverse (delegate (int x, int y, int z, Voxel v) {
             var cellPos = new Vector3Int (x, y, z);
-            if (cellPos.x + 1 >= chunk.size.x || cellPos.y + 1 >= chunk.size.y || cellPos.z + 1 >= chunk.size.z) return;
+            if (cellPos.x + 1 >= chunk.size || cellPos.y + 1 >= chunk.size || cellPos.z + 1 >= chunk.size) return;
 
             float[] cubeDensity = new float[8] {
                 chunk.voxels.GetVoxel (cellPos + Lookup.cubeVertOffsets[0]).density,
@@ -102,5 +102,9 @@ public class MarchingCubes : VoxelMeshGenerator {
             vertexNormals[entry.Key] = sums[entry.Value].normalized;
         }
         return vertexNormals;
+    }
+
+    public override void Init (MeshGeneratorSettings settings) {
+        throw new NotImplementedException ();
     }
 }

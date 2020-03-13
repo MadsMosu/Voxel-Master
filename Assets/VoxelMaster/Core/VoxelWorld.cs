@@ -13,10 +13,11 @@ public class VoxelWorld : MonoBehaviour {
     #region Parameters
     public float voxelScale = 1;
     public float isoLevel = 0;
-    public Vector3Int chunkSize = new Vector3Int (16, 16, 16);
+    public int chunkSize = 16;
     #endregion
 
     private WorldGenerator worldGenerator;
+    private MeshGeneratorSettings meshGeneratorSettings;
     private ThreadedMeshProvider meshProvider;
     private Dictionary<Vector3Int, VoxelChunk> chunks = new Dictionary<Vector3Int, VoxelChunk> ();
     private Dictionary<Vector3Int, Mesh> chunkMeshes = new Dictionary<Vector3Int, Mesh> ();
@@ -49,8 +50,12 @@ public class VoxelWorld : MonoBehaviour {
                 voxelScale = voxelScale
         });
 
-        meshProvider = new ThreadedMeshProvider (Util.CreateInstance<VoxelMeshGenerator> (meshGeneratorType));
+        meshGeneratorSettings = new MeshGeneratorSettings {
+            chunkSize = chunkSize,
+            voxelScale = voxelScale,
+        };
 
+        meshProvider = new ThreadedMeshProvider (Util.CreateInstance<VoxelMeshGenerator> (meshGeneratorType), meshGeneratorSettings);
         Debug.Log ("Creating chunks");
 
         collider = new GameObject ("Terrain collider").AddComponent<MeshCollider> ();
@@ -68,10 +73,13 @@ public class VoxelWorld : MonoBehaviour {
 
         RenderChunks ();
         // UpdateCollisionMeshes ();
-
-        int targetChunkX = Mathf.RoundToInt (viewer.position.x / chunkSize.x);
-        int targetChunkY = Mathf.RoundToInt (viewer.position.y / chunkSize.y);
-        int targetChunkZ = Mathf.RoundToInt (viewer.position.z / chunkSize.z);
+        if (!chunks.ContainsKey (Vector3Int.zero)) {
+            AddChunk (new Vector3Int (0, 0, 0));
+        }
+        return;
+        int targetChunkX = Mathf.RoundToInt (viewer.position.x / chunkSize);
+        int targetChunkY = Mathf.RoundToInt (viewer.position.y / chunkSize);
+        int targetChunkZ = Mathf.RoundToInt (viewer.position.z / chunkSize);
 
         var chunksToAdd = new List<Vector3Int> ();
 
@@ -91,9 +99,9 @@ public class VoxelWorld : MonoBehaviour {
     void RenderChunks () {
         foreach (KeyValuePair<Vector3Int, VoxelChunk> entry in chunks) {
             var pos = new Vector3 (
-                entry.Key.x * chunkSize.x,
-                entry.Key.y * chunkSize.y,
-                entry.Key.z * chunkSize.z
+                entry.Key.x * chunkSize,
+                entry.Key.y * chunkSize,
+                entry.Key.z * chunkSize
             );
             if (entry.Value.mesh != null)
                 Graphics.DrawMesh (entry.Value.mesh, pos, Quaternion.identity, material, 0);
@@ -102,9 +110,9 @@ public class VoxelWorld : MonoBehaviour {
 
     void UpdateCollisionMeshes () {
 
-        int targetChunkX = Mathf.RoundToInt (viewer.position.x / chunkSize.x);
-        int targetChunkY = Mathf.RoundToInt (viewer.position.y / chunkSize.y);
-        int targetChunkZ = Mathf.RoundToInt (viewer.position.z / chunkSize.z);
+        int targetChunkX = Mathf.RoundToInt (viewer.position.x / chunkSize);
+        int targetChunkY = Mathf.RoundToInt (viewer.position.y / chunkSize);
+        int targetChunkZ = Mathf.RoundToInt (viewer.position.z / chunkSize);
 
         var coord = new Vector3Int (targetChunkX, targetChunkY, targetChunkZ);
         if (chunks.ContainsKey (coord))
@@ -182,15 +190,15 @@ public class VoxelWorld : MonoBehaviour {
                     break;
             }
 
-            Gizmos.DrawWireCube (entry.Key * entry.Value.size, entry.Value.size);
+            Gizmos.DrawWireCube (entry.Key * entry.Value.size, new Vector3 (entry.Value.size, entry.Value.size, entry.Value.size));
 
         }
 
-        int targetChunkX = Mathf.RoundToInt (viewer.position.x / chunkSize.x);
-        int targetChunkY = Mathf.RoundToInt (viewer.position.y / chunkSize.y);
-        int targetChunkZ = Mathf.RoundToInt (viewer.position.z / chunkSize.z);
+        int targetChunkX = Mathf.RoundToInt (viewer.position.x / chunkSize);
+        int targetChunkY = Mathf.RoundToInt (viewer.position.y / chunkSize);
+        int targetChunkZ = Mathf.RoundToInt (viewer.position.z / chunkSize);
 
         Gizmos.color = new Color (1, 1, 1, .2f);
-        Gizmos.DrawCube (new Vector3Int (targetChunkX, targetChunkY, targetChunkZ) * chunkSize, chunkSize);
+        Gizmos.DrawCube (new Vector3Int (targetChunkX, targetChunkY, targetChunkZ) * chunkSize, new Vector3 (chunkSize, chunkSize, chunkSize));
     }
 }

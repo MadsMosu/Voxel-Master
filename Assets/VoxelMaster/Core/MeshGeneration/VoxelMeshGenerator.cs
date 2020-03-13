@@ -5,6 +5,8 @@ public abstract class VoxelMeshGenerator {
     public float isoLevel = .4f;
     public abstract MeshData GenerateMesh (VoxelChunk chunk);
 
+    public abstract void Init (MeshGeneratorSettings settings);
+
 }
 
 public struct MeshData {

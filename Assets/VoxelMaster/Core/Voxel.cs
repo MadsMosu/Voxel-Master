@@ -1,5 +1,4 @@
-public struct Voxel
-{
-    public float density;
+public struct Voxel {
+    public sbyte density;
     public byte materialIndex;
 }

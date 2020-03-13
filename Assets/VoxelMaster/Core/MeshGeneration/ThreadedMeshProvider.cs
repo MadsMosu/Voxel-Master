@@ -9,9 +9,10 @@ class ThreadedMeshProvider {
 
     private Queue<ChunkMeshGenerationData> generationQueue = new Queue<ChunkMeshGenerationData> ();
     private Queue<ChunkMeshGenerationData> generatedChunkQueue = new Queue<ChunkMeshGenerationData> ();
-    public ThreadedMeshProvider (VoxelMeshGenerator meshGenerator) {
+    public ThreadedMeshProvider (VoxelMeshGenerator meshGenerator, MeshGeneratorSettings meshGeneratorSettings) {
         this.settings = settings;
         this.meshGenerator = meshGenerator;
+        meshGenerator.Init (meshGeneratorSettings);
 
         new Thread (new ThreadStart (delegate {
             while (true) {

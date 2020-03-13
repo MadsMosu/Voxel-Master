@@ -431,7 +431,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 900113269}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: be76e5f14cfee674cb30b491fb72b09b, type: 3}
   m_Name: 
@@ -471,7 +471,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 900113269}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4b7b941edb27d2146b2065fc32771efe, type: 3}
   m_Name: 
@@ -509,12 +509,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   voxelScale: 1
   isoLevel: 0
-  chunkSize: {x: 16, y: 16, z: 16}
+  chunkSize: 64
   viewer: {fileID: 1935339057}
   generationRadius: 10
   dataStructureType: SimpleDataStructure, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
     PublicKeyToken=null
-  meshGeneratorType: MarchingCubes, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+  meshGeneratorType: MarchingCubesEnhanced, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
     PublicKeyToken=null
   material: {fileID: 2100000, guid: 40539cd6d3ae1104d8a518d7abb86a33, type: 2}
 --- !u!4 &1114245770

@@ -11,21 +11,25 @@ public class VoxelChunk {
     public List<VoxelMaterial> materials { get => new List<VoxelMaterial> (_materials); private set { _materials = value; } }
 
     public Vector3Int coords { get; private set; }
-    public Vector3Int size { get; private set; }
+    public int size { get; private set; }
     public float voxelScale { get; private set; }
     public float isoLevel { get; private set; }
+
+    public int lod;
+    public sbyte[] edgeDensities;
 
     public Mesh mesh;
 
     private MeshData meshData;
 
-    public VoxelChunk (Vector3Int coords, Vector3Int size, float voxelScale, float isoLevel, VoxelDataStructure voxels) {
+    public VoxelChunk (Vector3Int coords, int size, float voxelScale, float isoLevel, VoxelDataStructure voxels) {
         this.coords = coords;
-        this.size = size + Vector3Int.one;
+        this.size = size;
         this.voxelScale = voxelScale;
         this.isoLevel = isoLevel;
         this.voxels = voxels;
-        this.voxels.Init (this.size);
+        this.lod = 1;
+        this.voxels.Init (this.size + 3);
     }
 
     public void AddDensity (Vector3 pos, float[][][] densities) {

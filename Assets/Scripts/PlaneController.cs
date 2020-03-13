@@ -16,13 +16,13 @@ public class PlaneController : MonoBehaviour {
     }
 
     // Update is called once per frame
-    void Update () {
-        // transform.position += transform.forward * Time.deltaTime * forwardSpeed;
-        transform.position += transform.forward * Time.deltaTime * velocity;
+    // void Update () {
+    //     // transform.position += transform.forward * Time.deltaTime * forwardSpeed;
+    //     transform.position += transform.forward * Time.deltaTime * velocity;
 
-        velocity += (Vector3.Dot (transform.forward, -Vector3.up) + .1f) * Time.deltaTime * 5;
-        velocity = Mathf.Clamp (velocity, 5, 20);
+    //     velocity += (Vector3.Dot (transform.forward, -Vector3.up) + .1f) * Time.deltaTime * 5;
+    //     velocity = Mathf.Clamp (velocity, 5, 20);
 
-        transform.rotation *= Quaternion.Euler (Input.GetAxis ("Vertical") * Time.deltaTime * pitchSpeed * (velocity / 20f), 0, -Input.GetAxis ("Horizontal") * Time.deltaTime * rollSpeed * (velocity / 20f));
-    }
+    //     transform.rotation *= Quaternion.Euler (Input.GetAxis ("Vertical") * Time.deltaTime * pitchSpeed * (velocity / 20f), 0, -Input.GetAxis ("Horizontal") * Time.deltaTime * rollSpeed * (velocity / 20f));
+    // }
 }
