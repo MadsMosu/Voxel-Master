@@ -509,12 +509,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   voxelScale: 1
   isoLevel: 0
-  chunkSize: 64
+  chunkSize: 16
   viewer: {fileID: 1935339057}
   generationRadius: 10
   dataStructureType: SimpleDataStructure, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
     PublicKeyToken=null
-  meshGeneratorType: MarchingCubesEnhanced, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+  meshGeneratorType: MarchingCubesEnhanced2, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
     PublicKeyToken=null
   material: {fileID: 2100000, guid: 40539cd6d3ae1104d8a518d7abb86a33, type: 2}
 --- !u!4 &1114245770

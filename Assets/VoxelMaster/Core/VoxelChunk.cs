@@ -21,6 +21,7 @@ public class VoxelChunk {
     public Mesh mesh;
 
     private MeshData meshData;
+    public short[][][] reuseVertexCache;
 
     public VoxelChunk (Vector3Int coords, int size, float voxelScale, float isoLevel, VoxelDataStructure voxels) {
         this.coords = coords;
@@ -30,6 +31,22 @@ public class VoxelChunk {
         this.voxels = voxels;
         this.lod = 1;
         this.voxels.Init (this.size + 3);
+        InitReuseVertexCache ();
+    }
+
+    private void InitReuseVertexCache () {
+        reuseVertexCache = new short[2][][];
+        reuseVertexCache[0] = new short[size * size][];
+        reuseVertexCache[1] = new short[size * size][];
+
+        for (int i = 0; i < (size * size); i++) {
+            reuseVertexCache[0][i] = new short[4];
+            reuseVertexCache[1][i] = new short[4];
+            for (int j = 0; j < 4; j++) {
+                reuseVertexCache[0][i][j] = -1;
+                reuseVertexCache[1][i][j] = -1;
+            }
+        }
     }
 
     public void AddDensity (Vector3 pos, float[][][] densities) {

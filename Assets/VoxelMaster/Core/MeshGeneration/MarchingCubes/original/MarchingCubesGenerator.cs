@@ -107,4 +107,5 @@ public class MarchingCubes : VoxelMeshGenerator {
     public override void Init (MeshGeneratorSettings settings) {
         throw new NotImplementedException ();
     }
+
 }
