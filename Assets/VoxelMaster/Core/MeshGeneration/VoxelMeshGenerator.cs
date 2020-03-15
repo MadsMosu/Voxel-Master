@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 
 public abstract class VoxelMeshGenerator {
-    public abstract MeshData GenerateMesh (VoxelChunk chunk);
+    public abstract MeshData GenerateMesh (IVoxelData voxelData, Vector3Int origin, int size);
 
     public abstract void Init (MeshGeneratorSettings settings);
 
