@@ -73,10 +73,10 @@ public class VoxelWorld : MonoBehaviour {
 
         RenderChunks ();
         // UpdateCollisionMeshes ();
-        if (!chunks.ContainsKey (Vector3Int.zero)) {
-            AddChunk (new Vector3Int (0, 0, 0));
-        }
-        return;
+        // if (!chunks.ContainsKey (Vector3Int.zero)) {
+        //     AddChunk (new Vector3Int (0, 0, 0));
+        // }
+        // return;
         int targetChunkX = Mathf.RoundToInt (viewer.position.x / chunkSize);
         int targetChunkY = Mathf.RoundToInt (viewer.position.y / chunkSize);
         int targetChunkZ = Mathf.RoundToInt (viewer.position.z / chunkSize);

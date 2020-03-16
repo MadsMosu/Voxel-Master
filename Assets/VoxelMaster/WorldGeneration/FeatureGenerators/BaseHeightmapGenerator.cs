@@ -11,13 +11,12 @@ public class BaseHeightmapGenerator : FeatureGenerator {
 
         chunk.voxels.Traverse ((x, y, z, voxel) => {
 
-            float height = settings.baseHeight + Mathf.Pow ((noise.GetCubicFractal (
-                ((chunk.coords.x * settings.voxelScale) * (chunk.size - 1) + x) / settings.noiseScale,
-                ((chunk.coords.z * settings.voxelScale) * (chunk.size - 1) + z) / settings.noiseScale
-            ) + .5f) * settings.heightAmplifier, 1.6f);
+            float density = noise.GetCubicFractal (
+                ((chunk.coords.x * settings.voxelScale) * (chunk.size - 1f) + x),
+                ((chunk.coords.y * settings.voxelScale) * (chunk.size - 1f) + y),
+                ((chunk.coords.z * settings.voxelScale) * (chunk.size - 1f) + z));
 
-            float voxelDensity = (((chunk.coords.y * settings.voxelScale) * (chunk.size - 1) + y) - height) / settings.heightAmplifier;
-            chunk.voxels.SetVoxel (new Vector3Int (x, y, z), new Voxel { density = (sbyte) (voxelDensity * 128.0), materialIndex = 0 });
+            chunk.voxels.SetVoxel (new Vector3Int (x, y, z), new Voxel { density = density, materialIndex = 0 });
         });
     }
 }
