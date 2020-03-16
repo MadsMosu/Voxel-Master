@@ -8,7 +8,7 @@ using UnityEngine;
 using static ThreadedMeshProvider;
 
 // [ExecuteInEditMode]
-public class VoxelWorld : MonoBehaviour {
+public class VoxelWorld : MonoBehaviour, IVoxelData {
 
     #region Parameters
     public float voxelScale = 1;
@@ -23,6 +23,20 @@ public class VoxelWorld : MonoBehaviour {
     private Dictionary<Vector3Int, Mesh> chunkMeshes = new Dictionary<Vector3Int, Mesh> ();
     private List<VoxelMaterial> _materials = new List<VoxelMaterial> ();
     public List<VoxelMaterial> materials { get => new List<VoxelMaterial> (_materials); private set { _materials = value; } }
+
+    public Voxel this [Vector3 v] {
+        get => this [(int) v.x, (int) v.y, (int) v.z];
+        set => this [(int) v.x, (int) v.y, (int) v.z] = value;
+    }
+    public Voxel this [Vector3Int v] {
+        get => GetVoxel (v);
+        set =>
+            throw new NotImplementedException ();
+    }
+    public Voxel this [int x, int y, int z] {
+        get => this [new Vector3Int (x, y, z)];
+        set => this [new Vector3Int (x, y, z)] = value;
+    }
 
     private float viewDistance = 300;
     public Transform viewer;
@@ -53,6 +67,7 @@ public class VoxelWorld : MonoBehaviour {
         meshGeneratorSettings = new MeshGeneratorSettings {
             chunkSize = chunkSize,
             voxelScale = voxelScale,
+            isoLevel = isoLevel
         };
 
         meshProvider = new ThreadedMeshProvider (Util.CreateInstance<VoxelMeshGenerator> (meshGeneratorType), meshGeneratorSettings);
@@ -84,9 +99,9 @@ public class VoxelWorld : MonoBehaviour {
         var chunksToAdd = new List<Vector3Int> ();
 
         for (int zOffset = -generationRadius; zOffset < generationRadius; zOffset++)
-            for (int yOffset = 0; yOffset < 4; yOffset++)
+            for (int yOffset = -generationRadius; yOffset < generationRadius; yOffset++)
                 for (int xOffset = -generationRadius; xOffset < generationRadius; xOffset++) {
-                    var chunkCoord = new Vector3Int (targetChunkX + xOffset, yOffset, targetChunkZ + zOffset);
+                    var chunkCoord = new Vector3Int (targetChunkX + xOffset, targetChunkY + yOffset, targetChunkZ + zOffset);
                     if (!chunks.ContainsKey (chunkCoord))
                         chunksToAdd.Add (chunkCoord);
                 }
@@ -120,9 +135,24 @@ public class VoxelWorld : MonoBehaviour {
 
     }
 
+    private Voxel GetVoxel (Vector3Int coord) {
+        var chunk = new Vector3Int (
+            Mathf.FloorToInt (coord.x / chunkSize),
+            Mathf.FloorToInt (coord.y / chunkSize),
+            Mathf.FloorToInt (coord.z / chunkSize)
+        );
+        var voxelCoordInChunk = new Vector3Int (
+            coord.x % chunkSize,
+            coord.y % chunkSize,
+            coord.z % chunkSize
+        );
+        return chunks[chunk][voxelCoordInChunk];
+    }
+
     public void AddChunk (Vector3Int pos) {
         var chunkVoxels = Util.CreateInstance<VoxelDataStructure> (dataStructureType);
-        var chunk = new VoxelChunk (pos, chunkSize, voxelScale, isoLevel, chunkVoxels);
+        var chunk = new VoxelChunk (pos, chunkSize, voxelScale, chunkVoxels);
+        chunk.voxelWorld = this;
         chunks.Add (pos, chunk);
 
         worldGenerator.RequestChunkData (chunk, OnChunkData);
@@ -189,7 +219,6 @@ public class VoxelWorld : MonoBehaviour {
                     Gizmos.color = Color.gray;
                     break;
             }
-
             Gizmos.DrawWireCube (entry.Key * entry.Value.size, new Vector3 (entry.Value.size, entry.Value.size, entry.Value.size));
 
         }

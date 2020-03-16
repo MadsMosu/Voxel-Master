@@ -3,57 +3,64 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class MarchingCubes : VoxelMeshGenerator {
-    public override MeshData GenerateMesh (VoxelChunk chunk) {
-        int numCells = chunk.size * chunk.size * chunk.size;
-        var vertices = new List<Vector3> (5 * numCells * 3);
-        var triangleIndices = new List<int> (5 * numCells * 3);
-        int triangleIndex = 0;
+    private float isoLevel;
+    public override void Init (MeshGeneratorSettings settings) {
+        this.isoLevel = settings.isoLevel;
+    }
 
-        chunk.voxels.Traverse (delegate (int x, int y, int z, Voxel v) {
-            var cellPos = new Vector3Int (x, y, z);
-            if (cellPos.x + 1 >= chunk.size || cellPos.y + 1 >= chunk.size || cellPos.z + 1 >= chunk.size) return;
+    public override MeshData GenerateMesh (IVoxelData voxelData, Vector3Int origin, int size, int lod) {
+        int numCells = size * size * size;
+        List<Vector3> vertices = new List<Vector3> (5 * numCells * 3);
+        List<int> triangleIndices = new List<int> (5 * numCells * 3);
 
-            float[] cubeDensity = new float[8] {
-                chunk.voxels.GetVoxel (cellPos + Lookup.cubeVertOffsets[0]).density,
-                chunk.voxels.GetVoxel (cellPos + Lookup.cubeVertOffsets[1]).density,
-                chunk.voxels.GetVoxel (cellPos + Lookup.cubeVertOffsets[2]).density,
-                chunk.voxels.GetVoxel (cellPos + Lookup.cubeVertOffsets[3]).density,
-                chunk.voxels.GetVoxel (cellPos + Lookup.cubeVertOffsets[4]).density,
-                chunk.voxels.GetVoxel (cellPos + Lookup.cubeVertOffsets[5]).density,
-                chunk.voxels.GetVoxel (cellPos + Lookup.cubeVertOffsets[6]).density,
-                chunk.voxels.GetVoxel (cellPos + Lookup.cubeVertOffsets[7]).density,
-            };
+        for (int x = 0; x < size; x++)
+            for (int y = 0; y < size; y++)
+                for (int z = 0; z < size; z++) {
+                    // if (x == 0 || y == 0 || z == 0) continue;
+                    // if (x > size || y > size || z > size) continue;
 
-            int cubeindex = 0;
-            if (cubeDensity[0] < chunk.isoLevel) cubeindex |= 1;
-            if (cubeDensity[1] < chunk.isoLevel) cubeindex |= 2;
-            if (cubeDensity[2] < chunk.isoLevel) cubeindex |= 4;
-            if (cubeDensity[3] < chunk.isoLevel) cubeindex |= 8;
-            if (cubeDensity[4] < chunk.isoLevel) cubeindex |= 16;
-            if (cubeDensity[5] < chunk.isoLevel) cubeindex |= 32;
-            if (cubeDensity[6] < chunk.isoLevel) cubeindex |= 64;
-            if (cubeDensity[7] < chunk.isoLevel) cubeindex |= 128;
+                    Vector3Int cellPos = new Vector3Int (x, y, z);
+                    PolygonizeCell (voxelData, origin, cellPos, ref vertices, ref triangleIndices, lod);
 
-            int[] triangulation = Lookup.triTable[cubeindex];
-            for (int i = 0; triangulation[i] != -1; i += 3) {
-                for (int j = 0; j < 3; j++) {
-                    var a = Lookup.cornerIndexAFromEdge[triangulation[i + j]];
-                    var b = Lookup.cornerIndexBFromEdge[triangulation[i + j]];
-
-                    Vector3Int aPos = cellPos + Lookup.cubeVertOffsets[a];
-                    Vector3Int bPos = cellPos + Lookup.cubeVertOffsets[b];
-                    float lerp = (chunk.isoLevel - cubeDensity[a]) / (cubeDensity[b] - cubeDensity[a]);
-                    var vertex = Vector3.Lerp (aPos, bPos, lerp);
-
-                    vertices.Add (vertex);
-                    triangleIndices.Add (triangleIndex++);
                 }
-            }
-        });
         Vector3[] surfaceNormals = CalculateSurfaceNormals (vertices.ToArray (), triangleIndices.ToArray ());
         var normals = CalculateVertexNormals (vertices.ToArray (), surfaceNormals);
 
         return new MeshData (vertices.ToArray (), triangleIndices.ToArray (), normals);
+    }
+
+    internal void PolygonizeCell (IVoxelData volume, Vector3Int offsetPos, Vector3Int cellPos, ref List<Vector3> vertices, ref List<int> triangleIndices, int lod) {
+        offsetPos += cellPos;
+
+        float[] cubeDensities = new float[8];
+        byte caseCode = 0;
+        byte addToCaseCode = 1;
+        for (int i = 0; i < cubeDensities.Length; i++) {
+            cubeDensities[i] = volume[offsetPos + Tables.CornerIndex[i]].density;
+            if (cubeDensities[i] < isoLevel) {
+                caseCode |= addToCaseCode;
+            }
+            addToCaseCode *= 2;
+        }
+
+        if (caseCode == 0 || caseCode == 255) return;
+        int triangleIndex = 0;
+
+        int[] triangulation = Lookup.triTable[caseCode];
+        for (int i = 0; triangulation[i] != -1; i += 3) {
+            for (int j = 0; j < 3; j++) {
+                var a = Lookup.cornerIndexAFromEdge[triangulation[i + j]];
+                var b = Lookup.cornerIndexBFromEdge[triangulation[i + j]];
+
+                Vector3Int aPos = cellPos + Lookup.cubeVertOffsets[a];
+                Vector3Int bPos = cellPos + Lookup.cubeVertOffsets[b];
+                float lerp = (isoLevel - cubeDensities[a]) / (cubeDensities[b] - cubeDensities[a]);
+                var vertex = Vector3.Lerp (aPos, bPos, lerp);
+
+                vertices.Add (vertex);
+                triangleIndices.Add (triangleIndex++);
+            }
+        }
     }
 
     private Vector3[] CalculateSurfaceNormals (Vector3[] vertices, int[] triangleIndices) {
@@ -103,9 +110,4 @@ public class MarchingCubes : VoxelMeshGenerator {
         }
         return vertexNormals;
     }
-
-    public override void Init (MeshGeneratorSettings settings) {
-        throw new NotImplementedException ();
-    }
-
 }
