@@ -13,9 +13,9 @@ public class MarchingCubes : VoxelMeshGenerator {
         List<Vector3> vertices = new List<Vector3> (5 * numCells * 3);
         List<int> triangleIndices = new List<int> (5 * numCells * 3);
 
-        for (int x = 0; x < size; x++)
-            for (int y = 0; y < size; y++)
-                for (int z = 0; z < size; z++) {
+        for (int x = 0; x < size - 1; x++)
+            for (int y = 0; y < size - 1; y++)
+                for (int z = 0; z < size - 1; z++) {
                     // if (x == 0 || y == 0 || z == 0) continue;
                     // if (x > size || y > size || z > size) continue;
 
@@ -36,7 +36,7 @@ public class MarchingCubes : VoxelMeshGenerator {
         byte caseCode = 0;
         byte addToCaseCode = 1;
         for (int i = 0; i < cubeDensities.Length; i++) {
-            cubeDensities[i] = volume[offsetPos + Tables.CornerIndex[i]].density;
+            cubeDensities[i] = volume[offsetPos + Lookup.cubeVertOffsets[i]].density;
             if (cubeDensities[i] < isoLevel) {
                 caseCode |= addToCaseCode;
             }

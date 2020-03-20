@@ -56,7 +56,7 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
         for (int i = 0; i < vertexCount; i++) {
             byte edgeCode = (byte) (vertexData[i] & 0xFF);
 
-            byte cornerA = (byte) ((edgeCode >> 4) & 0x0F);
+            int cornerA = (byte) ((edgeCode >> 4) & 0x0F);
             byte cornerB = (byte) (edgeCode & 0x0F);
 
             float densityA = cubeDensities[cornerA];

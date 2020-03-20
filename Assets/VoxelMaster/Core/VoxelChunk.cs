@@ -39,7 +39,7 @@ public class VoxelChunk : IVoxelData {
         this.size = size;
         this.voxelScale = voxelScale;
         this.voxels = voxels;
-        this.voxels.Init (this.size + 1);
+        this.voxels.Init (this.size);
     }
 
     //DONT DELETE BELOW - MIGHT BE USED FOR LATER WHEN IMPLEMENTING CACHING

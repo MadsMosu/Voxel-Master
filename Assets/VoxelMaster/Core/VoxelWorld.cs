@@ -137,14 +137,14 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
 
     private Voxel GetVoxel (Vector3Int coord) {
         var chunk = new Vector3Int (
-            Mathf.FloorToInt (coord.x / chunkSize),
-            Mathf.FloorToInt (coord.y / chunkSize),
-            Mathf.FloorToInt (coord.z / chunkSize)
+            Mathf.FloorToInt (coord.x / (chunkSize - 1)),
+            Mathf.FloorToInt (coord.y / (chunkSize - 1)),
+            Mathf.FloorToInt (coord.z / (chunkSize - 1))
         );
         var voxelCoordInChunk = new Vector3Int (
-            coord.x % chunkSize,
-            coord.y % chunkSize,
-            coord.z % chunkSize
+            coord.x % (chunkSize - 1),
+            coord.y % (chunkSize - 1),
+            coord.z % (chunkSize - 1)
         );
         return chunks[chunk][voxelCoordInChunk];
     }
