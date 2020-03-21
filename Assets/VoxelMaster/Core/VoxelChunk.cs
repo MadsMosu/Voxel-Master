@@ -84,6 +84,7 @@ public class VoxelChunk : IVoxelData {
 
     public void SetMeshData (MeshData meshData) {
         this.meshData = meshData;
+        status = ChunkStatus.HasMeshData;
     }
 
     private Voxel GetVoxel (Vector3Int coord) => voxels.GetVoxel (coord);
@@ -97,7 +98,6 @@ public class VoxelChunk : IVoxelData {
             mesh.RecalculateNormals ();
         } else {
             mesh.SetNormals (meshData.normals);
-            mesh.RecalculateNormals ();
         }
         status = ChunkStatus.Idle;
     }
@@ -107,5 +107,7 @@ public class VoxelChunk : IVoxelData {
 public enum ChunkStatus {
     Created,
     Loading,
+    HasData,
+    HasMeshData,
     Idle
 }
