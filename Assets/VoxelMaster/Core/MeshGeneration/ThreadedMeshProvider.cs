@@ -17,7 +17,7 @@ class ThreadedMeshProvider {
         new Thread (new ThreadStart (delegate {
             while (true) {
                 ProcessGenerationQueue ();
-                Thread.Sleep (1);
+                Thread.Sleep (100);
             }
         })).Start ();
     }
