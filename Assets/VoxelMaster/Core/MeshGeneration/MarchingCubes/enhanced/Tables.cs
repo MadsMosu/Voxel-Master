@@ -1720,15 +1720,4 @@ public static class Tables {
         new ushort[] { }
     };
 
-    /*private static void ResizeArrays()
-    	{
-    		for (int i = 0; i < RegularVertexData.Length; i++)
-    		{
-    			Array.Resize(ref TransitionVertexData[i], 12);
-    		}
-    		for (int i = 0; i < TransitionVertexData.Length; i++)
-    		{
-    			Array.Resize(ref TransitionVertexData[i], 12);
-    		}
-    	}*/
 }
