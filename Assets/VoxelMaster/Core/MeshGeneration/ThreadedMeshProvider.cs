@@ -17,7 +17,7 @@ class ThreadedMeshProvider {
         new Thread (new ThreadStart (delegate {
             while (true) {
                 ProcessGenerationQueue ();
-                Thread.Sleep (100);
+                // Thread.Sleep (50);
             }
         })).Start ();
     }
@@ -32,6 +32,7 @@ class ThreadedMeshProvider {
     void ProcessGenerationQueue () {
         if (generationQueue.Count > 0) {
             var data = generationQueue.Dequeue ();
+            data.voxelChunk.status = ChunkStatus.GeneratingMesh;
             StartGenerationThread (data.voxelChunk, data.callback);
         }
     }

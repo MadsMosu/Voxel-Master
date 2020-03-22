@@ -40,12 +40,13 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
 
     private float viewDistance = 300;
     public Transform viewer;
+    public Vector3Int viewerCoordinates;
     public int generationRadius = 3;
 
     [HideInInspector] public String dataStructureType;
     [HideInInspector] public String meshGeneratorType;
 
-    MeshCollider collider;
+    new MeshCollider collider;
 
     #region Debug variables
     public Material material;
@@ -75,13 +76,21 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
 
         collider = new GameObject ("Terrain collider").AddComponent<MeshCollider> ();
 
-        // var chunksToGenerate = new Vector3Int (10, 1, 80);
-        // for (int i = 0; i < chunksToGenerate.x * chunksToGenerate.y * chunksToGenerate.z; i++)
-        //     AddChunk (Util.Map1DTo3D (i, chunksToGenerate));
+        UpdateViewerCoordinates ();
+        var chunkCoord = viewerCoordinates;
+        AddChunk (chunkCoord);
+    }
 
+    void UpdateViewerCoordinates () {
+        int targetChunkX = Int_floor_division ((int) viewer.position.x, chunkSize);
+        int targetChunkY = Int_floor_division ((int) viewer.position.y, chunkSize);
+        int targetChunkZ = Int_floor_division ((int) viewer.position.z, chunkSize);
+        viewerCoordinates = new Vector3Int (targetChunkX, targetChunkY, targetChunkZ);
     }
 
     void Update () {
+
+        UpdateViewerCoordinates ();
 
         worldGenerator.MainThreadUpdate ();
         meshProvider.MainThreadUpdate ();
@@ -92,23 +101,28 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
         //     AddChunk (new Vector3Int (0, 0, 0));
         // }
         // return;
-        int targetChunkX = Mathf.RoundToInt (viewer.position.x / chunkSize);
-        int targetChunkY = Mathf.RoundToInt (viewer.position.y / chunkSize);
-        int targetChunkZ = Mathf.RoundToInt (viewer.position.z / chunkSize);
 
-        var chunksToAdd = new List<Vector3Int> ();
+        ExpandChunkGeneration ();
 
-        for (int zOffset = -generationRadius; zOffset < generationRadius; zOffset++)
-            for (int yOffset = -generationRadius; yOffset < generationRadius; yOffset++)
-                for (int xOffset = -generationRadius; xOffset < generationRadius; xOffset++) {
-                    var chunkCoord = new Vector3Int (targetChunkX + xOffset, targetChunkY + yOffset, targetChunkZ + zOffset);
-                    if (!chunks.ContainsKey (chunkCoord))
-                        chunksToAdd.Add (chunkCoord);
-                }
+    }
 
-        chunksToAdd.OrderBy (coord => Vector3Int.Distance (new Vector3Int (targetChunkX, targetChunkY, targetChunkZ), coord))
-            .ToList ().ForEach (coord => AddChunk (coord));
-
+    private void ExpandChunkGeneration () {
+        foreach (var chunk in chunks.Values.ToArray ()) {
+            for (int z = -1; z <= 1; z++)
+                for (int y = -1; y <= 1; y++)
+                    for (int x = -1; x <= 1; x++) {
+                        if (x == 0 && y == 0 && z == 0) continue;
+                        var neighbourCoords = new Vector3Int (
+                            chunk.coords.x + x,
+                            chunk.coords.y + y,
+                            chunk.coords.z + z
+                        );
+                        if (!chunks.ContainsKey (neighbourCoords) &&
+                            Vector3Int.Distance (viewerCoordinates, neighbourCoords) <= generationRadius) {
+                            AddChunk (neighbourCoords);
+                        }
+                    }
+        }
     }
 
     void RenderChunks () {
@@ -125,9 +139,9 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
 
     void UpdateCollisionMeshes () {
 
-        int targetChunkX = Mathf.RoundToInt (viewer.position.x / chunkSize);
-        int targetChunkY = Mathf.RoundToInt (viewer.position.y / chunkSize);
-        int targetChunkZ = Mathf.RoundToInt (viewer.position.z / chunkSize);
+        int targetChunkX = Int_floor_division ((int) viewer.position.x, chunkSize);
+        int targetChunkY = Int_floor_division ((int) viewer.position.y, chunkSize);
+        int targetChunkZ = Int_floor_division ((int) viewer.position.z, chunkSize);
 
         var coord = new Vector3Int (targetChunkX, targetChunkY, targetChunkZ);
         if (chunks.ContainsKey (coord))
@@ -135,21 +149,34 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
 
     }
 
+    private int Int_floor_division (int value, int divider) {
+        int q = value / divider;
+        if (value % divider < 0) return q - 1;
+        else return q;
+    }
+
     private Voxel GetVoxel (Vector3Int coord) {
         var chunk = new Vector3Int (
-            Mathf.FloorToInt (coord.x / (chunkSize - 1)),
-            Mathf.FloorToInt (coord.y / (chunkSize - 1)),
-            Mathf.FloorToInt (coord.z / (chunkSize - 1))
+            Int_floor_division (coord.x, (chunkSize - 1)),
+            Int_floor_division (coord.y, (chunkSize - 1)),
+            Int_floor_division (coord.z, (chunkSize - 1))
         );
         var voxelCoordInChunk = new Vector3Int (
             coord.x % (chunkSize - 1),
             coord.y % (chunkSize - 1),
             coord.z % (chunkSize - 1)
         );
+
+        if (voxelCoordInChunk.x < 0) voxelCoordInChunk.x += chunkSize - 1;
+        if (voxelCoordInChunk.y < 0) voxelCoordInChunk.y += chunkSize - 1;
+        if (voxelCoordInChunk.z < 0) voxelCoordInChunk.z += chunkSize - 1;
+
+        if (!chunks.ContainsKey (chunk)) return new Voxel ();
         return chunks[chunk][voxelCoordInChunk];
     }
 
     public void AddChunk (Vector3Int pos) {
+        if (chunks.ContainsKey (pos)) return;
         var chunkVoxels = Util.CreateInstance<VoxelDataStructure> (dataStructureType);
         var chunk = new VoxelChunk (pos, chunkSize, voxelScale, chunkVoxels);
         chunk.voxelWorld = this;
@@ -159,12 +186,14 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
     }
 
     private void OnChunkData (VoxelChunk chunk) {
+        chunk.status = ChunkStatus.HasData;
         meshProvider.RequestChunkMesh (chunk, OnChunkMesh);
         // Debug.Log ("OnChunkData");
     }
 
     private void OnChunkMesh (ChunkMeshGenerationData chunkMeshGenerationData) {
         chunkMeshGenerationData.voxelChunk.GenerateMesh ();
+        chunkMeshGenerationData.voxelChunk.status = ChunkStatus.Idle;
         // Debug.Log ("OnChunkMesh");
     }
 
@@ -207,27 +236,29 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
         throw new NotImplementedException ();
     }
 
+    Color idleColor = new Color (1, 1, 1, .05f);
     void OnDrawGizmos () {
         foreach (KeyValuePair<Vector3Int, VoxelChunk> entry in chunks) {
             switch (entry.Value.status) {
-                case ChunkStatus.Idle:
-                    continue;
-                case ChunkStatus.Loading:
-                    Gizmos.color = Color.cyan;
+
+                case ChunkStatus.HasData:
+                    Gizmos.color = Color.yellow;
+                    break;
+                case ChunkStatus.HasMeshData:
+                    Gizmos.color = Color.blue;
+                    break;
+                case ChunkStatus.GeneratingMesh:
+                    Gizmos.color = Color.yellow;
                     break;
                 default:
-                    Gizmos.color = Color.gray;
+                    Gizmos.color = Color.clear;
                     break;
             }
             Gizmos.DrawWireCube (entry.Key * entry.Value.size, new Vector3 (entry.Value.size, entry.Value.size, entry.Value.size));
 
         }
 
-        int targetChunkX = Mathf.RoundToInt (viewer.position.x / chunkSize);
-        int targetChunkY = Mathf.RoundToInt (viewer.position.y / chunkSize);
-        int targetChunkZ = Mathf.RoundToInt (viewer.position.z / chunkSize);
-
         Gizmos.color = new Color (1, 1, 1, .2f);
-        Gizmos.DrawCube (new Vector3Int (targetChunkX, targetChunkY, targetChunkZ) * chunkSize, new Vector3 (chunkSize, chunkSize, chunkSize));
+        Gizmos.DrawCube (viewerCoordinates * chunkSize + (Vector3.one * chunkSize / 2f), new Vector3 (chunkSize, chunkSize, chunkSize));
     }
 }

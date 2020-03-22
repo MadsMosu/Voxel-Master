@@ -6,7 +6,7 @@ public class VoxelChunk : IVoxelData {
 
     public VoxelWorld voxelWorld;
 
-    public ChunkStatus status = ChunkStatus.Created;
+    public ChunkStatus status = ChunkStatus.Idle;
 
     public VoxelDataStructure voxels { get; private set; }
     private List<VoxelMaterial> _materials = new List<VoxelMaterial> ();
@@ -99,15 +99,13 @@ public class VoxelChunk : IVoxelData {
         } else {
             mesh.SetNormals (meshData.normals);
         }
-        status = ChunkStatus.Idle;
     }
 
 }
 
 public enum ChunkStatus {
-    Created,
-    Loading,
     HasData,
+    GeneratingMesh,
     HasMeshData,
     Idle
 }
