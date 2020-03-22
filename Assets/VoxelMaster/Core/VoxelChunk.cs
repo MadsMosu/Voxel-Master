@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class VoxelChunk : IVoxelData {
 
     public VoxelWorld voxelWorld;
 
-    public ChunkStatus status = ChunkStatus.Created;
+    private ThreadedMeshProvider meshProvider;
+    public ChunkStatus status = ChunkStatus.Idle;
 
     public VoxelDataStructure voxels { get; private set; }
     private List<VoxelMaterial> _materials = new List<VoxelMaterial> ();
@@ -30,33 +32,42 @@ public class VoxelChunk : IVoxelData {
         set => this [new Vector3Int (x, y, z)] = value;
     }
 
-    public Mesh mesh;
+    public struct LODMesh {
+        public int lod;
+        public Mesh mesh;
+    }
+    public LODMesh[] LODMeshes;
+    private int _lod = 0;
 
-    private MeshData meshData;
+    public int lod {
+        get => _lod;
+        set => SetLod (value);
+    }
 
-    public VoxelChunk (Vector3Int coords, int size, float voxelScale, VoxelDataStructure voxels) {
+    public void SetLod (int lod) {
+        if (LODMeshes[lod].mesh == null) {
+            this._lod = lod;
+            meshProvider.RequestChunkMesh (this, OnMeshGenerated);
+        }
+    }
+
+    private void OnMeshGenerated (ThreadedMeshProvider.ChunkMeshDataResult obj) {
+        LODMeshes[obj.lod] = new LODMesh { lod = obj.lod, mesh = BuildMesh (obj.meshData) };
+    }
+
+    public Mesh GetCurrentMesh () {
+        return LODMeshes[lod].mesh;
+    }
+
+    public VoxelChunk (Vector3Int coords, int size, float voxelScale, VoxelDataStructure voxels, ThreadedMeshProvider meshProvider) {
         this.coords = coords;
         this.size = size;
         this.voxelScale = voxelScale;
         this.voxels = voxels;
         this.voxels.Init (this.size);
+        this.meshProvider = meshProvider;
+        LODMeshes = new LODMesh[] { new LODMesh { lod = 0 }, new LODMesh { lod = 1 }, new LODMesh { lod = 2 } };
     }
-
-    //DONT DELETE BELOW - MIGHT BE USED FOR LATER WHEN IMPLEMENTING CACHING
-    // private void InitReuseVertexCache () {
-    //     reuseVertexCache = new short[2][][];
-    //     reuseVertexCache[0] = new short[size * size][];
-    //     reuseVertexCache[1] = new short[size * size][];
-
-    //     for (int i = 0; i < (size * size); i++) {
-    //         reuseVertexCache[0][i] = new short[4];
-    //         reuseVertexCache[1][i] = new short[4];
-    //         for (int j = 0; j < 4; j++) {
-    //             reuseVertexCache[0][i][j] = -1;
-    //             reuseVertexCache[1][i][j] = -1;
-    //         }
-    //     }
-    // }
 
     public void AddDensity (Vector3 pos, float[][][] densities) {
         throw new NotImplementedException ();
@@ -82,16 +93,11 @@ public class VoxelChunk : IVoxelData {
         throw new NotImplementedException ();
     }
 
-    public void SetMeshData (MeshData meshData) {
-        this.meshData = meshData;
-        status = ChunkStatus.HasMeshData;
-    }
-
     private Voxel GetVoxel (Vector3Int coord) => voxels.GetVoxel (coord);
     private void SetVoxel (Vector3Int coord, Voxel voxel) => voxels.SetVoxel (coord, voxel);
 
-    public void GenerateMesh () {
-        mesh = new Mesh ();
+    public Mesh BuildMesh (MeshData meshData) {
+        Mesh mesh = new Mesh ();
         mesh.SetVertices (meshData.vertices);
         mesh.SetTriangles (meshData.triangleIndicies, 0);
         if (meshData.normals == null || meshData.normals.Length == 0) {
@@ -99,15 +105,14 @@ public class VoxelChunk : IVoxelData {
         } else {
             mesh.SetNormals (meshData.normals);
         }
-        status = ChunkStatus.Idle;
+        return mesh;
     }
 
 }
 
 public enum ChunkStatus {
-    Created,
-    Loading,
     HasData,
+    GeneratingMesh,
     HasMeshData,
     Idle
 }

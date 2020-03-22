@@ -4,21 +4,9 @@ using UnityEngine;
 
 public class MarchingCubesEnhanced : VoxelMeshGenerator {
     private float isoLevel;
-    private static Vector3Int[][] toIterate;
 
     public override void Init (MeshGeneratorSettings settings) {
         this.isoLevel = settings.isoLevel;
-
-        var chunkLodStart = settings.chunkSize - 2;
-        var chunkLodEnd = settings.chunkSize - 1;
-        toIterate = new Vector3Int[][] {
-            new Vector3Int[] { new Vector3Int (0, 0, 0), new Vector3Int (1, chunkLodStart, chunkLodStart) },
-            new Vector3Int[] { new Vector3Int (chunkLodStart, 0, 0), new Vector3Int (chunkLodEnd, chunkLodStart, chunkLodStart) },
-            new Vector3Int[] { new Vector3Int (0, 0, 0), new Vector3Int (chunkLodStart, 1, chunkLodStart) },
-            new Vector3Int[] { new Vector3Int (0, chunkLodStart, 0), new Vector3Int (chunkLodStart, chunkLodEnd, chunkLodStart) },
-            new Vector3Int[] { new Vector3Int (0, 0, 0), new Vector3Int (chunkLodStart, chunkLodStart, 1) },
-            new Vector3Int[] { new Vector3Int (0, 0, chunkLodStart), new Vector3Int (chunkLodStart, chunkLodStart, chunkLodEnd) }
-        };
     }
 
     public override MeshData GenerateMesh (IVoxelData voxelData, Vector3Int origin, int size, int lod) {
@@ -27,22 +15,18 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
         List<int> triangleIndices = new List<int> (numCells * 12);
         List<Vector3> normals = new List<Vector3> (numCells * 12);
 
-        for (int z = 0; z < size - 1; z++)
-            for (int y = 0; y < size - 1; y++)
-                for (int x = 0; x < size - 1; x++) {
+        int incrementer = lod == 0 ? 1 : lod * 2;
+
+        for (int z = 0; z < size; z += incrementer)
+            for (int y = 0; y < size; y += incrementer)
+                for (int x = 0; x < size; x += incrementer) {
                     Vector3Int cellPos = new Vector3Int (x, y, z);
-                    PolygonizeCell (voxelData, origin, cellPos, ref vertices, ref triangleIndices, ref normals, lod);
+                    PolygonizeCell (voxelData, origin, cellPos, ref vertices, ref triangleIndices, ref normals, incrementer);
                 }
-
-        if (lod > 0) {
-
-        }
         return new MeshData (vertices.ToArray (), triangleIndices.ToArray (), normals.ToArray ());
     }
 
-    internal void PolygonizeTransitionCell (IVoxelData volume, Vector3Int cellPos, ref List<Vector3> vertices, ref List<int> triangleIndices, ref List<Vector3> normals, int lod, Vector3Int start, Vector3Int end, bool invertTris, int lodFactor) {
-
-    }
+    private static Vector3Int Vector3IntForward = new Vector3Int (0, 0, 1);
 
     internal void PolygonizeCell (IVoxelData volume, Vector3Int offsetPos, Vector3Int cellPos, ref List<Vector3> vertices, ref List<int> triangleIndices, ref List<Vector3> normals, int lod) {
         offsetPos += cellPos;
@@ -51,7 +35,7 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
         byte caseCode = 0;
         byte addToCaseCode = 1;
         for (int i = 0; i < cubeDensities.Length; i++) {
-            cubeDensities[i] = volume[offsetPos + Tables.CornerIndex[i]].density;
+            cubeDensities[i] = volume[offsetPos + Tables.CornerIndex[i] * lod].density;
             if (cubeDensities[i] < isoLevel) {
                 caseCode |= addToCaseCode;
             }
@@ -79,14 +63,15 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
             float densityA = cubeDensities[cornerA];
             float densityB = cubeDensities[cornerB];
 
-            var p0Int = cellPos + Tables.CornerIndex[cornerA];
+            var p0Int = cellPos + Tables.CornerIndex[cornerA] * lod;
             var p0 = new Vector3 (p0Int.x, p0Int.y, p0Int.z);
-            var p1Int = cellPos + Tables.CornerIndex[cornerB];
+            var p1Int = cellPos + Tables.CornerIndex[cornerB] * lod;
             var p1 = new Vector3 (p1Int.x, p1Int.y, p1Int.z);
 
             float lerpFactor = (isoLevel - densityA) / (densityB - densityA);
             var Q = p0 + lerpFactor * (p1 - p0);
 
+            normals.Add (GetNormal (offsetPos + Tables.CornerIndex[cornerA] * lod, offsetPos + Tables.CornerIndex[cornerB] * lod, volume, lerpFactor));
             vertices.Add (Q);
             indicesMapping[i] = vertices.Count - 1;
         }
@@ -104,35 +89,22 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
             triangleIndices.Add (vertexIndex0);
             triangleIndices.Add (vertexIndex1);
             triangleIndices.Add (vertexIndex2);
-
-            Vector3 triangleSurfaceNormal = Vector3.Cross ((vertex1 - vertex0), (vertex2 - vertex0)).normalized;
-            Vector3 vertex0Normal = triangleSurfaceNormal;
-            Vector3 vertex1Normal = triangleSurfaceNormal;
-            Vector3 vertex2Normal = triangleSurfaceNormal;
         }
 
     }
 
-    //DONT DELETE BELOW - MIGHT BE USED FOR LATER WHEN IMPLEMENTING CACHING
+    private Vector3 GetNormal (Vector3Int cornerAPos, Vector3Int cornerBPos, IVoxelData volume, float lerpFactor) {
 
-    // private short[] GetReusedVertexCache (Vector3Int v, int direction, VoxelChunk chunk) {
-    //     var reuseX = (direction) & 0x1;
-    //     var reuseY = (direction >> 2) & 0x1;
-    //     var reuseZ = (direction >> 1) & 0x1;
+        float cornerAnx = (volume[cornerAPos + Vector3Int.right].density - volume[cornerAPos - Vector3Int.right].density);
+        float cornerAny = (volume[cornerAPos + Vector3Int.up].density - volume[cornerAPos - Vector3Int.up].density);
+        float cornerAnz = (volume[cornerAPos + Vector3IntForward].density - volume[cornerAPos - Vector3IntForward].density);
 
-    //     Vector3Int pos = v - new Vector3Int (reuseX, reuseY, reuseZ);
-    //     return chunk.reuseVertexCache[pos.z & 1][pos.y * chunk.size + pos.x];
-    // }
+        float cornerBnx = (volume[cornerBPos + Vector3Int.right].density - volume[cornerBPos - Vector3Int.right].density);
+        float cornerBny = (volume[cornerBPos + Vector3Int.up].density - volume[cornerBPos - Vector3Int.up].density);
+        float cornerBnz = (volume[cornerBPos + Vector3IntForward].density - volume[cornerBPos - Vector3IntForward].density);
 
-    // private void SetVertexCacheIndex (Vector3Int pos, int reuseCacheIndex, short value, VoxelChunk chunk) {
-    //     chunk.reuseVertexCache[pos.z & 1][pos.y * chunk.size + pos.x][reuseCacheIndex] = value;
-    // }
+        Vector3 normal = new Vector3 (cornerAnx, cornerAny, cornerAnz) * (1f - lerpFactor) + new Vector3 (cornerBnx, cornerBny, cornerBnz) * lerpFactor;
+        return (normal);
 
-    // private void MapVertice (int i, int reusedVertexIndex, int[] indicesMapping, byte[] cellIndices) {
-    //     for (int j = 0; j < indicesMapping.Length; j++) {
-    //         if (i == cellIndices[j]) {
-    //             indicesMapping[j] = reusedVertexIndex;
-    //         }
-    //     }
-    // }
+    }
 }

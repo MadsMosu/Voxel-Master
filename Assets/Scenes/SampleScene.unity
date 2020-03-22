@@ -511,10 +511,11 @@ MonoBehaviour:
   isoLevel: 0
   chunkSize: 16
   viewer: {fileID: 1935339057}
-  generationRadius: 8
-  dataStructureType: SimpleDataStructure, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+  viewerCoordinates: {x: 0, y: 0, z: 0}
+  generationRadius: 5
+  dataStructureType: SimpleDataStructure, Assembly-CSharp, Version=1.0.0.0, Culture=neutral,
     PublicKeyToken=null
-  meshGeneratorType: MarchingCubesEnhanced, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+  meshGeneratorType: MarchingCubesEnhanced, Assembly-CSharp, Version=1.0.0.0, Culture=neutral,
     PublicKeyToken=null
   material: {fileID: 2100000, guid: 40539cd6d3ae1104d8a518d7abb86a33, type: 2}
 --- !u!4 &1114245770
@@ -667,7 +668,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1935339056}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.82, y: 50, z: 62.09}
+  m_LocalPosition: {x: -100, y: -100, z: -100}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 1595141633}
@@ -686,7 +687,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4785dff6a2fab87409f873f7ae85b457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  forwardSpeed: 20
+  forwardSpeed: 21.75
   pitchSpeed: 50
   rollSpeed: 70
   velocity: 1

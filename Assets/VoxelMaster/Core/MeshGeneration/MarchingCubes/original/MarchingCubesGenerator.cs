@@ -16,8 +16,6 @@ public class MarchingCubes : VoxelMeshGenerator {
         for (int x = 0; x < size - 1; x++)
             for (int y = 0; y < size - 1; y++)
                 for (int z = 0; z < size - 1; z++) {
-                    // if (x == 0 || y == 0 || z == 0) continue;
-                    // if (x > size || y > size || z > size) continue;
 
                     Vector3Int cellPos = new Vector3Int (x, y, z);
                     PolygonizeCell (voxelData, origin, cellPos, ref vertices, ref triangleIndices, lod);
