@@ -513,9 +513,9 @@ MonoBehaviour:
   viewer: {fileID: 1935339057}
   viewerCoordinates: {x: 0, y: 0, z: 0}
   generationRadius: 5
-  dataStructureType: SimpleDataStructure, Assembly-CSharp, Version=1.0.0.0, Culture=neutral,
+  dataStructureType: SimpleDataStructure, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
     PublicKeyToken=null
-  meshGeneratorType: MarchingCubesEnhanced, Assembly-CSharp, Version=1.0.0.0, Culture=neutral,
+  meshGeneratorType: MarchingCubesEnhanced, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
     PublicKeyToken=null
   material: {fileID: 2100000, guid: 40539cd6d3ae1104d8a518d7abb86a33, type: 2}
 --- !u!4 &1114245770

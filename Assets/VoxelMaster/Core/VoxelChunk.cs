@@ -66,7 +66,7 @@ public class VoxelChunk : IVoxelData {
         this.voxels = voxels;
         this.voxels.Init (this.size);
         this.meshProvider = meshProvider;
-        LODMeshes = new LODMesh[] { new LODMesh { lod = 0 }, new LODMesh { lod = 1 }, new LODMesh { lod = 2 } };
+        LODMeshes = new LODMesh[] { new LODMesh { lod = 0 }, new LODMesh { lod = 1 }, new LODMesh { lod = 2 }, new LODMesh { lod = 3 } };
     }
 
     public void AddDensity (Vector3 pos, float[][][] densities) {

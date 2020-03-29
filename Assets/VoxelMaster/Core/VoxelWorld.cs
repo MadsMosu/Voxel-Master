@@ -127,6 +127,7 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
 
     void RenderChunks () {
         foreach (KeyValuePair<Vector3Int, VoxelChunk> entry in chunks) {
+            int lodIncrementer = 1 << entry.Value.lod;
             var pos = new Vector3 (
                 entry.Key.x * chunkSize,
                 entry.Key.y * chunkSize,

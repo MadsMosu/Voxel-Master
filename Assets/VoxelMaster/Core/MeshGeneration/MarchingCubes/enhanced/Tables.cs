@@ -67,7 +67,7 @@ public static class Tables {
         }
     }
 
-    public static readonly Vector3Int[] CornerIndex = new [] {
+    public static readonly Vector3Int[] CornerIndex = new Vector3Int[] {
         new Vector3Int (0, 0, 0),
         new Vector3Int (1, 0, 0),
         new Vector3Int (0, 0, 1),
