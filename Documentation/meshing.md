@@ -11,10 +11,9 @@ As we needed to support large scale terrains, and all of it has to be rendered, 
 
 ## Level of Detail
 
-Our original idea for the level of detail algorithm, was to sample every * *n* * voxel in a chunk, where * *n* * corresponds to the chunks LOD level + 1. It has to be plussed by one since our LOD levels starts at 0. 
+Our original idea for the level of detail algorithm, was to sample every *n* voxel in a chunk, where *n* corresponds to the chunks LOD level + 1. It has to be plussed by one since our LOD levels starts at 0. However, sampling every *n* voxel in a chunk generated unwanted offsets where chunks of different resolution meet.
 
+## Transvoxel
 
-sampling every n voxel generated unwanted offsets where chunks of different levels meet
-
-solution was transvoxel using transitioncells
+In order to fix the above LOD problem, we looked into the Transvoxel algorithm by Eric Lengyel. It is an algorithm that enhances the orignal Marching Cubes algorithm by fixing some ambigous cases, as well as provides a robust level of detail method for seamlessly joining meshes of different resolutions using a new type of cell called transition cells, which are inserted at the borders of all chunks with a LOD higher than 0. All meshes are built from the same number of voxels, no matter resolution. This caused a new problem in our current meshing structure.
 
