@@ -104,7 +104,7 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
         float cornerBnz = (volume[cornerBPos + Vector3IntForward].density - volume[cornerBPos - Vector3IntForward].density);
 
         Vector3 normal = new Vector3 (cornerAnx, cornerAny, cornerAnz) * (1f - lerpFactor) + new Vector3 (cornerBnx, cornerBny, cornerBnz) * lerpFactor;
-        return (normal);
+        return -(normal).normalized;
 
     }
 }
