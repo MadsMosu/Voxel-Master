@@ -9,33 +9,30 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
         this.isoLevel = settings.isoLevel;
     }
 
-    public override MeshData GenerateMesh (IVoxelData voxelData, Vector3Int origin, int size, int lod) {
+    public override MeshData GenerateMesh (Voxel[] voxelData, int size, float scale) {
         int numCells = size * size * size;
         List<Vector3> vertices = new List<Vector3> (numCells * 12);
         List<int> triangleIndices = new List<int> (numCells * 12);
         List<Vector3> normals = new List<Vector3> (numCells * 12);
 
-        int incrementer = lod == 0 ? 1 : lod * 2;
-
-        for (int z = 0; z < size; z += incrementer)
-            for (int y = 0; y < size; y += incrementer)
-                for (int x = 0; x < size; x += incrementer) {
+        for (int z = 0; z < size - 1; z++)
+            for (int y = 0; y < size - 1; y++)
+                for (int x = 0; x < size - 1; x++) {
                     Vector3Int cellPos = new Vector3Int (x, y, z);
-                    PolygonizeCell (voxelData, origin, cellPos, ref vertices, ref triangleIndices, ref normals, incrementer);
+                    PolygonizeCell (voxelData, cellPos, size, scale, ref vertices, ref triangleIndices, ref normals);
                 }
         return new MeshData (vertices.ToArray (), triangleIndices.ToArray (), normals.ToArray ());
     }
 
     private static Vector3Int Vector3IntForward = new Vector3Int (0, 0, 1);
 
-    internal void PolygonizeCell (IVoxelData volume, Vector3Int offsetPos, Vector3Int cellPos, ref List<Vector3> vertices, ref List<int> triangleIndices, ref List<Vector3> normals, int lod) {
-        offsetPos += cellPos;
+    internal void PolygonizeCell (Voxel[] volume, Vector3Int cellPos, int size, float scale, ref List<Vector3> vertices, ref List<int> triangleIndices, ref List<Vector3> normals) {
 
         float[] cubeDensities = new float[8];
         byte caseCode = 0;
         byte addToCaseCode = 1;
         for (int i = 0; i < cubeDensities.Length; i++) {
-            cubeDensities[i] = volume[offsetPos + Tables.CornerIndex[i] * lod].density;
+            cubeDensities[i] = volume[Util.Map3DTo1D (cellPos + Tables.CornerIndex[i], size)].density;
             if (cubeDensities[i] < isoLevel) {
                 caseCode |= addToCaseCode;
             }
@@ -63,15 +60,15 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
             float densityA = cubeDensities[cornerA];
             float densityB = cubeDensities[cornerB];
 
-            var p0Int = cellPos + Tables.CornerIndex[cornerA] * lod;
+            var p0Int = cellPos + Tables.CornerIndex[cornerA];
             var p0 = new Vector3 (p0Int.x, p0Int.y, p0Int.z);
-            var p1Int = cellPos + Tables.CornerIndex[cornerB] * lod;
+            var p1Int = cellPos + Tables.CornerIndex[cornerB];
             var p1 = new Vector3 (p1Int.x, p1Int.y, p1Int.z);
 
             float lerpFactor = (isoLevel - densityA) / (densityB - densityA);
             var Q = p0 + lerpFactor * (p1 - p0);
 
-            normals.Add (GetNormal (offsetPos + Tables.CornerIndex[cornerA] * lod, offsetPos + Tables.CornerIndex[cornerB] * lod, volume, lerpFactor));
+            // normals.Add (GetNormal (cellPos + Tables.CornerIndex[cornerA], cellPos + Tables.CornerIndex[cornerB], volume, lerpFactor));
             vertices.Add (Q);
             indicesMapping[i] = vertices.Count - 1;
         }

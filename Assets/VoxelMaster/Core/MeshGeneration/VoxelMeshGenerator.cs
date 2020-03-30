@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 
 public abstract class VoxelMeshGenerator {
-    public abstract MeshData GenerateMesh (IVoxelData voxelData, Vector3Int origin, int size, int lod);
+    public abstract MeshData GenerateMesh (Voxel[] voxelData, int size, float scale);
 
     public abstract void Init (MeshGeneratorSettings settings);
 
@@ -22,5 +22,17 @@ public struct MeshData {
         this.vertices = vertices;
         this.triangleIndicies = triangleIndicies;
         this.normals = normals;
+    }
+
+    public Mesh BuildMesh () {
+        var mesh = new Mesh ();
+        mesh.SetVertices (this.vertices);
+        mesh.SetTriangles (this.triangleIndicies, 0);
+        if (this.normals == null || this.normals.Length == 0) {
+            mesh.RecalculateNormals ();
+        } else {
+            mesh.SetNormals (this.normals);
+        }
+        return mesh;
     }
 }

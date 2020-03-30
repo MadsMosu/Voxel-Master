@@ -83,7 +83,7 @@ public class Octree {
         return locationCode;
     }
 
-    public uint GetChunkAtCoord (Vector3Int coord) {
+    public uint GetNodeIndexAtCoord (Vector3Int coord) {
         // Debug.Log ($"Input coord: {coord}");
         OctreeNode currentNode = nodes[0b1];
 
@@ -104,6 +104,12 @@ public class Octree {
         return currentNode.locationCode;
     }
 
+    public OctreeNode GetNode (uint locationCode) {
+        if (!nodes.ContainsKey (locationCode)) return null;
+        return nodes[locationCode];
+
+    }
+
     public void DrawLeafNodes () {
         DrawLeafNodes (nodes[0b1]);
         // DrawAll (nodes[0b1]);
@@ -114,7 +120,7 @@ public class Octree {
         var depth = GetNodeDepth (node);
         Gizmos.color = Color.HSVToRGB ((maxDepth * 1.0f) / (depth * 1.0f), 1, 1);
         Gizmos.DrawWireCube (node.bounds.center, node.bounds.size);
-        UnityEditor.Handles.Label (node.bounds.center, depth.ToString ());
+        UnityEditor.Handles.Label (node.bounds.center + Vector3.up * node.bounds.extents.y, depth.ToString ());
         if (GetNodeDepth (node) == maxDepth + 1) {
             return;
         }
@@ -128,15 +134,20 @@ public class Octree {
         }
     }
 
-    internal List<VoxelChunk> GetChunksInNode (uint locationCode) {
+    internal List<OctreeNode> GetLeafChildren (uint locationCode) {
         var node = nodes[locationCode];
 
-        var chunks = new List<VoxelChunk> ();
+        var chunks = new List<OctreeNode> ();
+
+        if (GetNodeDepth (node) >= maxDepth + 1) {
+            chunks.Add (node);
+            return chunks;
+        }
 
         for (int i = 0; i < 8; i++) {
             if (isBitSet (node.childrenFlags, i)) {
                 uint locCodeChild = (node.locationCode << 3) | (uint) i;
-                chunks.AddRange (GetChunksInNode (locCodeChild));
+                chunks.AddRange (GetLeafChildren (locCodeChild));
             }
         }
         return chunks;
@@ -145,6 +156,13 @@ public class Octree {
     OctreeNode GetParentNode (OctreeNode node) {
         uint locCodeParent = node.locationCode >> 3;
         return nodes[locCodeParent];
+    }
+
+    public VoxelChunk GetChunkAtCoord (Vector3Int coord) {
+        var nodeLocation = GetNodeIndexAtCoord (coord);
+        if (nodeLocation <= 0) return null;
+
+        return nodes[nodeLocation].chunk;
     }
 
     byte GetNodeDepth (OctreeNode node) {
@@ -166,4 +184,5 @@ public class Octree {
 
     }
     public static bool isBitSet (int b, int bitNumber) => (b & (1 << bitNumber)) != 0;
+
 }
