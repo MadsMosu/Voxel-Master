@@ -21,7 +21,7 @@ public class PlaneController : MonoBehaviour {
         transform.position += transform.forward * Time.deltaTime * velocity;
 
         velocity += (Vector3.Dot (transform.forward, -Vector3.up) + .3f) * Time.deltaTime * 5;
-        velocity = Mathf.Clamp (velocity, 1, 1);
+        velocity = Mathf.Clamp (velocity, 5, 20);
 
         transform.rotation *= Quaternion.Euler (Input.GetAxis ("Vertical") * Time.deltaTime * pitchSpeed * (velocity / 20f), 0, -Input.GetAxis ("Horizontal") * Time.deltaTime * rollSpeed * (velocity / 20f));
     }

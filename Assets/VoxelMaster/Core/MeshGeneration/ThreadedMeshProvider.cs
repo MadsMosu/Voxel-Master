@@ -33,7 +33,6 @@ public class ThreadedMeshProvider {
     void ProcessGenerationQueue () {
         if (generationQueue.Count > 0) {
             var data = generationQueue.Dequeue ();
-            data.voxelChunk.status = ChunkStatus.GeneratingMesh;
             StartGenerationThread (data.voxelChunk, data.callback);
         }
     }
@@ -52,14 +51,14 @@ public class ThreadedMeshProvider {
     }
 
     void GenerateChunkDataThread (VoxelChunk chunk, Action<ChunkMeshDataResult> onChunkData) {
-        MeshData meshData = meshGenerator.GenerateMesh (chunk.voxelWorld, chunk.coords * chunk.size, chunk.size, chunk.lod);
-        lock (generatedChunkQueue) {
-            generatedChunkQueue.Enqueue (new ChunkMeshDataResult {
-                meshData = meshData,
-                    lod = chunk.lod,
-                    callback = onChunkData
-            });
-        }
+        // MeshData meshData = meshGenerator.GenerateMesh (chunk.voxelWorld, chunk.coords * chunk.size, chunk.size, chunk.lod);
+        // lock (generatedChunkQueue) {
+        //     generatedChunkQueue.Enqueue (new ChunkMeshDataResult {
+        //         meshData = meshData,
+        //             lod = chunk.lod,
+        //             callback = onChunkData
+        //     });
+        // }
     }
     public struct ChunkMeshGenerationData {
         public VoxelChunk voxelChunk;

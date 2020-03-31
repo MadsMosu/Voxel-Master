@@ -19,8 +19,9 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
     private WorldGenerator worldGenerator;
     private MeshGeneratorSettings meshGeneratorSettings;
     private ThreadedMeshProvider meshProvider;
-    private Dictionary<Vector3Int, VoxelChunk> chunks = new Dictionary<Vector3Int, VoxelChunk> ();
-    private Dictionary<Vector3Int, Mesh> chunkMeshes = new Dictionary<Vector3Int, Mesh> ();
+    private Octree chunks = new Octree (16, 9);
+    // private Dictionary<Vector3Int, Mesh> chunkMeshes = new Dictionary<Vector3Int, Mesh> ();
+    private List<VoxelChunk> dirtChunks = new List<VoxelChunk> ();
     private List<VoxelMaterial> _materials = new List<VoxelMaterial> ();
     public List<VoxelMaterial> materials { get => new List<VoxelMaterial> (_materials); private set { _materials = value; } }
 
@@ -30,8 +31,7 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
     }
     public Voxel this [Vector3Int v] {
         get => GetVoxel (v);
-        set =>
-            throw new NotImplementedException ();
+        set => SetVoxel (v, value);
     }
     public Voxel this [int x, int y, int z] {
         get => this [new Vector3Int (x, y, z)];
@@ -77,20 +77,30 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
         collider = new GameObject ("Terrain collider").AddComponent<MeshCollider> ();
 
         UpdateViewerCoordinates ();
-        var chunkCoord = viewerCoordinates;
-        AddChunk (chunkCoord);
+        AddChunk (viewerCoordinates);
+
+        GenerateTerrainMeshes ();
     }
 
+    bool viewerCoordinatesChanged = false;
     void UpdateViewerCoordinates () {
+        viewerCoordinatesChanged = false;
         int targetChunkX = Int_floor_division ((int) viewer.position.x, chunkSize);
         int targetChunkY = Int_floor_division ((int) viewer.position.y, chunkSize);
         int targetChunkZ = Int_floor_division ((int) viewer.position.z, chunkSize);
-        viewerCoordinates = new Vector3Int (targetChunkX, targetChunkY, targetChunkZ);
+        var newViewerCoordinates = new Vector3Int (targetChunkX, targetChunkY, targetChunkZ);
+        if (newViewerCoordinates != viewerCoordinates) viewerCoordinatesChanged = true;
+        viewerCoordinates = newViewerCoordinates;
     }
 
     void Update () {
 
         UpdateViewerCoordinates ();
+        ExpandChunkGeneration ();
+        if (viewerCoordinatesChanged) {
+            AddChunk (viewerCoordinates);
+
+        }
 
         worldGenerator.MainThreadUpdate ();
         meshProvider.MainThreadUpdate ();
@@ -102,51 +112,63 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
         // }
         // return;
 
-        ExpandChunkGeneration ();
+    }
+
+    private void GenerateTerrainMeshes () {
+        var currentNodeLocation = chunks.GetNodeIndexAtCoord (viewerCoordinates);
+        var parentNodeLocation = currentNodeLocation >> 3;
+
+        var lod0Chunks = chunks.GetChunksInNode (parentNodeLocation);
+        Debug.Log (lod0Chunks.Count);
 
     }
 
     private void ExpandChunkGeneration () {
-        foreach (var chunk in chunks.Values.ToArray ()) {
-            for (int z = -1; z <= 1; z++)
-                for (int y = -1; y <= 1; y++)
-                    for (int x = -1; x <= 1; x++) {
-                        if (x == 0 && y == 0 && z == 0) continue;
-                        var neighbourCoords = new Vector3Int (
-                            chunk.coords.x + x,
-                            chunk.coords.y + y,
-                            chunk.coords.z + z
-                        );
-                        if (!chunks.ContainsKey (neighbourCoords) &&
-                            Vector3Int.Distance (viewerCoordinates, neighbourCoords) <= generationRadius) {
-                            AddChunk (neighbourCoords);
-                        }
-                    }
-        }
+        // foreach (var chunk in chunks.Values.ToArray ()) {
+        //     bool allNeighboursHaveData = true;
+        //     for (int z = -1; z <= 1; z++)
+        //         for (int y = -1; y <= 1; y++)
+        //             for (int x = -1; x <= 1; x++) {
+        //                 if (x == 0 && y == 0 && z == 0) continue;
+        //                 var neighbourCoords = new Vector3Int (
+        //                     chunk.coords.x + x,
+        //                     chunk.coords.y + y,
+        //                     chunk.coords.z + z
+        //                 );
+        //                 if (!chunks.ContainsKey (neighbourCoords)) {
+        //                     if (Vector3Int.Distance (viewerCoordinates, neighbourCoords) <= generationRadius) {
+        //                         AddChunk (neighbourCoords);
+        //                     }
+        //                     allNeighboursHaveData = false;
+        //                 } else {
+        //                     if (!chunks[neighbourCoords].hasData) allNeighboursHaveData = false;
+        //                 }
+        //             }
+        //     if (!chunk.hasMesh && allNeighboursHaveData) chunk.SetLod (0);
+        // }
     }
 
     void RenderChunks () {
-        foreach (KeyValuePair<Vector3Int, VoxelChunk> entry in chunks) {
-            int lodIncrementer = 1 << entry.Value.lod;
-            var pos = new Vector3 (
-                entry.Key.x * chunkSize,
-                entry.Key.y * chunkSize,
-                entry.Key.z * chunkSize
-            );
-            if (entry.Value.GetCurrentMesh () != null)
-                Graphics.DrawMesh (entry.Value.GetCurrentMesh (), pos, Quaternion.identity, material, 0);
-        }
+        // foreach (KeyValuePair<Vector3Int, VoxelChunk> entry in chunks) {
+        //     var pos = new Vector3 (
+        //         entry.Key.x * chunkSize,
+        //         entry.Key.y * chunkSize,
+        //         entry.Key.z * chunkSize
+        //     );
+        //     if (entry.Value.GetCurrentMesh () != null)
+        //         Graphics.DrawMesh (entry.Value.GetCurrentMesh (), pos, Quaternion.identity, material, 0);
+        // }
     }
 
     void UpdateCollisionMeshes () {
 
-        int targetChunkX = Int_floor_division ((int) viewer.position.x, chunkSize);
-        int targetChunkY = Int_floor_division ((int) viewer.position.y, chunkSize);
-        int targetChunkZ = Int_floor_division ((int) viewer.position.z, chunkSize);
+        // int targetChunkX = Int_floor_division ((int) viewer.position.x, chunkSize);
+        // int targetChunkY = Int_floor_division ((int) viewer.position.y, chunkSize);
+        // int targetChunkZ = Int_floor_division ((int) viewer.position.z, chunkSize);
 
-        var coord = new Vector3Int (targetChunkX, targetChunkY, targetChunkZ);
-        if (chunks.ContainsKey (coord))
-            collider.sharedMesh = chunks[coord].GetCurrentMesh ();
+        // var coord = new Vector3Int (targetChunkX, targetChunkY, targetChunkZ);
+        // if (chunks.ContainsKey (coord))
+        //     collider.sharedMesh = chunks[coord].GetCurrentMesh ();
 
     }
 
@@ -157,58 +179,82 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
     }
 
     private Voxel GetVoxel (Vector3Int coord) {
-        var chunk = new Vector3Int (
-            Int_floor_division (coord.x, (chunkSize - 1)),
-            Int_floor_division (coord.y, (chunkSize - 1)),
-            Int_floor_division (coord.z, (chunkSize - 1))
-        );
-        var voxelCoordInChunk = new Vector3Int (
-            coord.x % (chunkSize - 1),
-            coord.y % (chunkSize - 1),
-            coord.z % (chunkSize - 1)
-        );
+        return new Voxel ();
+        // var chunk = new Vector3Int (
+        //     Int_floor_division (coord.x, (chunkSize - 1)),
+        //     Int_floor_division (coord.y, (chunkSize - 1)),
+        //     Int_floor_division (coord.z, (chunkSize - 1))
+        // );
+        // var voxelCoordInChunk = new Vector3Int (
+        //     coord.x % (chunkSize - 1),
+        //     coord.y % (chunkSize - 1),
+        //     coord.z % (chunkSize - 1)
+        // );
 
-        if (voxelCoordInChunk.x < 0) voxelCoordInChunk.x += chunkSize - 1;
-        if (voxelCoordInChunk.y < 0) voxelCoordInChunk.y += chunkSize - 1;
-        if (voxelCoordInChunk.z < 0) voxelCoordInChunk.z += chunkSize - 1;
+        // if (voxelCoordInChunk.x < 0) voxelCoordInChunk.x += chunkSize - 1;
+        // if (voxelCoordInChunk.y < 0) voxelCoordInChunk.y += chunkSize - 1;
+        // if (voxelCoordInChunk.z < 0) voxelCoordInChunk.z += chunkSize - 1;
 
-        if (!chunks.ContainsKey (chunk)) return new Voxel ();
-        return chunks[chunk][voxelCoordInChunk];
+        // if (!chunks.ContainsKey (chunk)) return new Voxel { density = 0 };
+        // return chunks[chunk][voxelCoordInChunk];
+    }
+    private void SetVoxel (Vector3Int coord, Voxel voxel) {
+        // var chunk = new Vector3Int (
+        //     Int_floor_division (coord.x, (chunkSize - 1)),
+        //     Int_floor_division (coord.y, (chunkSize - 1)),
+        //     Int_floor_division (coord.z, (chunkSize - 1))
+        // );
+        // var voxelCoordInChunk = new Vector3Int (
+        //     coord.x % (chunkSize - 1),
+        //     coord.y % (chunkSize - 1),
+        //     coord.z % (chunkSize - 1)
+        // );
+
+        // if (voxelCoordInChunk.x < 0) voxelCoordInChunk.x += chunkSize - 1;
+        // if (voxelCoordInChunk.y < 0) voxelCoordInChunk.y += chunkSize - 1;
+        // if (voxelCoordInChunk.z < 0) voxelCoordInChunk.z += chunkSize - 1;
+
+        // if (!chunks.ContainsKey (chunk)) throw new IndexOutOfRangeException ();
+        // chunks[chunk][voxelCoordInChunk] = voxel;
     }
 
     public void AddChunk (Vector3Int pos) {
-        if (chunks.ContainsKey (pos)) return;
+        if (chunks.GetNodeIndexAtCoord (pos) != 0) return;
         var chunkVoxels = Util.CreateInstance<VoxelDataStructure> (dataStructureType);
-        var chunk = new VoxelChunk (pos, chunkSize, voxelScale, chunkVoxels, meshProvider);
+        var chunk = new VoxelChunk (pos, chunkSize, voxelScale, chunkVoxels);
         chunk.voxelWorld = this;
-        chunks.Add (pos, chunk);
+        chunks.AddChunk (pos, chunk);
 
         worldGenerator.RequestChunkData (chunk, OnChunkData);
     }
 
     private void OnChunkData (VoxelChunk chunk) {
-        chunk.status = ChunkStatus.HasData;
-        chunk.SetLod (UnityEngine.Random.Range (0, 2));
-        // Debug.Log ("OnChunkData");
+        chunk.setHasData ();
     }
 
-    private void OnChunkMesh (ChunkMeshGenerationData chunkMeshGenerationData) {
-        chunkMeshGenerationData.voxelChunk.status = ChunkStatus.Idle;
-        // Debug.Log ("OnChunkMesh");
+    private bool AllNeighboursHaveData (VoxelChunk chunk) {
+        // for (int z = -1; z <= 1; z++)
+        //     for (int y = -1; y <= 1; y++)
+        //         for (int x = -1; x <= 1; x++) {
+        //             if (x == 0 && y == 0 && z == 0) continue;
+        //             var coord = chunk.coords + new Vector3Int (x, y, z);
+        //             if (!chunks.ContainsKey (coord) || chunks[coord].hasData == false) {
+        //                 return false;
+        //             }
+        //         }
+        return true;
     }
 
-    FastNoise noise = new FastNoise (34535284);
-
-    private float DensityFunction (Vector3 pos) {
-
-        var scale = .5f;
-
-        float baseHeight = 0;
-        float heightAmplifier = 20;
-
-        float height = baseHeight + Mathf.Pow ((noise.GetCubicFractal ((pos.x) / scale, (pos.z) / scale) + .5f) * heightAmplifier, 1.6f);
-        float voxelDensity = ((pos.y) - height) / heightAmplifier;
-        return voxelDensity;
+    private void ChunkForEachNeighbour (VoxelChunk chunk, Action<VoxelChunk> cb) {
+        // for (int z = -1; z <= 1; z++)
+        //     for (int y = -1; y <= 1; y++)
+        //         for (int x = -1; x <= 1; x++) {
+        //             if (x == 0 && y == 0 && z == 0) continue;
+        //             var coord = chunk.coords + new Vector3Int (x, y, z);
+        //             if (chunks.ContainsKey (coord)) {
+        //                 cb.Invoke (chunks[coord]);
+        //             }
+        //         }
     }
 
     public void RemoveChunk (Vector3Int pos) {
@@ -238,26 +284,30 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
 
     Color idleColor = new Color (1, 1, 1, .05f);
     void OnDrawGizmos () {
-        foreach (KeyValuePair<Vector3Int, VoxelChunk> entry in chunks) {
-            switch (entry.Value.status) {
+        // chunks.DrawLeafNodes ();
+        var currentNode = chunks.GetNode (chunks.GetNodeIndexAtCoord (viewerCoordinates));
+        Gizmos.DrawWireCube (currentNode.bounds.center, currentNode.bounds.size);
 
-                case ChunkStatus.HasData:
-                    Gizmos.color = Color.yellow;
-                    break;
-                case ChunkStatus.HasMeshData:
-                    Gizmos.color = Color.blue;
-                    break;
-                case ChunkStatus.GeneratingMesh:
-                    Gizmos.color = Color.yellow;
-                    break;
-                default:
-                    Gizmos.color = Color.clear;
-                    break;
-            }
-            Gizmos.DrawWireCube (entry.Key * entry.Value.size, new Vector3 (entry.Value.size, entry.Value.size, entry.Value.size));
+        Gizmos.color = Color.green;
+        var parentNode = chunks.GetNode (currentNode.locationCode >> 3);
+        Gizmos.DrawWireCube (parentNode.bounds.center, parentNode.bounds.size);
 
-        }
+        Gizmos.color = Color.yellow;
+        var parentParentNode = chunks.GetNode (parentNode.locationCode >> 3);
+        Gizmos.DrawWireCube (parentParentNode.bounds.center, parentParentNode.bounds.size);
 
+        Gizmos.color = Color.red;
+        Gizmos.DrawSphere (viewerCoordinates * chunkSize + (Vector3.one * chunkSize / 2), 4);
+        // foreach (KeyValuePair<Vector3Int, VoxelChunk> entry in chunks) {
+
+        //     if (entry.Value.hasData)
+        //         Gizmos.color = Color.green;
+        //     else
+        //         Gizmos.color = Color.white;
+
+        //     Gizmos.DrawWireCube (entry.Key * entry.Value.size, new Vector3 (entry.Value.size, entry.Value.size, entry.Value.size));
+
+        // }
         Gizmos.color = new Color (1, 1, 1, .2f);
         Gizmos.DrawCube (viewerCoordinates * chunkSize + (Vector3.one * chunkSize / 2f), new Vector3 (chunkSize, chunkSize, chunkSize));
     }

@@ -21,6 +21,7 @@ Meshes are not saved in RAM (for non visible chunks) since we can always generat
 ## Loading chunks
 
 Chunks are loaded whenever the players view distance reaches a chunk coordinate which is missing a chunk.
+//TODO: This should be describing the new neighbour search algorithm
 
 ## Unloading chunks
 
