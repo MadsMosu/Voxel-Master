@@ -4,6 +4,12 @@ using UnityEngine;
 
 public class Octree {
 
+    private static readonly Vector3Int[][] diagonalNeighborLocations = new Vector3Int[][] {
+        new Vector3Int[4] { new Vector3Int (-1, 1, -1), new Vector3Int (-1, 1, 1), new Vector3Int (1, 1, 1), new Vector3Int (1, 1, -1) },
+        new Vector3Int[4] { new Vector3Int (-1, 0, -1), new Vector3Int (-1, 0, 1), new Vector3Int (1, 0, 1), new Vector3Int (1, 0, -1) },
+        new Vector3Int[4] { new Vector3Int (-1, -1, -1), new Vector3Int (-1, -1, 1), new Vector3Int (1, -1, 1), new Vector3Int (1, -1, -1) }
+    };
+
     int leafSize;
     byte maxDepth;
 
@@ -118,12 +124,12 @@ public class Octree {
 
     private void DrawLeafNodes (OctreeNode node) {
         var depth = GetNodeDepth (node);
-        Gizmos.color = Color.HSVToRGB ((maxDepth * 1.0f) / (depth * 1.0f), 1, 1);
-        Gizmos.DrawWireCube (node.bounds.center, node.bounds.size);
-        UnityEditor.Handles.Label (node.bounds.center + Vector3.up * node.bounds.extents.y, depth.ToString ());
         if (GetNodeDepth (node) == maxDepth + 1) {
             return;
         }
+        Gizmos.color = Color.HSVToRGB ((maxDepth * 1.0f) / (depth * 1.0f), 1, 1);
+        Gizmos.DrawWireCube (node.bounds.center, node.bounds.size);
+        UnityEditor.Handles.Label (node.bounds.center + Vector3.up * node.bounds.extents.y, depth.ToString ());
 
         for (int i = 0; i < 8; i++) {
             if (isBitSet (node.childrenFlags, i)) {
@@ -151,6 +157,38 @@ public class Octree {
             }
         }
         return chunks;
+    }
+
+    internal List<OctreeNode> GetChildren (uint locationCode) {
+        var node = nodes[locationCode];
+
+        var chunks = new List<OctreeNode> ();
+
+        if (GetNodeDepth (node) >= maxDepth + 1) {
+            return chunks;
+        }
+
+        for (int i = 0; i < 8; i++) {
+            if (isBitSet (node.childrenFlags, i)) {
+                uint locCodeChild = (node.locationCode << 3) | (uint) i;
+                chunks.Add (GetNode (locCodeChild));
+            }
+        }
+        return chunks;
+    }
+
+    public List<OctreeNode> GetDiagonalLeafChildren (uint currentNodeLocation, uint currentNodeParrentLocation) {
+        var diagonalNeighbors = new List<OctreeNode> ();
+        var currentNode = GetNode (currentNodeLocation);
+        for (int i = 0; i < diagonalNeighborLocations.Length; i++) {
+            for (int j = 0; j < diagonalNeighborLocations[i].Length; j++) {
+                var nodeLocation = GetNodeIndexAtCoord (currentNode.chunk.coords + diagonalNeighborLocations[i][j]);
+                var nodeParentLocation = nodeLocation >> 3;
+                if (nodeParentLocation == currentNodeParrentLocation) continue;
+                diagonalNeighbors.AddRange (GetChildren (nodeParentLocation));
+            }
+        }
+        return diagonalNeighbors;
     }
 
     OctreeNode GetParentNode (OctreeNode node) {

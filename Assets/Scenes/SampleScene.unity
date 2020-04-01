@@ -725,7 +725,7 @@ MonoBehaviour:
   chunkSize: 16
   viewer: {fileID: 871260437}
   viewerCoordinates: {x: 0, y: 0, z: 0}
-  generationRadius: 5
+  generationRadius: 12
   dataStructureType: SimpleDataStructure, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
     PublicKeyToken=null
   meshGeneratorType: MarchingCubesEnhanced, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,

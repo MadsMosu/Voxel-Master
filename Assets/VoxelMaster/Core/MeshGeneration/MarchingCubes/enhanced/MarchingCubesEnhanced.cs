@@ -15,9 +15,9 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
         List<int> triangleIndices = new List<int> (numCells * 12);
         List<Vector3> normals = new List<Vector3> (numCells * 12);
 
-        for (int z = 0; z < size - 1; z++)
-            for (int y = 0; y < size - 1; y++)
-                for (int x = 0; x < size - 1; x++) {
+        for (int z = 1; z < size - 1; z++)
+            for (int y = 1; y < size - 1; y++)
+                for (int x = 1; x < size - 1; x++) {
                     Vector3Int cellPos = new Vector3Int (x, y, z);
                     PolygonizeCell (voxelData, cellPos, size, scale, ref vertices, ref triangleIndices, ref normals);
                 }
@@ -69,7 +69,7 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
             var Q = p0 + lerpFactor * (p1 - p0);
 
             // normals.Add (GetNormal (cellPos + Tables.CornerIndex[cornerA], cellPos + Tables.CornerIndex[cornerB], volume, lerpFactor));
-            vertices.Add (Q);
+            vertices.Add (Q * scale);
             indicesMapping[i] = vertices.Count - 1;
         }
 

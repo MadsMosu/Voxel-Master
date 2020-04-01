@@ -77,6 +77,7 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
 
         UpdateViewerCoordinates ();
         AddChunk (viewerCoordinates);
+        ExpandChunkGeneration ();
 
     }
 
@@ -94,9 +95,9 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
     void Update () {
 
         UpdateViewerCoordinates ();
-        ExpandChunkGeneration ();
         if (viewerCoordinatesChanged) {
-            AddChunk (viewerCoordinates);
+            // ExpandChunkGeneration ();
+            // AddChunk (viewerCoordinates);
             GenerateTerrainMeshes ();
         }
 
@@ -113,34 +114,62 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
     }
 
     private void GenerateTerrainMeshes () {
+        previewMeshes.Clear ();
+
+        // var currentNodeLocation = chunks.GetNodeIndexAtCoord (viewerCoordinates);
+        // var parentNodeLocation = currentNodeLocation >> 3;
+
+        // var lod0ChunkNodes = chunks.GetLeafChildren (parentNodeLocation);
+
+        // foreach (var node in lod0ChunkNodes) {
+        //     Voxel[] voxels = new Voxel[(chunkSize + 3) * (chunkSize + 3) * (chunkSize + 3)];
+
+        //     meshProvider.RequestChunkMesh (new MeshGenerationRequest {
+        //         locationCode = node.locationCode,
+        //             voxels = ExtractVoxels ((node.chunk.coords * chunkSize) - Vector3Int.one, 0),
+        //             size = chunkSize + 3,
+        //             voxelScale = 1f,
+        //             callback = OnChunkMesh
+        //     });
+        // }
+
         var currentNodeLocation = chunks.GetNodeIndexAtCoord (viewerCoordinates);
-        var parentNodeLocation = currentNodeLocation >> 3;
+        uint lastNodeLocation = 0;
+        for (int i = 0; i < 3; i++) {
+            lastNodeLocation = currentNodeLocation;
+            currentNodeLocation = currentNodeLocation >> 3;
 
-        var lod0ChunkNodes = chunks.GetLeafChildren (parentNodeLocation);
+            var lod0ChunkNodes = chunks.GetChildren (currentNodeLocation);
+            foreach (var node in lod0ChunkNodes) {
+                if (i != 0 && node.locationCode == lastNodeLocation) continue;
+                Voxel[] voxels = new Voxel[(chunkSize + 3) * (chunkSize + 3) * (chunkSize + 3)];
 
-        foreach (var node in lod0ChunkNodes) {
-            Voxel[] voxels = new Voxel[(chunkSize + 3) * (chunkSize + 3) * (chunkSize + 3)];
+                var extractStart = new Vector3Int (
+                    (int) node.bounds.min.x,
+                    (int) node.bounds.min.y,
+                    (int) node.bounds.min.z
+                ) - Vector3Int.one;
 
-            meshProvider.RequestChunkMesh (new MeshGenerationRequest {
-                locationCode = node.locationCode,
-                    voxels = ExtractVoxels ((node.chunk.coords * chunkSize) - Vector3Int.one, 0),
-                    size = chunkSize + 3,
-                    voxelScale = 1f,
-                    callback = OnChunkMesh
-            });
+                meshProvider.RequestChunkMesh (new MeshGenerationRequest {
+                    locationCode = node.locationCode,
+                        voxels = ExtractVoxels (extractStart, i),
+                        size = chunkSize + 3,
+                        voxelScale = 1f * (1 << i),
+                        callback = OnChunkMesh
+                });
+            }
+
         }
-
     }
 
     private Voxel[] ExtractVoxels (Vector3Int startVoxelCoord, int lod) {
-        Debug.Log (startVoxelCoord);
         int size = (chunkSize + 3);
         Voxel[] voxels = new Voxel[size * size * size];
-        for (int z = 0; z < size; z++)
-            for (int y = 0; y < size; y++)
-                for (int x = 0; x < size; x++) {
+        for (byte z = 0; z < size; z += 1)
+            for (byte y = 0; y < size; y += 1)
+                for (byte x = 0; x < size; x += 1) {
                     var coord = new Vector3Int (x, y, z);
-                    voxels[Util.Map3DTo1D (coord, size)] = GetVoxel (coord);
+                    voxels[Util.Map3DTo1D (coord, size)] = GetVoxel (startVoxelCoord + coord * (1 << lod));
                 }
         return voxels;
     }
@@ -152,6 +181,11 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
     }
 
     private void ExpandChunkGeneration () {
+        for (int z = -generationRadius / 2; z < generationRadius / 2; z++)
+            for (int y = -generationRadius / 2; y < generationRadius / 2; y++)
+                for (int x = -generationRadius / 2; x < generationRadius / 2; x++) {
+                    AddChunk (viewerCoordinates + new Vector3Int (x, y, z));
+                }
         // foreach (var chunk in chunks.Values.ToArray ()) {
         //     bool allNeighboursHaveData = true;
         //     for (int z = -1; z <= 1; z++)
@@ -325,13 +359,17 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
             var currentNode = chunks.GetNode (chunks.GetNodeIndexAtCoord (viewerCoordinates));
             Gizmos.DrawWireCube (currentNode.bounds.center, currentNode.bounds.size);
 
-            // Gizmos.color = Color.green;
-            // var parentNode = chunks.GetNode (currentNode.locationCode >> 3);
-            // Gizmos.DrawWireCube (parentNode.bounds.center, parentNode.bounds.size);
+            Gizmos.color = Color.green;
+            var parentNode = chunks.GetNode (currentNode.locationCode >> 3);
+            Gizmos.DrawWireCube (parentNode.bounds.center, parentNode.bounds.size);
 
-            // Gizmos.color = Color.yellow;
-            // var parentParentNode = chunks.GetNode (parentNode.locationCode >> 3);
-            // Gizmos.DrawWireCube (parentParentNode.bounds.center, parentParentNode.bounds.size);
+            Gizmos.color = Color.yellow;
+            var parentParentNode = chunks.GetNode (parentNode.locationCode >> 3);
+            Gizmos.DrawWireCube (parentParentNode.bounds.center, parentParentNode.bounds.size);
+
+            Gizmos.color = Color.red;
+            var parentParentParentNode = chunks.GetNode (parentParentNode.locationCode >> 3);
+            Gizmos.DrawWireCube (parentParentParentNode.bounds.center, parentParentParentNode.bounds.size);
         } catch { }
 
         Gizmos.color = Color.red;
