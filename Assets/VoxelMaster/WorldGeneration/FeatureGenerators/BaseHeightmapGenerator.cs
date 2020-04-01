@@ -15,7 +15,7 @@ public class BaseHeightmapGenerator : FeatureGenerator {
         var chunkY = (chunk.coords.y * settings.voxelScale) * chunkSizeMinusOne;
         var chunkZ = (chunk.coords.z * settings.voxelScale) * chunkSizeMinusOne;
 
-        float noiseScale = 1f;
+        float noiseScale = 4f;
         chunk.voxels.Traverse ((x, y, z, voxel) => {
 
             float terrainHeight = noise.GetPerlinFractal ((chunkX + x) / noiseScale, 0, (chunkZ + z) / noiseScale);
@@ -26,6 +26,10 @@ public class BaseHeightmapGenerator : FeatureGenerator {
             density += noise.GetPerlin ((chunkX + x) / (noiseScale / 20), 0, (chunkZ + z) / (noiseScale / 20)) / 10f;
 
             chunk.voxels.SetVoxel (new Vector3Int (x, y, z), new Voxel { density = -density, materialIndex = 0 });
+            // chunk.voxels.SetVoxel (new Vector3Int (x, y, z), new Voxel {
+            //     density =
+            //         noise.GetPerlinFractal ((chunkX + x) / noiseScale, (chunkY + y) / noiseScale, (chunkZ + z) / noiseScale), materialIndex = 0
+            // });
         });
     }
 }

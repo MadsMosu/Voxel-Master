@@ -44,21 +44,17 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
         };
     }
 
-    public override MeshData GenerateMesh (IVoxelData voxelData, Vector3Int origin, int size, int lod) {
+    public override MeshData GenerateMesh (Voxel[] voxelData, int size, float scale) {
         int numCells = size * size * size;
         List<Vector3> vertices = new List<Vector3> ();
         List<int> triangleIndices = new List<int> ();
         List<Vector3> normals = new List<Vector3> ();
 
-        int lodIncrementer = 1 << lod;
-
-        for (int z = 0; z < size; z += lodIncrementer)
-            for (int y = 0; y < size; y += lodIncrementer)
-                for (int x = 0; x < size; x += lodIncrementer) {
-                    // if (x % lodIncrementer == 0 && y % lodIncrementer == 0 && z % lodIncrementer == 0) {
+        for (int z = 0; z < size - 1; z++)
+            for (int y = 0; y < size - 1; y++)
+                for (int x = 0; x < size - 1; x++) {
                     Vector3Int cellPos = new Vector3Int (x, y, z);
-                    PolygonizeCell (voxelData, origin, cellPos, ref vertices, ref triangleIndices, ref normals, lodIncrementer, lod);
-                    // }
+                    PolygonizeCell (voxelData, cellPos, size, scale, ref vertices, ref triangleIndices, ref normals);
                 }
 
         // if (lod > 0) {
@@ -122,45 +118,71 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
                 Vector3 p0 = new Vector3 (p0Int.x, p0Int.y, p0Int.z);
                 Vector3Int p1Int = cornerBHalfFacePos;
                 Vector3 p1 = new Vector3 (p1Int.x, p1Int.y, p1Int.z);
-
-                float lerpFactor = (isoLevel - densityA) / (densityB - densityA);
-                var Q = offsetPos - transStart + (p0 + lerpFactor * (p1 - p0)) / 2;
-
-                indicesMapping[i] = vertices.Count - 1;
-                // var QPos = (Q + transStart) / 2;
-                vertices.Add (Q *= lodIncrementer);
-                normals.Add (GetNormal (offsetPos + cornerAHalfFacePos, offsetPos + cornerBHalfFacePos, volume, lerpFactor));
-
-            }
-
-            bool flipWinding = invertTriangles[side];
-            // bool flipWinding = (transCellClass >> 7) != 0;
-            for (int t = 0; t < triangleCount; t++) {
-                int vertexIndex0 = indicesMapping[cellIndices[t * 3]];
-                int vertexIndex1 = indicesMapping[cellIndices[t * 3 + 1]];
-                int vertexIndex2 = indicesMapping[cellIndices[t * 3 + 2]];
-
-                Vector3 vertex0 = vertices[vertexIndex0];
-                Vector3 vertex1 = vertices[vertexIndex1];
-                Vector3 vertex2 = vertices[vertexIndex2];
-                if (vertex0 == vertex1 || vertex0 == vertex2 || vertex1 == vertex2) continue; //triangle with zero space
-
-                ushort invert = 1;
-                if (flipWinding) invert = 0;
-
-                if ((transCellClass >> 7) % 2 == invert) {
-                    triangleIndices.Add (vertexIndex0);
-                    triangleIndices.Add (vertexIndex1);
-                    triangleIndices.Add (vertexIndex2);
-                } else {
-                    triangleIndices.Add (vertexIndex0);
-                    triangleIndices.Add (vertexIndex2);
-                    triangleIndices.Add (vertexIndex1);
-                }
-
             }
         }
+    }
 
+    internal void PolygonizeCell (Voxel[] volume, Vector3Int cellPos, int size, float scale, ref List<Vector3> vertices, ref List<int> triangleIndices, ref List<Vector3> normals) {
+
+        float[] cubeDensities = new float[8];
+        byte caseCode = 0;
+        byte addToCaseCode = 1;
+        for (int i = 0; i < cubeDensities.Length; i++) {
+            cubeDensities[i] = volume[Util.Map3DTo1D (cellPos + Tables.CornerIndex[i], size)].density;
+            if (cubeDensities[i] < isoLevel) {
+                caseCode |= addToCaseCode;
+            }
+            addToCaseCode *= 2;
+        }
+
+        if (caseCode == 0 || caseCode == 255) return;
+
+        byte regularCellClass = Tables.RegularCellClass[caseCode];
+        Tables.RegularCell regularCell = Tables.RegularCellData[regularCellClass];
+        ushort[] vertexData = Tables.RegularVertexData[caseCode];
+
+        byte[] cellIndices = regularCell.GetIndices ();
+        if (cellIndices == null) return;
+        int[] indicesMapping = new int[cellIndices.Length]; //maps the added indices to the vertexData indices
+
+        long vertexCount = regularCell.GetVertexCount ();
+        long triangleCount = regularCell.GetTriangleCount ();
+        for (int i = 0; i < vertexCount; i++) {
+            byte edgeCode = (byte) (vertexData[i] & 0xFF);
+
+            byte cornerA = (byte) ((edgeCode >> 4) & 0x0F);
+            byte cornerB = (byte) (edgeCode & 0x0F);
+
+            float densityA = cubeDensities[cornerA];
+            float densityB = cubeDensities[cornerB];
+
+            var p0Int = cellPos + Tables.CornerIndex[cornerA];
+            var p0 = new Vector3 (p0Int.x, p0Int.y, p0Int.z);
+            var p1Int = cellPos + Tables.CornerIndex[cornerB];
+            var p1 = new Vector3 (p1Int.x, p1Int.y, p1Int.z);
+
+            float lerpFactor = (isoLevel - densityA) / (densityB - densityA);
+            var Q = p0 + lerpFactor * (p1 - p0);
+
+            // normals.Add (GetNormal (cellPos + Tables.CornerIndex[cornerA], cellPos + Tables.CornerIndex[cornerB], volume, lerpFactor));
+            vertices.Add (Q);
+            indicesMapping[i] = vertices.Count - 1;
+        }
+
+        for (int t = 0; t < triangleCount; t++) {
+            int vertexIndex0 = indicesMapping[cellIndices[t * 3]];
+            int vertexIndex1 = indicesMapping[cellIndices[t * 3 + 1]];
+            int vertexIndex2 = indicesMapping[cellIndices[t * 3 + 2]];
+
+            Vector3 vertex0 = vertices[vertexIndex0];
+            Vector3 vertex1 = vertices[vertexIndex1];
+            Vector3 vertex2 = vertices[vertexIndex2];
+            if (vertex0 == vertex1 || vertex0 == vertex2 || vertex1 == vertex2) continue; //triangle with zero space
+
+            triangleIndices.Add (vertexIndex0);
+            triangleIndices.Add (vertexIndex1);
+            triangleIndices.Add (vertexIndex2);
+        }
     }
 
     private static Vector3Int GetTransCorner (byte corner, Vector3Int[] transFaceCorners) {
@@ -205,70 +227,6 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
                 return new Vector3Int (pos.x, pos.y, 0);
             default:
                 return Vector3Int.zero;
-        }
-    }
-
-    internal void PolygonizeCell (IVoxelData volume, Vector3Int offsetPos, Vector3Int cellPos, ref List<Vector3> vertices, ref List<int> triangleIndices, ref List<Vector3> normals, int lodIncrementer, int lod) {
-        offsetPos += cellPos;
-
-        float[] cubeDensities = new float[8];
-        byte caseCode = 0;
-        byte addToCaseCode = 1;
-        for (int i = 0; i < cubeDensities.Length; i++) {
-            cubeDensities[i] = volume[offsetPos + Tables.CornerIndex[i] * lodIncrementer].density;
-            if (cubeDensities[i] < isoLevel) {
-                caseCode |= addToCaseCode;
-            }
-            addToCaseCode *= 2;
-        }
-
-        if (caseCode == 0 || caseCode == 255) return;
-
-        byte regularCellClass = Tables.RegularCellClass[caseCode];
-        Tables.RegularCell regularCell = Tables.RegularCellData[regularCellClass];
-        ushort[] vertexData = Tables.RegularVertexData[caseCode];
-
-        byte[] cellIndices = regularCell.GetIndices ();
-        if (cellIndices == null) return;
-        int[] indicesMapping = new int[cellIndices.Length]; //maps the added indices to the vertexData indices
-
-        long vertexCount = regularCell.GetVertexCount ();
-        long triangleCount = regularCell.GetTriangleCount ();
-        for (int i = 0; i < vertexCount; i++) {
-            byte edgeCode = (byte) (vertexData[i] & 0xFF);
-
-            byte cornerA = (byte) ((edgeCode >> 4) & 0x0F);
-            byte cornerB = (byte) (edgeCode & 0x0F);
-
-            float densityA = cubeDensities[cornerA];
-            float densityB = cubeDensities[cornerB];
-
-            var p0Int = cellPos + Tables.CornerIndex[cornerA] * lodIncrementer;
-            var p0 = new Vector3 (p0Int.x, p0Int.y, p0Int.z);
-            var p1Int = cellPos + Tables.CornerIndex[cornerB] * lodIncrementer;
-            var p1 = new Vector3 (p1Int.x, p1Int.y, p1Int.z);
-
-            float lerpFactor = (isoLevel - densityA) / (densityB - densityA);
-            var Q = p0 + lerpFactor * (p1 - p0);
-
-            normals.Add (GetNormal (offsetPos + Tables.CornerIndex[cornerA] * lodIncrementer, offsetPos + Tables.CornerIndex[cornerB] * lodIncrementer, volume, lerpFactor));
-            vertices.Add (Q);
-            indicesMapping[i] = vertices.Count - 1;
-        }
-
-        for (int t = 0; t < triangleCount; t++) {
-            int vertexIndex0 = indicesMapping[cellIndices[t * 3]];
-            int vertexIndex1 = indicesMapping[cellIndices[t * 3 + 1]];
-            int vertexIndex2 = indicesMapping[cellIndices[t * 3 + 2]];
-
-            Vector3 vertex0 = vertices[vertexIndex0];
-            Vector3 vertex1 = vertices[vertexIndex1];
-            Vector3 vertex2 = vertices[vertexIndex2];
-            if (vertex0 == vertex1 || vertex0 == vertex2 || vertex1 == vertex2) continue; //triangle with zero space
-
-            triangleIndices.Add (vertexIndex0);
-            triangleIndices.Add (vertexIndex1);
-            triangleIndices.Add (vertexIndex2);
         }
     }
 

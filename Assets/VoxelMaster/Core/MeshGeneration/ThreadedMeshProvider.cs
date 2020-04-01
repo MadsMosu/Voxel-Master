@@ -5,11 +5,12 @@ using System.Threading.Tasks;
 using UnityEngine;
 
 public class ThreadedMeshProvider {
+
     public WorldGeneratorSettings settings { get; private set; }
     VoxelMeshGenerator meshGenerator;
 
-    private Queue<ChunkMeshGenerationData> generationQueue = new Queue<ChunkMeshGenerationData> ();
-    private Queue<ChunkMeshDataResult> generatedChunkQueue = new Queue<ChunkMeshDataResult> ();
+    private Queue<MeshGenerationRequest> generationQueue = new Queue<MeshGenerationRequest> ();
+    private Queue<MeshGenerationResult> generatedChunkQueue = new Queue<MeshGenerationResult> ();
     public ThreadedMeshProvider (VoxelMeshGenerator meshGenerator, MeshGeneratorSettings meshGeneratorSettings) {
         this.settings = settings;
         this.meshGenerator = meshGenerator;
@@ -33,42 +34,43 @@ public class ThreadedMeshProvider {
     void ProcessGenerationQueue () {
         if (generationQueue.Count > 0) {
             var data = generationQueue.Dequeue ();
-            StartGenerationThread (data.voxelChunk, data.callback);
+            StartGenerationThread (data);
         }
     }
 
-    public void RequestChunkMesh (VoxelChunk chunk, Action<ChunkMeshDataResult> onChunkData) {
-        generationQueue.Enqueue (new ChunkMeshGenerationData {
-            voxelChunk = chunk,
-                callback = onChunkData,
-        });
+    public void RequestChunkMesh (MeshGenerationRequest request) {
+        generationQueue.Enqueue (request);
     }
 
-    void StartGenerationThread (VoxelChunk chunk, Action<ChunkMeshDataResult> onChunkData) {
+    void StartGenerationThread (MeshGenerationRequest request) {
         Task.Run (delegate {
-            GenerateChunkDataThread (chunk, onChunkData);
+            GenerateChunkDataThread (request);
         });
     }
 
-    void GenerateChunkDataThread (VoxelChunk chunk, Action<ChunkMeshDataResult> onChunkData) {
-        // MeshData meshData = meshGenerator.GenerateMesh (chunk.voxelWorld, chunk.coords * chunk.size, chunk.size, chunk.lod);
-        // lock (generatedChunkQueue) {
-        //     generatedChunkQueue.Enqueue (new ChunkMeshDataResult {
-        //         meshData = meshData,
-        //             lod = chunk.lod,
-        //             callback = onChunkData
-        //     });
-        // }
-    }
-    public struct ChunkMeshGenerationData {
-        public VoxelChunk voxelChunk;
-        public Action<ChunkMeshDataResult> callback;
+    void GenerateChunkDataThread (MeshGenerationRequest request) {
+        MeshData meshData = meshGenerator.GenerateMesh (request.voxels, request.size, request.voxelScale);
+        lock (generatedChunkQueue) {
+            generatedChunkQueue.Enqueue (new MeshGenerationResult {
+                locationCode = request.locationCode,
+                    meshData = meshData,
+                    callback = request.callback
+            });
+        }
     }
 
-    public struct ChunkMeshDataResult {
+    public struct MeshGenerationRequest {
+        public uint locationCode;
+        public Voxel[] voxels; // 19 x 19 x 19
+        public float voxelScale;
+        public int size;
+        public Action<MeshGenerationResult> callback;
+    }
+
+    public struct MeshGenerationResult {
+        public uint locationCode;
         public MeshData meshData;
-        public int lod;
-        public Action<ChunkMeshDataResult> callback;
+        public Action<MeshGenerationResult> callback;
     }
 
 }
