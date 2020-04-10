@@ -49,7 +49,7 @@ public class ThreadedMeshProvider {
     }
 
     void GenerateChunkDataThread (MeshGenerationRequest request) {
-        MeshData meshData = meshGenerator.GenerateMesh (request.voxels, request.size, request.voxelScale);
+        MeshData meshData = meshGenerator.GenerateMesh (request.voxels, request.size, request.step, request.voxelScale);
         lock (generatedChunkQueue) {
             generatedChunkQueue.Enqueue (new MeshGenerationResult {
                 locationCode = request.locationCode,
@@ -61,8 +61,9 @@ public class ThreadedMeshProvider {
 
     public struct MeshGenerationRequest {
         public uint locationCode;
-        public Voxel[] voxels; // 19 x 19 x 19
+        public Voxel[] voxels;
         public float voxelScale;
+        public int step;
         public int size;
         public Action<MeshGenerationResult> callback;
     }

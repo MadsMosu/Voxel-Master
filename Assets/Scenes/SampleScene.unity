@@ -728,7 +728,7 @@ MonoBehaviour:
   generationRadius: 24
   dataStructureType: SimpleDataStructure, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
     PublicKeyToken=null
-  meshGeneratorType: MarchingCubesEnhanced, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+  meshGeneratorType: MarchingCubesEnhanced2, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
     PublicKeyToken=null
   material: {fileID: 2100000, guid: aafdef48947a4284fb6592e0dec45324, type: 2}
 --- !u!4 &1114245770

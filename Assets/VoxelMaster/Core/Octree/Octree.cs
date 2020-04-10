@@ -213,7 +213,7 @@ public class Octree {
         return depth;
     }
 
-    public void DrawAll (OctreeNode node) {
+    void DrawAll (OctreeNode node) {
         foreach (KeyValuePair<uint, OctreeNode> entry in nodes) {
             Gizmos.color = new Color (1, 1, 1, .2f);
             Gizmos.DrawWireCube (entry.Value.bounds.center, entry.Value.bounds.size);
