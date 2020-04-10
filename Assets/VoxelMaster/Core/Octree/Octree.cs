@@ -242,4 +242,15 @@ public class Octree {
     }
     public static bool isBitSet (int b, int bitNumber) => (b & (1 << bitNumber)) != 0;
 
+    private string IntToBinaryString (uint number) {
+        const uint mask = 1;
+        var binary = string.Empty;
+        while (number > 0) {
+            // Logical AND the number and prepend it to the result string
+            binary = (number & mask) + binary;
+            number = number >> 1;
+        }
+
+        return binary;
+    }
 }

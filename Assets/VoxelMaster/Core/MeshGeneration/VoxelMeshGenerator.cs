@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 
 public abstract class VoxelMeshGenerator {
-    public abstract MeshData GenerateMesh (Voxel[] voxelData, int size, float scale);
+    public abstract MeshData GenerateMesh (Voxel[] voxelData, int size, int step, float scale);
 
     public abstract void Init (MeshGeneratorSettings settings);
 

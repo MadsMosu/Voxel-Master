@@ -19,8 +19,8 @@ public class BaseHeightmapGenerator : FeatureGenerator {
         chunk.voxels.Traverse ((x, y, z, voxel) => {
 
             // float terrainHeight = noise.GetPerlinFractal ((chunkX + x) / noiseScale, 0, (chunkZ + z) / noiseScale);
-            // float terrainHeight = noise.GetPerlin ((chunkX + x) / noiseScale, 0, (chunkZ + z) / noiseScale) + 2;
-            float terrainHeight = 3;
+            float terrainHeight = noise.GetPerlin ((chunkX + x) / noiseScale, 0, (chunkZ + z) / noiseScale) + 2;
+            // float terrainHeight = 3;
 
             // terrainHeight = 1f - Math.Abs (terrainHeight);
 

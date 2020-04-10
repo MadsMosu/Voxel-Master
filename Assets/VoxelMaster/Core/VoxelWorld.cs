@@ -52,6 +52,15 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
     public Material material;
     #endregion
 
+    private enum Sides {
+        NegativeX = 0,
+        PositiveX = 1,
+        NegativeY = 2,
+        PositiveY = 3,
+        NegativeZ = 4,
+        PositiveZ = 5
+    }
+
     private float SignedDistanceSphere (Vector3 pos, Vector3 center, float radius) {
         return Vector3.Distance (pos, center) - radius;
     }
@@ -135,41 +144,57 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
 
         var currentNodeLocation = chunks.GetNodeIndexAtCoord (viewerCoordinates);
         uint lastNodeLocation = 0;
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 2; i++) {
             lastNodeLocation = currentNodeLocation;
             currentNodeLocation = currentNodeLocation >> 3;
 
             var lod0ChunkNodes = chunks.GetChildren (currentNodeLocation);
             foreach (var node in lod0ChunkNodes) {
                 if (i != 0 && node.locationCode == lastNodeLocation) continue;
-                Voxel[] voxels = new Voxel[(chunkSize + 3) * (chunkSize + 3) * (chunkSize + 3)];
 
+                int lodStep = 1 << i;
+                int prevLodStep = 1 << (i - 1);
+                int step = i > 0 ? prevLodStep : lodStep;
+                int size = (chunkSize * lodStep) + (lodStep * 3);
                 var extractStart = new Vector3Int (
                     (int) node.bounds.min.x,
                     (int) node.bounds.min.y,
                     (int) node.bounds.min.z
-                ) - Vector3Int.one;
+                ) - new Vector3Int (lodStep, lodStep, lodStep);
+
+                // var sides = new List<Sides> ();
 
                 meshProvider.RequestChunkMesh (new MeshGenerationRequest {
                     locationCode = node.locationCode,
-                        voxels = ExtractVoxels (extractStart, i),
-                        size = chunkSize + 3,
-                        voxelScale = 1f * (1 << i),
+                        voxels = ExtractVoxels (extractStart, size, step),
+                        size = size,
+                        step = lodStep,
+                        voxelScale = 1f,
                         callback = OnChunkMesh
                 });
             }
-
         }
     }
+    // for (int side = 0; side < 6; side++)
+    //     for (int u = 1; u < size; u += step)
+    //         for (int v = 1; v < size; v += step) {
+    //             Vector3Int coord = new Vector3Int (
+    //                 Tables.transFullFaceOrientation[side][0].x * (size - 1) + u * Tables.transFullFaceOrientation[side][1].x + v * Tables.transFullFaceOrientation[side][2].x,
+    //                 Tables.transFullFaceOrientation[side][0].y * (size - 1) + u * Tables.transFullFaceOrientation[side][1].y + v * Tables.transFullFaceOrientation[side][2].y,
+    //                 Tables.transFullFaceOrientation[side][0].z * (size - 1) + u * Tables.transFullFaceOrientation[side][1].z + v * Tables.transFullFaceOrientation[side][2].z
+    //             );
+    //             voxels[Util.Map3DTo1D (coord, size)] = GetVoxel (startVoxelCoord + coord);
+    //             // if (step == 2) Debug.Log (coord);
+    //         }
 
-    private Voxel[] ExtractVoxels (Vector3Int startVoxelCoord, int lod) {
-        int size = (chunkSize + 3);
+    private Voxel[] ExtractVoxels (Vector3Int startVoxelCoord, int size, int step) {
         Voxel[] voxels = new Voxel[size * size * size];
-        for (byte z = 0; z < size; z += 1)
-            for (byte y = 0; y < size; y += 1)
-                for (byte x = 0; x < size; x += 1) {
+
+        for (int z = 0; z < size; z += step)
+            for (int y = 0; y < size; y += step)
+                for (int x = 0; x < size; x += step) {
                     var coord = new Vector3Int (x, y, z);
-                    voxels[Util.Map3DTo1D (coord, size)] = GetVoxel (startVoxelCoord + coord * (1 << lod));
+                    voxels[Util.Map3DTo1D (coord, size)] = GetVoxel (startVoxelCoord + coord);
                 }
         return voxels;
     }
@@ -177,6 +202,14 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
     private Dictionary<uint, Mesh> previewMeshes = new Dictionary<uint, Mesh> ();
     private void OnChunkMesh (MeshGenerationResult res) {
         previewMeshes[res.locationCode] = res.meshData.BuildMesh ();
+        // var vdata = res.meshData.vertices;
+        // if (vdata.Length > 0) {
+        //     var first = vdata[0];
+        //     var last = vdata[vdata.Length - 1];
+        //     if (last.x - first.x > 20 || last.y - first.x > 20 || last.z - first.z > 20) {
+        //         Debug.Log (res.meshData.vertices.Length);
+        //     }
+        // }
     }
 
     private void ExpandChunkGeneration () {

@@ -67,15 +67,65 @@ public static class Tables {
         }
     }
 
-    public static readonly Vector3Int[] CornerIndex = new [] {
+    // public static readonly Vector3Int[] CornerIndex = new Vector3Int[] {
+    //     new Vector3Int (0, 0, 0),
+    //     new Vector3Int (1, 0, 0),
+    //     new Vector3Int (0, 0, 1),
+    //     new Vector3Int (1, 0, 1),
+    //     new Vector3Int (0, 1, 0),
+    //     new Vector3Int (1, 1, 0),
+    //     new Vector3Int (0, 1, 1),
+    //     new Vector3Int (1, 1, 1)
+    // };
+
+    public static readonly Vector3Int[] CornerIndex = new Vector3Int[] {
         new Vector3Int (0, 0, 0),
         new Vector3Int (1, 0, 0),
-        new Vector3Int (0, 0, 1),
-        new Vector3Int (1, 0, 1),
         new Vector3Int (0, 1, 0),
         new Vector3Int (1, 1, 0),
+        new Vector3Int (0, 0, 1),
+        new Vector3Int (1, 0, 1),
         new Vector3Int (0, 1, 1),
         new Vector3Int (1, 1, 1)
+    };
+
+    //(cell_origin_shift, U_direction, V_direction, W_direction)
+    public static readonly Vector3Int[][] transFullFaceOrientation = new Vector3Int[][] {
+        new Vector3Int[] { new Vector3Int (0, 0, 0), new Vector3Int (1, 0, 0), new Vector3Int (0, 1, 0), new Vector3Int (0, 0, 1) }, //Z-
+        new Vector3Int[] { new Vector3Int (1, 0, 1), new Vector3Int (-1, 0, 0), new Vector3Int (0, 1, 0), new Vector3Int (0, 0, -1) }, //Z+
+        new Vector3Int[] { new Vector3Int (0, 0, 1), new Vector3Int (1, 0, 0), new Vector3Int (0, 0, -1), new Vector3Int (0, 1, 0) }, //Y-
+        new Vector3Int[] { new Vector3Int (0, 1, 0), new Vector3Int (1, 0, 0), new Vector3Int (0, 0, 1), new Vector3Int (0, -1, 0) }, //Y+
+        new Vector3Int[] { new Vector3Int (0, 0, 1), new Vector3Int (0, 0, -1), new Vector3Int (0, 1, 0), new Vector3Int (1, 0, 0) }, //X-
+        new Vector3Int[] { new Vector3Int (1, 0, 0), new Vector3Int (0, 0, 1), new Vector3Int (0, 1, 0), new Vector3Int (-1, 0, 0) } //X+
+    };
+
+    //(cell_origin_shift, U_direction, V_direction, W_direction)
+    public static readonly Vector3Int[][] transReverseOrientation = new Vector3Int[][] {
+        new Vector3Int[] { new Vector3Int (0, 0, 0), new Vector3Int (1, 0, 0), new Vector3Int (0, 1, 0), new Vector3Int (0, 0, 1) }, //Z+
+        new Vector3Int[] { new Vector3Int (1, 0, 1), new Vector3Int (-1, 0, 0), new Vector3Int (0, 1, 0), new Vector3Int (0, 0, -1) }, //Z-
+        new Vector3Int[] { new Vector3Int (0, 1, 0), new Vector3Int (1, 0, 0), new Vector3Int (0, 0, 1), new Vector3Int (0, -1, 0) }, //Y+
+        new Vector3Int[] { new Vector3Int (0, 0, 1), new Vector3Int (1, 0, 0), new Vector3Int (0, 0, -1), new Vector3Int (0, 1, 0) }, //Y-
+        new Vector3Int[] { new Vector3Int (1, 0, 0), new Vector3Int (0, 0, 1), new Vector3Int (0, 1, 0), new Vector3Int (-1, 0, 0) }, //X+
+        new Vector3Int[] { new Vector3Int (0, 0, 1), new Vector3Int (0, 0, -1), new Vector3Int (0, 1, 0), new Vector3Int (1, 0, 0) } //X-
+    };
+
+    public static readonly Vector2Int[] transFullCorners = new Vector2Int[] {
+        new Vector2Int (0, 0),
+        new Vector2Int (1, 0),
+        new Vector2Int (2, 0),
+        new Vector2Int (0, 1),
+        new Vector2Int (1, 1),
+        new Vector2Int (2, 1),
+        new Vector2Int (0, 2),
+        new Vector2Int (1, 2),
+        new Vector2Int (2, 2)
+    };
+
+    public static readonly Vector2Int[] transRegularCorners = new Vector2Int[] {
+        new Vector2Int (0, 0),
+        new Vector2Int (1, 0),
+        new Vector2Int (0, 1),
+        new Vector2Int (1, 1)
     };
 
     public static readonly byte[] RegularCellClass = new byte[256] {
