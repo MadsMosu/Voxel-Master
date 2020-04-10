@@ -98,7 +98,7 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
         if (viewerCoordinatesChanged) {
             // ExpandChunkGeneration ();
             // AddChunk (viewerCoordinates);
-            GenerateTerrainMeshes ();
+            // GenerateTerrainMeshes ();
         }
 
         worldGenerator.MainThreadUpdate ();
@@ -176,7 +176,6 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
 
     private Dictionary<uint, Mesh> previewMeshes = new Dictionary<uint, Mesh> ();
     private void OnChunkMesh (MeshGenerationResult res) {
-        // Debug.Log ($"Adding mesh at: {res.locationCode}");
         previewMeshes[res.locationCode] = res.meshData.BuildMesh ();
     }
 
@@ -351,40 +350,48 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
         throw new NotImplementedException ();
     }
 
+    void DrawNeighbour (OctreeNode from, byte axis, bool direction = true) {
+        DrawNodeIfExists (chunks.RelativeLocation (from.locationCode, axis, direction));
+    }
+
+    void DrawNodeIfExists (uint location) {
+        var positiveNeighbour = chunks.GetNode (location);
+        if (positiveNeighbour != null)
+            Gizmos.DrawWireCube (positiveNeighbour.bounds.center, positiveNeighbour.bounds.size);
+    }
+
     Color idleColor = new Color (1, 1, 1, .05f);
     void OnDrawGizmos () {
-        // chunks.DrawLeafNodes ();
-        try {
+        if (chunks == null) return;
 
-            var currentNode = chunks.GetNode (chunks.GetNodeIndexAtCoord (viewerCoordinates));
+        // chunks.DrawLeafNodes ();
+
+        var currentNode = chunks.GetNode (chunks.GetNodeIndexAtCoord (viewerCoordinates));
+        if (currentNode != null) {
+
             Gizmos.DrawWireCube (currentNode.bounds.center, currentNode.bounds.size);
 
             Gizmos.color = Color.green;
-            var parentNode = chunks.GetNode (currentNode.locationCode >> 3);
-            Gizmos.DrawWireCube (parentNode.bounds.center, parentNode.bounds.size);
-
+            DrawNodeIfExists (currentNode.locationCode >> 3);
             Gizmos.color = Color.yellow;
-            var parentParentNode = chunks.GetNode (parentNode.locationCode >> 3);
-            Gizmos.DrawWireCube (parentParentNode.bounds.center, parentParentNode.bounds.size);
-
+            DrawNodeIfExists (currentNode.locationCode >> 6);
             Gizmos.color = Color.red;
-            var parentParentParentNode = chunks.GetNode (parentParentNode.locationCode >> 3);
-            Gizmos.DrawWireCube (parentParentParentNode.bounds.center, parentParentParentNode.bounds.size);
-        } catch { }
+            DrawNodeIfExists (currentNode.locationCode >> 9);
 
-        Gizmos.color = Color.red;
-        Gizmos.DrawSphere (viewerCoordinates * chunkSize + (Vector3.one * chunkSize / 2), 4);
-        // foreach (KeyValuePair<Vector3Int, VoxelChunk> entry in chunks) {
+            // Gizmos.color = Color.red;
+            // DrawNeighbour (currentNode, 0b001);
+            // Gizmos.color = Color.blue;
+            // DrawNeighbour (currentNode, 0b010);
+            // Gizmos.color = Color.green;
+            // DrawNeighbour (currentNode, 0b100);
+            // Gizmos.color = Color.red;
+            // DrawNeighbour (currentNode, 0b001, false);
+            // Gizmos.color = Color.blue;
+            // DrawNeighbour (currentNode, 0b010, false);
+            // Gizmos.color = Color.green;
+            // DrawNeighbour (currentNode, 0b100, false);
 
-        //     if (entry.Value.hasData)
-        //         Gizmos.color = Color.green;
-        //     else
-        //         Gizmos.color = Color.white;
+        }
 
-        //     Gizmos.DrawWireCube (entry.Key * entry.Value.size, new Vector3 (entry.Value.size, entry.Value.size, entry.Value.size));
-
-        // }
-        Gizmos.color = new Color (1, 1, 1, .2f);
-        Gizmos.DrawCube (viewerCoordinates * chunkSize + (Vector3.one * chunkSize / 2f), new Vector3 (chunkSize, chunkSize, chunkSize));
     }
 }

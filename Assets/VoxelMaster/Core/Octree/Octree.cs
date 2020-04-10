@@ -203,8 +203,27 @@ public class Octree {
         return nodes[nodeLocation].chunk;
     }
 
+    public uint RelativeLocation (uint location, byte axis, bool direction) {
+        byte depth = GetDepth (location);
+        byte startDepth = depth;
+        while (depth > 0) {
+            uint depthAxisBit = (uint) (axis << ((startDepth - depth) * 3));
+            uint checkAxisAtDepth = location & depthAxisBit;
+            if ((!direction && checkAxisAtDepth > 0) || (direction && checkAxisAtDepth == 0)) {
+                return location ^ depthAxisBit;
+            } else {
+                location ^= depthAxisBit;
+            }
+            depth--;
+        }
+        return 0;
+    }
+
     byte GetNodeDepth (OctreeNode node) {
-        var locationCode = node.locationCode;
+        return GetDepth (node.locationCode);
+    }
+
+    byte GetDepth (uint locationCode) {
         byte depth = 0;
         while (locationCode > 1) {
             depth++;
