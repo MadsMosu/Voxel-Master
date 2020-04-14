@@ -52,7 +52,6 @@ public class MarchingCubesEnhanced2 : VoxelMeshGenerator {
             }
             addToCaseCode *= 2;
         }
-
         if (caseCode == 0 || caseCode == 255) return;
 
         byte regularCellClass = Tables.RegularCellClass[caseCode];

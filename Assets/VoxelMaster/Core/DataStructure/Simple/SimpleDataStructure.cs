@@ -50,6 +50,9 @@ public class SimpleDataStructure : VoxelDataStructure {
 
     }
 
+    public override Voxel[] ToArray () {
+        return voxels;
+    }
 }
 
 [StructLayout (LayoutKind.Sequential), Serializable]

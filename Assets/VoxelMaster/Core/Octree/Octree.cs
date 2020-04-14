@@ -159,7 +159,7 @@ public class Octree {
         return chunks;
     }
 
-    internal List<OctreeNode> GetChildren (uint locationCode) {
+    public List<OctreeNode> GetChildren (uint locationCode) {
         var node = nodes[locationCode];
 
         var chunks = new List<OctreeNode> ();
@@ -175,6 +175,21 @@ public class Octree {
             }
         }
         return chunks;
+    }
+
+    public List<uint> GetChildLocations (uint locationCode) {
+        var node = this.nodes[locationCode];
+        var nodes = new List<uint> ();
+        if (GetNodeDepth (node) >= maxDepth + 1)
+            return nodes;
+
+        for (int i = 0; i < 8; i++) {
+            if (isBitSet (node.childrenFlags, i)) {
+                uint locCodeChild = (node.locationCode << 3) | (uint) i;
+                nodes.Add (locCodeChild);
+            }
+        }
+        return nodes;
     }
 
     public List<OctreeNode> GetDiagonalLeafChildren (uint currentNodeLocation, uint currentNodeParrentLocation) {
@@ -203,7 +218,7 @@ public class Octree {
         return nodes[nodeLocation].chunk;
     }
 
-    public uint RelativeLocation (uint location, byte axis, bool direction) {
+    public static uint RelativeLocation (uint location, byte axis, bool direction) {
         byte depth = GetDepth (location);
         byte startDepth = depth;
         while (depth > 0) {
@@ -219,11 +234,34 @@ public class Octree {
         return 0;
     }
 
+    public byte GetMaxDepth () => maxDepth;
+
+    public static uint RelativeLeafNodeLocation (uint location, Vector3Int offset) {
+        uint result = location;
+
+        bool yDirection = offset.y > 0;
+        int ySteps = Mathf.Abs (offset.y);
+        for (int y = 0; y < ySteps; y++)
+            result = RelativeLocation (result, 0b100, yDirection);
+
+        bool zDirection = offset.z > 0;
+        int zSteps = Mathf.Abs (offset.z);
+        for (int z = 0; z < zSteps; z++)
+            result = RelativeLocation (result, 0b010, zDirection);
+
+        bool xDirection = offset.x > 0;
+        int xSteps = Mathf.Abs (offset.x);
+        for (int x = 0; x < xSteps; x++)
+            result = RelativeLocation (result, 0b001, xDirection);
+
+        return result;
+    }
+
     byte GetNodeDepth (OctreeNode node) {
         return GetDepth (node.locationCode);
     }
 
-    byte GetDepth (uint locationCode) {
+    public static byte GetDepth (uint locationCode) {
         byte depth = 0;
         while (locationCode > 1) {
             depth++;
