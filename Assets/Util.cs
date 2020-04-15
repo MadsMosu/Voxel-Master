@@ -27,6 +27,10 @@ public static class Util {
         return coords.x + coords.y * size + coords.z * size * size;
     }
 
+    public static int Map3DTo1D (Vector3Int coords, Vector3Int size) {
+        return coords.x + coords.y * size.x + coords.z * size.x * size.z;
+    }
+
     public static Vector3Int Map1DTo3D (int i, int size) {
         var x = i % size;
         var y = (i / size) % size;
