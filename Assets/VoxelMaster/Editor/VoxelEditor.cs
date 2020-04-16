@@ -44,21 +44,21 @@ public class VoxelEditor : Editor {
 
     }
 
-    void OnSceneGUI () {
-        VoxelWorld voxelWorld = (VoxelWorld) target;
+    // void OnSceneGUI () {
+    //     VoxelWorld voxelWorld = (VoxelWorld) target;
 
-        // Ray ray = Camera.current. (Event.current.mousePosition);
-        Ray ray = HandleUtility.GUIPointToWorldRay (Event.current.mousePosition);
-        Handles.Label (voxelWorld.transform.position, "LABEL TEXT");
-        Handles.SphereHandleCap (3, voxelWorld.transform.position, Quaternion.identity, 1, EventType.Repaint);
-        RaycastHit hit = new RaycastHit ();
-        Handles.DrawLine (ray.origin, ray.origin + ray.direction * 1000);
-        if (Physics.Raycast (ray, out hit, 1000.0f)) {
-            Handles.color = Color.red;
-            Handles.SphereHandleCap (-3, hit.point, Quaternion.identity, 1, EventType.Repaint);
-            Event.current.Use ();
-        }
+    //     // Ray ray = Camera.current. (Event.current.mousePosition);
+    //     Ray ray = HandleUtility.GUIPointToWorldRay (Event.current.mousePosition);
+    //     Handles.Label (voxelWorld.transform.position, "LABEL TEXT");
+    //     Handles.SphereHandleCap (3, voxelWorld.transform.position, Quaternion.identity, 1, EventType.Repaint);
+    //     RaycastHit hit = new RaycastHit ();
+    //     Handles.DrawLine (ray.origin, ray.origin + ray.direction * 1000);
+    //     if (Physics.Raycast (ray, out hit, 1000.0f)) {
+    //         Handles.color = Color.red;
+    //         Handles.SphereHandleCap (-3, hit.point, Quaternion.identity, 1, EventType.Repaint);
+    //         Event.current.Use ();
+    //     }
 
-    }
+    // }
 
 }

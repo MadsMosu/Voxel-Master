@@ -8,7 +8,7 @@ using UnityEngine;
 using static ThreadedMeshProvider;
 
 //[ExecuteInEditMode]
-[System.Serializable]
+// [System.Serializable]
 public class VoxelWorld : MonoBehaviour, IVoxelData {
 
     #region Parameters
@@ -20,11 +20,13 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
     private WorldGenerator worldGenerator;
     private MeshGeneratorSettings meshGeneratorSettings;
     private ThreadedMeshProvider meshProvider;
-    private Octree chunks;
     // private Dictionary<Vector3Int, Mesh> chunkMeshes = new Dictionary<Vector3Int, Mesh> ();
     private List<VoxelChunk> dirtChunks = new List<VoxelChunk> ();
     private List<VoxelMaterial> _materials = new List<VoxelMaterial> ();
     public List<VoxelMaterial> materials { get => new List<VoxelMaterial> (_materials); private set { _materials = value; } }
+
+    private Dictionary<Vector3Int, VoxelChunk> chunks;
+    private Octree chunksOctree;
 
     public Voxel this [Vector3 v] {
         get => this [(int) v.x, (int) v.y, (int) v.z];
@@ -61,12 +63,12 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
         NegativeZ = 4,
         PositiveZ = 5
     }
-
     void OnEnable () {
 
         Debug.Log ("OnEnable");
 
-        if (chunks == null) chunks = new Octree (16, 9);
+        chunks = new Dictionary<Vector3Int, VoxelChunk> ();
+        if (chunksOctree == null) chunksOctree = new Octree (16, 9);
 
         int cornerIndex = 0;
         for (int x = -1; x <= 1; x++)
@@ -90,7 +92,7 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
             isoLevel = isoLevel
         };
 
-        meshProvider = new ThreadedMeshProvider (Util.CreateInstance<VoxelMeshGenerator> (meshGeneratorType), meshGeneratorSettings);
+        meshProvider = new ThreadedMeshProvider (this, Util.CreateInstance<VoxelMeshGenerator> (meshGeneratorType), meshGeneratorSettings);
 
         ExpandChunkGeneration ();
         UpdateViewerCoordinates ();
@@ -151,7 +153,7 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
         lod1Nodes.Clear ();
         lod2Nodes.Clear ();
 
-        var currentNodeLocation = chunks.GetNodeIndexAtCoord (viewerCoordinates);
+        var currentNodeLocation = chunksOctree.GetNodeIndexAtCoord (viewerCoordinates);
         lod0Nodes.Add (currentNodeLocation);
         lod2Nodes.Add (currentNodeLocation >> 9);
 
@@ -162,22 +164,21 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
         }
 
         lod0Nodes.ToList ().ForEach (code => {
-            var nodeVoxels = chunks.ExtractVoxels (code, 0);
+            var node = chunksOctree.GetNode (code);
             meshProvider.RequestChunkMesh (new MeshGenerationRequest {
-                locationCode = code,
-                    voxels = nodeVoxels,
-                    size = chunkSize + 3,
+                origin = Util.FloorVector3 (node.bounds.min),
+                    locationCode = code,
                     voxelScale = 1f,
                     callback = OnChunkMesh,
                     step = 1 << 0
             });
         });
         lod1Nodes.ToList ().ForEach (code => {
-            var nodeVoxels = chunks.ExtractVoxels (code, 1);
+            var node = chunksOctree.GetNode (code);
+            Debug.Assert (node.chunk == null);
             meshProvider.RequestChunkMesh (new MeshGenerationRequest {
-                locationCode = code,
-                    voxels = nodeVoxels,
-                    size = chunkSize + 3,
+                origin = Util.FloorVector3 (node.bounds.min),
+                    locationCode = code,
                     voxelScale = 1f,
                     callback = OnChunkMesh,
                     step = 1 << 1
@@ -199,7 +200,7 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
 
         colliders[res.locationCode].sharedMesh = mesh;
         colliders[res.locationCode].transform.parent = transform;
-        colliders[res.locationCode].transform.position = chunks.GetNode (res.locationCode).bounds.min;
+        colliders[res.locationCode].transform.position = chunksOctree.GetNode (res.locationCode).bounds.min;
 
     }
 
@@ -213,7 +214,7 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
 
     void RenderChunks () {
         foreach (KeyValuePair<uint, Mesh> entry in previewMeshes) {
-            var meshNode = chunks.GetNode (entry.Key);
+            var meshNode = chunksOctree.GetNode (entry.Key);
             Graphics.DrawMesh (entry.Value, meshNode.bounds.min, Quaternion.identity, material, 0);
 
         }
@@ -226,6 +227,26 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
 
     private Voxel GetVoxel (Vector3Int coord) {
 
+        var chunkCoord = new Vector3Int (
+            Int_floor_division (coord.x, (chunkSize - 1)),
+            Int_floor_division (coord.y, (chunkSize - 1)),
+            Int_floor_division (coord.z, (chunkSize - 1))
+        );
+        var voxelCoordInChunk = new Vector3Int (
+            coord.x % (chunkSize - 1),
+            coord.y % (chunkSize - 1),
+            coord.z % (chunkSize - 1)
+        );
+
+        if (voxelCoordInChunk.x < 0) voxelCoordInChunk.x += chunkSize - 1;
+        if (voxelCoordInChunk.y < 0) voxelCoordInChunk.y += chunkSize - 1;
+        if (voxelCoordInChunk.z < 0) voxelCoordInChunk.z += chunkSize - 1;
+
+        if (!chunks.ContainsKey (chunkCoord)) return new Voxel { density = 0 };
+
+        return chunks[chunkCoord][voxelCoordInChunk];
+    }
+    private void SetVoxel (Vector3Int coord, Voxel voxel) {
         var chunk = new Vector3Int (
             Int_floor_division (coord.x, (chunkSize - 1)),
             Int_floor_division (coord.y, (chunkSize - 1)),
@@ -241,36 +262,18 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
         if (voxelCoordInChunk.y < 0) voxelCoordInChunk.y += chunkSize - 1;
         if (voxelCoordInChunk.z < 0) voxelCoordInChunk.z += chunkSize - 1;
 
-        if (chunks.GetChunkAtCoord (chunk) == null) return new Voxel { density = 0 };
-
-        return chunks.GetChunkAtCoord (chunk) [voxelCoordInChunk];
-    }
-    private void SetVoxel (Vector3Int coord, Voxel voxel) {
-        // var chunk = new Vector3Int (
-        //     Int_floor_division (coord.x, (chunkSize - 1)),
-        //     Int_floor_division (coord.y, (chunkSize - 1)),
-        //     Int_floor_division (coord.z, (chunkSize - 1))
-        // );
-        // var voxelCoordInChunk = new Vector3Int (
-        //     coord.x % (chunkSize - 1),
-        //     coord.y % (chunkSize - 1),
-        //     coord.z % (chunkSize - 1)
-        // );
-
-        // if (voxelCoordInChunk.x < 0) voxelCoordInChunk.x += chunkSize - 1;
-        // if (voxelCoordInChunk.y < 0) voxelCoordInChunk.y += chunkSize - 1;
-        // if (voxelCoordInChunk.z < 0) voxelCoordInChunk.z += chunkSize - 1;
-
-        // if (!chunks.ContainsKey (chunk)) throw new IndexOutOfRangeException ();
-        // chunks[chunk][voxelCoordInChunk] = voxel;
+        if (!chunks.ContainsKey (chunk)) throw new IndexOutOfRangeException ();
+        chunks[chunk][voxelCoordInChunk] = voxel;
     }
 
     public void AddChunk (Vector3Int pos) {
-        if (chunks.GetNodeIndexAtCoord (pos) != 0) return;
+        if (chunks.ContainsKey (pos)) return;
         var chunkVoxels = Util.CreateInstance<VoxelDataStructure> (dataStructureType);
         var chunk = new VoxelChunk (pos, chunkSize, voxelScale, chunkVoxels);
         chunk.voxelWorld = this;
-        chunks.AddChunk (pos, chunk);
+
+        chunks.Add (pos, chunk);
+        chunksOctree.AddChunk (pos, chunk);
 
         worldGenerator.RequestChunkData (chunk, OnChunkData);
     }
@@ -306,7 +309,7 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
     }
 
     void DrawNodeIfExists (uint location) {
-        var positiveNeighbour = chunks.GetNode (location);
+        var positiveNeighbour = chunksOctree.GetNode (location);
         if (positiveNeighbour != null)
             Gizmos.DrawWireCube (positiveNeighbour.bounds.center, positiveNeighbour.bounds.size);
     }

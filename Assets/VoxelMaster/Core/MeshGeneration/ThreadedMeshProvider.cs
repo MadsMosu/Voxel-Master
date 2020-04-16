@@ -8,12 +8,14 @@ public class ThreadedMeshProvider {
 
     public WorldGeneratorSettings settings { get; private set; }
     VoxelMeshGenerator meshGenerator;
+    private IVoxelData volume;
 
     private Queue<MeshGenerationRequest> generationQueue = new Queue<MeshGenerationRequest> ();
     private Queue<MeshGenerationResult> generatedChunkQueue = new Queue<MeshGenerationResult> ();
-    public ThreadedMeshProvider (VoxelMeshGenerator meshGenerator, MeshGeneratorSettings meshGeneratorSettings) {
+    public ThreadedMeshProvider (IVoxelData volume, VoxelMeshGenerator meshGenerator, MeshGeneratorSettings meshGeneratorSettings) {
         this.settings = settings;
         this.meshGenerator = meshGenerator;
+        this.volume = volume;
         meshGenerator.Init (meshGeneratorSettings);
 
         new Thread (new ThreadStart (delegate {
@@ -49,7 +51,7 @@ public class ThreadedMeshProvider {
     }
 
     void GenerateChunkDataThread (MeshGenerationRequest request) {
-        MeshData meshData = meshGenerator.GenerateMesh (request.voxels, request.size, request.step, request.voxelScale);
+        MeshData meshData = meshGenerator.GenerateMesh (volume, request.origin, request.step, request.voxelScale);
         lock (generatedChunkQueue) {
             generatedChunkQueue.Enqueue (new MeshGenerationResult {
                 locationCode = request.locationCode,
@@ -60,11 +62,10 @@ public class ThreadedMeshProvider {
     }
 
     public struct MeshGenerationRequest {
+        public Vector3Int origin;
         public uint locationCode;
-        public Voxel[] voxels;
         public float voxelScale;
         public int step;
-        public int size;
         public Action<MeshGenerationResult> callback;
     }
 

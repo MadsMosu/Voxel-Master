@@ -44,6 +44,10 @@ public static class Util {
         return new Vector2Int (x, y);
     }
 
+    public static Vector3Int FloorVector3 (Vector3 v) {
+        return new Vector3Int ((int) v.x, (int) v.y, (int) v.z);
+    }
+
     public static T CreateInstance<T> (String type) {
         return (T) Activator.CreateInstance (Type.GetType (type));
     }
