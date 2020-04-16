@@ -56,7 +56,7 @@ public class Voxelizer : EditorWindow {
                         b = mesh.vertices[mesh.triangles[t + 1]],
                         c = mesh.vertices[mesh.triangles[t + 2]],
                         };
-                        Debug.Log ($"A: {triangle.a} B: {triangle.b} C: {triangle.c}");
+                        // Debug.Log ($"A: {triangle.a} B: {triangle.b} C: {triangle.c}");
                         VoxelizeTriangle (triangle);
                     }
                     // }
@@ -75,29 +75,32 @@ public class Voxelizer : EditorWindow {
         Plane g = new Plane (Vector3.Cross (a.normal, triangle.c - triangle.a).normalized, (triangle.c + triangle.a) / 2);
         TriangleRegions regions = new TriangleRegions (a, b, c, d, e, f, g);
 
-        Bounds boundingBox = TriangleBoundingBox (triangle);
+        Bounds triangleBoundingBox = TriangleBoundingBox (triangle);
         Bounds S = new Bounds (boundingBox.center, new Vector3 (
-            boundingBox.max.x + (filterWidth * voxelScale.x),
-            boundingBox.max.y + (filterWidth * voxelScale.y),
-            boundingBox.max.z + (filterWidth * voxelScale.z)
+            triangleBoundingBox.max.x + (filterWidth * voxelScale.x),
+            triangleBoundingBox.max.y + (filterWidth * voxelScale.y),
+            triangleBoundingBox.max.z + (filterWidth * voxelScale.z)
         ));
-        var dist = a.distance * boundingBox.min.x + b.distance * boundingBox.min.y + c.distance * boundingBox.min.z + d.distance;
+        var dist = a.distance * triangleBoundingBox.min.x + b.distance * triangleBoundingBox.min.y + c.distance * triangleBoundingBox.min.z + d.distance;
         var xStep = a.distance;
-        var yStep = b.distance - a.distance * boundingBox.max.x;
-        var zStep = c.distance - b.distance * boundingBox.max.y - a.distance * boundingBox.max.x;
-        for (var z = boundingBox.min.z; z <= boundingBox.max.z; z += voxelScale.z) {
-            for (var y = boundingBox.min.y; y <= boundingBox.max.y; y += voxelScale.y) {
-                for (var x = boundingBox.min.x; x <= boundingBox.max.x; x += voxelScale.x) {
+        var yStep = b.distance - a.distance * triangleBoundingBox.max.x;
+        var zStep = c.distance - b.distance * triangleBoundingBox.max.y - a.distance * triangleBoundingBox.max.x;
+        for (var z = triangleBoundingBox.min.z; z <= triangleBoundingBox.max.z; z += voxelScale.z) {
+            for (var y = triangleBoundingBox.min.y; y <= triangleBoundingBox.max.y; y += voxelScale.y) {
+                for (var x = triangleBoundingBox.min.x; x <= triangleBoundingBox.max.x; x += voxelScale.x) {
 
                     float density = GetVoxelDensity (new Vector3 (x, y, z), regions, triangle, S);
-                    voxels[Util.Map3DTo1D (MapModelSpaceToResolution (new Vector3 (x, y, z)), resolution)] = new Voxel { density = density };
-
+                    if (density != 0f) {
+                        Vector3Int resolutionCoord = MapModelSpaceToResolution (new Vector3 (x, y, z));
+                        voxels[Util.Map3DTo1D (resolutionCoord, resolution)] = new Voxel { density = density };
+                    }
                     dist += xStep;
                 }
                 dist += yStep;
             }
             dist += zStep;
         }
+        Debug.Log ("hello");
     }
 
     private Vector3Int MapModelSpaceToResolution (Vector3 pos) {
@@ -142,7 +145,7 @@ public class Voxelizer : EditorWindow {
         var maxY = Mathf.Max (Mathf.Max (triangle.a.y, triangle.b.y), triangle.c.y);
         var maxZ = Mathf.Max (Mathf.Max (triangle.a.z, triangle.b.z), triangle.c.z);
         bounds.SetMinMax (new Vector3 (minX, minY, minZ), new Vector3 (maxX, maxY, maxZ));
-        bounds.center = new Vector3 ((minX + maxX) / 2, (minY + maxX) / 2, (minZ + maxZ) / 2);
+        // bounds.center = new Vector3 ((minX + maxX) / 2, (minY + maxX) / 2, (minZ + maxZ) / 2);
         return bounds;
     }
 
@@ -166,7 +169,7 @@ public class Voxelizer : EditorWindow {
     public void OnDestroy () { }
 
     private float R1Density (Plane a) {
-        return 1 - (a.distance / filterWidth);
+        return 1 - (Mathf.Abs (a.distance) / filterWidth);
     }
 
     private float R234Density (Plane a, Plane b) {
