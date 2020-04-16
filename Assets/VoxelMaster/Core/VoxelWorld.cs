@@ -7,7 +7,8 @@ using System.Threading;
 using UnityEngine;
 using static ThreadedMeshProvider;
 
-// [ExecuteInEditMode]
+//[ExecuteInEditMode]
+[System.Serializable]
 public class VoxelWorld : MonoBehaviour, IVoxelData {
 
     #region Parameters
@@ -19,7 +20,7 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
     private WorldGenerator worldGenerator;
     private MeshGeneratorSettings meshGeneratorSettings;
     private ThreadedMeshProvider meshProvider;
-    private Octree chunks = new Octree (16, 9);
+    private Octree chunks;
     // private Dictionary<Vector3Int, Mesh> chunkMeshes = new Dictionary<Vector3Int, Mesh> ();
     private List<VoxelChunk> dirtChunks = new List<VoxelChunk> ();
     private List<VoxelMaterial> _materials = new List<VoxelMaterial> ();
@@ -61,12 +62,12 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
         PositiveZ = 5
     }
 
-    private float SignedDistanceSphere (Vector3 pos, Vector3 center, float radius) {
-        return Vector3.Distance (pos, center) - radius;
-    }
+    void OnEnable () {
 
-    Vector3Int[] neighbourOffsets = new Vector3Int[26];
-    void Start () {
+        Debug.Log ("OnEnable");
+
+        if (chunks == null) chunks = new Octree (16, 9);
+
         int cornerIndex = 0;
         for (int x = -1; x <= 1; x++)
             for (int y = -1; y <= 1; y++)
@@ -77,7 +78,7 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
 
         worldGenerator = new WorldGenerator (new WorldGeneratorSettings {
             baseHeight = 0,
-                heightAmplifier = 20,
+                heightAmplifier = 10,
                 noiseScale = 1f,
                 seed = 45432345,
                 voxelScale = voxelScale
@@ -91,7 +92,17 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
 
         meshProvider = new ThreadedMeshProvider (Util.CreateInstance<VoxelMeshGenerator> (meshGeneratorType), meshGeneratorSettings);
 
-        collider = new GameObject ("Terrain collider").AddComponent<MeshCollider> ();
+        ExpandChunkGeneration ();
+        UpdateViewerCoordinates ();
+
+    }
+
+    void OnDisable () {
+        transform.GetComponentsInChildren<MeshCollider> ().ToList ().ForEach (col => DestroyImmediate (col.gameObject));
+    }
+
+    Vector3Int[] neighbourOffsets = new Vector3Int[26];
+    void Start () {
 
         UpdateViewerCoordinates ();
         AddChunk (viewerCoordinates);
@@ -148,168 +159,48 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
             lod0Nodes.Add (Octree.RelativeLeafNodeLocation (currentNodeLocation, neighbourOffsets[i]));
             lod1Nodes.Add (Octree.RelativeLeafNodeLocation (currentNodeLocation >> 6, neighbourOffsets[i]));
             lod2Nodes.Add (Octree.RelativeLeafNodeLocation (currentNodeLocation >> 9, neighbourOffsets[i]));
-            // uint lod0Code = chunks.RelativeLeafNodeLocation (currentNodeLocation, cornerOffsets[i]);
-            // chunks.GetChildLocations (lod0Code >> 3).ForEach (c => lod0Nodes.Add (c));
-            // chunks.GetChildLocations (lod0Code >> 6).ForEach (c => lod1Nodes.Add (c));
-            // chunks.GetChildLocations (lod0Code >> 9).ForEach (c => lod2Nodes.Add (c));
         }
 
         lod0Nodes.ToList ().ForEach (code => {
-            var nodeVoxels = ExtractVoxels (code, true);
-
+            var nodeVoxels = chunks.ExtractVoxels (code, 0);
             meshProvider.RequestChunkMesh (new MeshGenerationRequest {
                 locationCode = code,
                     voxels = nodeVoxels,
                     size = chunkSize + 3,
                     voxelScale = 1f,
                     callback = OnChunkMesh,
-                    step = 1
+                    step = 1 << 0
             });
         });
-
-        // var currentNodeLocation = chunks.GetNodeIndexAtCoord (viewerCoordinates);
-        // var parentNodeLocation = currentNodeLocation >> 3;
-
-        // var lod0ChunkNodes = chunks.GetLeafChildren (parentNodeLocation);
-
-        // foreach (var node in lod0ChunkNodes) {
-        //     Voxel[] voxels = new Voxel[(chunkSize + 3) * (chunkSize + 3) * (chunkSize + 3)];
-
-        //     meshProvider.RequestChunkMesh (new MeshGenerationRequest {
-        //         locationCode = node.locationCode,
-        //             voxels = ExtractVoxels ((node.chunk.coords * chunkSize) - Vector3Int.one, 0),
-        //             size = chunkSize + 3,
-        //             voxelScale = 1f,
-        //             callback = OnChunkMesh
-        //     });
-        // }
-
-        // var currentNodeLocation = chunks.GetNodeIndexAtCoord (viewerCoordinates);
-        // uint lastNodeLocation = 0;
-        // for (int i = 0; i < 2; i++) {
-        //     lastNodeLocation = currentNodeLocation;
-        //     currentNodeLocation = currentNodeLocation >> 3;
-
-        //     var lod0ChunkNodes = chunks.GetChildren (currentNodeLocation);
-        //     foreach (var node in lod0ChunkNodes) {
-        //         if (i != 0 && node.locationCode == lastNodeLocation) continue;
-
-        //         int lodStep = 1 << i;
-        //         int prevLodStep = 1 << (i - 1);
-        //         int step = i > 0 ? prevLodStep : lodStep;
-        //         int size = (chunkSize * lodStep) + (lodStep * 3);
-        //         var extractStart = new Vector3Int (
-        //             (int) node.bounds.min.x,
-        //             (int) node.bounds.min.y,
-        //             (int) node.bounds.min.z
-        //         ) - new Vector3Int (lodStep, lodStep, lodStep);
-
-        //         // var sides = new List<Sides> ();
-
-        //         meshProvider.RequestChunkMesh (new MeshGenerationRequest {
-        //             locationCode = node.locationCode,
-        //                 voxels = ExtractVoxels (extractStart, size, step),
-        //                 size = size,
-        //                 step = lodStep,
-        //                 voxelScale = 1f,
-        //                 callback = OnChunkMesh
-        //         });
-        //     }
-        // }
-    }
-
-    static Vector3Int vector3IntForward = new Vector3Int (0, 0, 1);
-    private readonly Vector3Int[] extractionAxis = new Vector3Int[] {
-        Vector3Int.right,
-        Vector3Int.up,
-        vector3IntForward,
-        Vector3Int.right + Vector3Int.up + vector3IntForward,
-        Vector3Int.right + Vector3Int.up,
-        Vector3Int.up + vector3IntForward,
-        Vector3Int.right + vector3IntForward,
-    };
-    private Voxel[] ExtractVoxels (uint nodeLocation, bool withEdges) {
-        var depth = Octree.GetDepth (nodeLocation);
-
-        if (depth == chunks.GetMaxDepth ()) { }
-
-        var node = chunks.GetNode (nodeLocation);
-
-        var voxelArraySize = 19;
-        Voxel[] nodeVoxels = new Voxel[voxelArraySize * voxelArraySize * voxelArraySize];
-
-        // for (int i = 0; i < nodeVoxels.Length; i++) nodeVoxels[i] = new Voxel { density = 1f };
-
-        void FillSides (int axis) {
-
-            var negativeNeighbour = chunks.GetNode (Octree.RelativeLeafNodeLocation (nodeLocation, -extractionAxis[axis]));
-            negativeNeighbour.chunk.voxels.Traverse ((x, y, z, v) => {
-                var edgeIndex = chunkSize - 1;
-                if (axis == 0 && x == edgeIndex) {
-                    nodeVoxels[Util.Map3DTo1D (new Vector3Int (0, y, z), voxelArraySize)] = v;
-                }
-                if (axis == 1 && y == edgeIndex) {
-                    nodeVoxels[Util.Map3DTo1D (new Vector3Int (x, 0, z), voxelArraySize)] = v;
-                }
-                if (axis == 2 && z == edgeIndex) {
-                    nodeVoxels[Util.Map3DTo1D (new Vector3Int (x, y, 0), voxelArraySize)] = v;
-                }
-                if (axis == 3 && x == edgeIndex && y == edgeIndex && z == edgeIndex) {
-                    nodeVoxels[Util.Map3DTo1D (new Vector3Int (0, 0, 0), voxelArraySize)] = v;
-                }
-                if (axis == 4 && x == edgeIndex && y == edgeIndex) {
-                    nodeVoxels[Util.Map3DTo1D (new Vector3Int (0, 0, z), voxelArraySize)] = v;
-                }
-                if (axis == 5 && z == edgeIndex && y == edgeIndex) {
-                    nodeVoxels[Util.Map3DTo1D (new Vector3Int (x, 0, 0), voxelArraySize)] = v;
-                }
-                if (axis == 6 && x == edgeIndex && z == edgeIndex) {
-                    nodeVoxels[Util.Map3DTo1D (new Vector3Int (0, y, 0), voxelArraySize)] = v;
-                }
+        lod1Nodes.ToList ().ForEach (code => {
+            var nodeVoxels = chunks.ExtractVoxels (code, 1);
+            meshProvider.RequestChunkMesh (new MeshGenerationRequest {
+                locationCode = code,
+                    voxels = nodeVoxels,
+                    size = chunkSize + 3,
+                    voxelScale = 1f,
+                    callback = OnChunkMesh,
+                    step = 1 << 1
             });
-
-            var positiveNeighbour = chunks.GetNode (Octree.RelativeLeafNodeLocation (nodeLocation, extractionAxis[axis]));
-            positiveNeighbour.chunk.voxels.Traverse ((x, y, z, v) => {
-                int edgeStartIndex = voxelArraySize - 2;
-                if (axis == 0 && x <= 1) {
-                    // Debug.Log ($"\tx:{x}\t\ty:{y}\t\tz:{z}\tx+edgeStart:{edgeStartIndex + x}");
-                    nodeVoxels[Util.Map3DTo1D (new Vector3Int (edgeStartIndex + x, y + 1, z + 1), voxelArraySize)] = v;
-                }
-                if (axis == 1 && y <= 1) {
-                    nodeVoxels[Util.Map3DTo1D (new Vector3Int (x + 1, edgeStartIndex + y, z + 1), voxelArraySize)] = v;
-                }
-                if (axis == 2 && z <= 1) {
-                    nodeVoxels[Util.Map3DTo1D (new Vector3Int (x + 1, y + 1, edgeStartIndex + z), voxelArraySize)] = v;
-                }
-                if (axis == 3 && x <= 1 && y <= 1 && z <= 1) {
-                    nodeVoxels[Util.Map3DTo1D (new Vector3Int (edgeStartIndex + x, edgeStartIndex + y, edgeStartIndex + z), voxelArraySize)] = v;
-                }
-                if (axis == 4 && x <= 1 && y <= 1) {
-                    nodeVoxels[Util.Map3DTo1D (new Vector3Int (edgeStartIndex + x, edgeStartIndex + y, z + 1), voxelArraySize)] = v;
-                }
-                if (axis == 5 && z <= 1 && y <= 1) {
-                    nodeVoxels[Util.Map3DTo1D (new Vector3Int (1 + x, edgeStartIndex + y, edgeStartIndex + z), voxelArraySize)] = v;
-                }
-                if (axis == 6 && x <= 1 && z <= 1) {
-                    nodeVoxels[Util.Map3DTo1D (new Vector3Int (edgeStartIndex + x, 1 + y, edgeStartIndex + z), voxelArraySize)] = v;
-                }
-            });
-        }
-
-        for (int i = 0; i < extractionAxis.Length; i++) {
-            FillSides (i);
-        }
-
-        node.chunk.voxels.Traverse ((x, y, z, v) => {
-            nodeVoxels[Util.Map3DTo1D (new Vector3Int (x + 1, y + 1, z + 1), voxelArraySize)] = v;
         });
-
-        return nodeVoxels;
     }
 
     private Dictionary<uint, Mesh> previewMeshes = new Dictionary<uint, Mesh> ();
+    private Dictionary<uint, MeshCollider> colliders = new Dictionary<uint, MeshCollider> ();
     private void OnChunkMesh (MeshGenerationResult res) {
-        previewMeshes[res.locationCode] = res.meshData.BuildMesh ();
+        var mesh = res.meshData.BuildMesh ();
+        previewMeshes[res.locationCode] = mesh;
+
+        MeshCollider collider;
+        if (colliders.ContainsKey (res.locationCode))
+            collider = colliders[res.locationCode];
+        else
+            colliders[res.locationCode] = new GameObject ().AddComponent<MeshCollider> ();
+
+        colliders[res.locationCode].sharedMesh = mesh;
+        colliders[res.locationCode].transform.parent = transform;
+        colliders[res.locationCode].transform.position = chunks.GetNode (res.locationCode).bounds.min;
+
     }
 
     private void ExpandChunkGeneration () {
@@ -318,60 +209,15 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
                 for (int x = -generationRadius / 2; x < generationRadius / 2; x++) {
                     AddChunk (viewerCoordinates + new Vector3Int (x, y, z));
                 }
-        // foreach (var chunk in chunks.Values.ToArray ()) {
-        //     bool allNeighboursHaveData = true;
-        //     for (int z = -1; z <= 1; z++)
-        //         for (int y = -1; y <= 1; y++)
-        //             for (int x = -1; x <= 1; x++) {
-        //                 if (x == 0 && y == 0 && z == 0) continue;
-        //                 var neighbourCoords = new Vector3Int (
-        //                     chunk.coords.x + x,
-        //                     chunk.coords.y + y,
-        //                     chunk.coords.z + z
-        //                 );
-        //                 if (!chunks.ContainsKey (neighbourCoords)) {
-        //                     if (Vector3Int.Distance (viewerCoordinates, neighbourCoords) <= generationRadius) {
-        //                         AddChunk (neighbourCoords);
-        //                     }
-        //                     allNeighboursHaveData = false;
-        //                 } else {
-        //                     if (!chunks[neighbourCoords].hasData) allNeighboursHaveData = false;
-        //                 }
-        //             }
-        //     if (!chunk.hasMesh && allNeighboursHaveData) chunk.SetLod (0);
-        // }
     }
 
     void RenderChunks () {
-        // foreach (KeyValuePair<Vector3Int, VoxelChunk> entry in chunks) {
-        //     var pos = new Vector3 (
-        //         entry.Key.x * chunkSize,
-        //         entry.Key.y * chunkSize,
-        //         entry.Key.z * chunkSize
-        //     );
-        //     if (entry.Value.GetCurrentMesh () != null)
-        //         Graphics.DrawMesh (entry.Value.GetCurrentMesh (), pos, Quaternion.identity, material, 0);
-        // }
-
         foreach (KeyValuePair<uint, Mesh> entry in previewMeshes) {
             var meshNode = chunks.GetNode (entry.Key);
             Graphics.DrawMesh (entry.Value, meshNode.bounds.min, Quaternion.identity, material, 0);
 
         }
     }
-
-    void UpdateCollisionMeshes () {
-
-        // int targetChunkX = Int_floor_division ((int) viewer.position.x, chunkSize);
-        // int targetChunkY = Int_floor_division ((int) viewer.position.y, chunkSize);
-        // int targetChunkZ = Int_floor_division ((int) viewer.position.z, chunkSize);
-
-        // var coord = new Vector3Int (targetChunkX, targetChunkY, targetChunkZ);
-        // if (chunks.ContainsKey (coord))
-        //     collider.sharedMesh = chunks[coord].GetCurrentMesh ();
-
-    }
-
     private int Int_floor_division (int value, int divider) {
         int q = value / divider;
         if (value % divider < 0) return q - 1;
@@ -431,31 +277,7 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
 
     private void OnChunkData (VoxelChunk chunk) {
         chunk.setHasData ();
-    }
 
-    private bool AllNeighboursHaveData (VoxelChunk chunk) {
-        // for (int z = -1; z <= 1; z++)
-        //     for (int y = -1; y <= 1; y++)
-        //         for (int x = -1; x <= 1; x++) {
-        //             if (x == 0 && y == 0 && z == 0) continue;
-        //             var coord = chunk.coords + new Vector3Int (x, y, z);
-        //             if (!chunks.ContainsKey (coord) || chunks[coord].hasData == false) {
-        //                 return false;
-        //             }
-        //         }
-        return true;
-    }
-
-    private void ChunkForEachNeighbour (VoxelChunk chunk, Action<VoxelChunk> cb) {
-        // for (int z = -1; z <= 1; z++)
-        //     for (int y = -1; y <= 1; y++)
-        //         for (int x = -1; x <= 1; x++) {
-        //             if (x == 0 && y == 0 && z == 0) continue;
-        //             var coord = chunk.coords + new Vector3Int (x, y, z);
-        //             if (chunks.ContainsKey (coord)) {
-        //                 cb.Invoke (chunks[coord]);
-        //             }
-        //         }
     }
 
     public void RemoveChunk (Vector3Int pos) {
@@ -483,20 +305,19 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
         throw new NotImplementedException ();
     }
 
-    void DrawNeighbour (OctreeNode from, byte axis, bool direction = true) {
-        DrawNodeIfExists (Octree.RelativeLocation (from.locationCode, axis, direction));
-    }
-
     void DrawNodeIfExists (uint location) {
         var positiveNeighbour = chunks.GetNode (location);
         if (positiveNeighbour != null)
             Gizmos.DrawWireCube (positiveNeighbour.bounds.center, positiveNeighbour.bounds.size);
     }
 
-    Color idleColor = new Color (1, 1, 1, .05f);
-
     void OnDrawGizmos () {
         if (chunks == null) return;
+
+        // chunks.GetLeafChildren (0b1).ForEach (n => {
+        //     Gizmos.color = n.chunk.hasData ? Color.green : Color.clear;
+        //     Gizmos.DrawWireCube (n.bounds.center, n.bounds.extents);
+        // });
 
         Gizmos.color = new Color (1, .3f, .2f, 1f);
         lod0Nodes.ToList ().ForEach (n => DrawNodeIfExists (n));
@@ -504,36 +325,5 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
         lod1Nodes.ToList ().ForEach (n => DrawNodeIfExists (n));
         Gizmos.color = new Color (.7f, .7f, 1f, .1f);
         lod2Nodes.ToList ().ForEach (n => DrawNodeIfExists (n));
-
-        chunks.GetLeafChildren (0b1).ForEach (node => {
-            Gizmos.color = new Color (1, 0, 0, .05f);
-            if (node.chunk.hasData)
-                Gizmos.DrawWireCube (node.bounds.center, node.bounds.size);
-        });
-
-        // var currentNode = chunks.GetNode (chunks.GetNodeIndexAtCoord (viewerCoordinates));
-        // if (currentNode != null) {
-
-        //     void DrawParents (uint locationCode) {
-        //         Gizmos.color = Color.green;
-        //         DrawNodeIfExists (locationCode >> 3);
-        //         Gizmos.color = Color.yellow;
-        //         DrawNodeIfExists (locationCode >> 6);
-        //         Gizmos.color = Color.red;
-        //         DrawNodeIfExists (locationCode >> 9);
-        //     }
-        //     Gizmos.DrawWireCube (currentNode.bounds.center, currentNode.bounds.size);
-        //     DrawParents (currentNode.locationCode);
-
-        //     for (int i = 0; i < cornerOffsets.Length; i++) {
-        //         Gizmos.color = Color.magenta;
-        //         uint code = chunks.RelativeLeafNodeLocation (currentNode.locationCode, cornerOffsets[i]);
-        //         DrawNodeIfExists (code);
-        //         DrawParents (code);
-
-        //     }
-
-        // }
-
     }
 }

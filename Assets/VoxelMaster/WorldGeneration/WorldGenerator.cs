@@ -20,7 +20,7 @@ public class WorldGenerator {
         new Thread (new ThreadStart (delegate {
             while (true) {
                 ProcessGenerationQueue ();
-                Thread.Sleep (1);
+                // Thread.Sleep (1);
             }
         })).Start ();
     }
