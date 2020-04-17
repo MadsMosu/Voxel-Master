@@ -155,13 +155,16 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
 
         var currentNodeLocation = chunksOctree.GetNodeIndexAtCoord (viewerCoordinates);
         lod0Nodes.Add (currentNodeLocation);
-        lod2Nodes.Add (currentNodeLocation >> 9);
+        lod0Nodes.Add (currentNodeLocation >> 3);
 
-        for (int i = 0; i < neighbourOffsets.Length; i++) {
-            lod0Nodes.Add (Octree.RelativeLeafNodeLocation (currentNodeLocation, neighbourOffsets[i]));
-            lod1Nodes.Add (Octree.RelativeLeafNodeLocation (currentNodeLocation >> 6, neighbourOffsets[i]));
-            lod2Nodes.Add (Octree.RelativeLeafNodeLocation (currentNodeLocation >> 9, neighbourOffsets[i]));
-        }
+        for (int x = -2; x <= 2; x++)
+            for (int y = -2; y <= 2; y++)
+                for (int z = -2; z <= 2; z++) {
+                    if (x == 0 && y == 0 && z == 0) continue;
+                    lod0Nodes.Add (Octree.RelativeLeafNodeLocation (currentNodeLocation, new Vector3Int (x, y, z)));
+                    lod1Nodes.Add (Octree.RelativeLeafNodeLocation (currentNodeLocation >> 3, new Vector3Int (x, y, z)));
+                    lod2Nodes.Add (Octree.RelativeLeafNodeLocation (currentNodeLocation >> 6, new Vector3Int (x, y, z)));
+                }
 
         lod0Nodes.ToList ().ForEach (code => {
             var node = chunksOctree.GetNode (code);
@@ -173,6 +176,7 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
                     step = 1 << 0
             });
         });
+
         lod1Nodes.ToList ().ForEach (code => {
             var node = chunksOctree.GetNode (code);
             Debug.Assert (node.chunk == null);
@@ -184,6 +188,19 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
                     step = 1 << 1
             });
         });
+
+        lod2Nodes.ToList ().ForEach (code => {
+            var node = chunksOctree.GetNode (code);
+            Debug.Assert (node.chunk == null);
+            meshProvider.RequestChunkMesh (new MeshGenerationRequest {
+                origin = Util.FloorVector3 (node.bounds.min),
+                    locationCode = code,
+                    voxelScale = 1f,
+                    callback = OnChunkMesh,
+                    step = 1 << 2
+            });
+        });
+        return;
     }
 
     private Dictionary<uint, Mesh> previewMeshes = new Dictionary<uint, Mesh> ();
@@ -308,25 +325,55 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
         throw new NotImplementedException ();
     }
 
-    void DrawNodeIfExists (uint location) {
+    void DrawNodeIfExists (uint location, bool solid = false) {
         var positiveNeighbour = chunksOctree.GetNode (location);
         if (positiveNeighbour != null)
-            Gizmos.DrawWireCube (positiveNeighbour.bounds.center, positiveNeighbour.bounds.size);
+            if (solid)
+                Gizmos.DrawCube (positiveNeighbour.bounds.center, positiveNeighbour.bounds.size);
+            else
+                Gizmos.DrawWireCube (positiveNeighbour.bounds.center, positiveNeighbour.bounds.size);
     }
 
     void OnDrawGizmos () {
         if (chunks == null) return;
 
-        // chunks.GetLeafChildren (0b1).ForEach (n => {
-        //     Gizmos.color = n.chunk.hasData ? Color.green : Color.clear;
-        //     Gizmos.DrawWireCube (n.bounds.center, n.bounds.extents);
-        // });
+        var currentNodeLocation = chunksOctree.GetNodeIndexAtCoord (viewerCoordinates);
+        Gizmos.color = Color.red;
+        DrawNodeIfExists (currentNodeLocation, true);
 
-        Gizmos.color = new Color (1, .3f, .2f, 1f);
-        lod0Nodes.ToList ().ForEach (n => DrawNodeIfExists (n));
-        Gizmos.color = new Color (.6f, 1f, .4f, .2f);
-        lod1Nodes.ToList ().ForEach (n => DrawNodeIfExists (n));
-        Gizmos.color = new Color (.7f, .7f, 1f, .1f);
-        lod2Nodes.ToList ().ForEach (n => DrawNodeIfExists (n));
+        lod0Nodes.ToList ().ForEach (n => {
+            Gizmos.color = new Color (.5f, .5f, 1f, 1f);
+            DrawNodeIfExists (n);
+            Gizmos.color = new Color (.5f, .5f, 1f, .2f);
+            // DrawNodeIfExists (n, true);
+        });
+        lod1Nodes.ToList ().ForEach (n => {
+            Gizmos.color = new Color (1f, 1f, .2f, 1f);
+            DrawNodeIfExists (n);
+            Gizmos.color = new Color (1f, 1f, .2f, .2f);
+            // DrawNodeIfExists (n, true);
+        });
+        lod2Nodes.ToList ().ForEach (n => {
+            Gizmos.color = new Color (1f, .8f, .5f, 1f);
+            DrawNodeIfExists (n);
+            Gizmos.color = new Color (1f, .8f, .5f, .2f);
+            // DrawNodeIfExists (n, true);
+        });
+
+        // for (int i = 0; i < neighbourOffsets.Length; i++) {
+        //     var neighbourLocation = Octree.RelativeLeafNodeLocation (currentNodeLocation >> 6, neighbourOffsets[i]);
+        //     Gizmos.color = new Color (.5f, .5f, 1f, 1f);
+        //     DrawNodeIfExists (neighbourLocation);
+        //     Gizmos.color = new Color (.5f, .5f, 1f, .5f);
+        //     DrawNodeIfExists (neighbourLocation, true);
+        // }
+        // for (int i = 0; i < neighbourOffsets.Length; i++) {
+        //     var neighbourLocation = Octree.RelativeLeafNodeLocation (currentNodeLocation >> 9, neighbourOffsets[i]);
+        //     Gizmos.color = new Color (1f, .8f, .5f, 1f);
+        //     DrawNodeIfExists (neighbourLocation);
+        //     Gizmos.color = new Color (2f, .8f, .5f, .5f);
+        //     DrawNodeIfExists (neighbourLocation, true);
+        // }
+
     }
 }

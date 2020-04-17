@@ -16,14 +16,14 @@ public class BaseHeightmapGenerator : FeatureGenerator {
         var chunkY = (chunk.coords.y * settings.voxelScale) * chunk.size;
         var chunkZ = (chunk.coords.z * settings.voxelScale) * chunk.size;
 
-        float noiseScale = .3f;
+        float noiseScale = .6f;
         chunk.voxels.Traverse ((x, y, z, voxel) => {
 
             float terrainHeight = noise.GetPerlinFractal ((chunkX + x) / noiseScale, 0, (chunkZ + z) / noiseScale);
             // float terrainHeight = noise.GetPerlin ((chunkX + x) / noiseScale, 0, (chunkZ + z) / noiseScale) + 2;
             // float terrainHeight = 0;
 
-            terrainHeight = (1f - Math.Abs (terrainHeight)) * 2;
+            terrainHeight = (1f - Math.Abs (terrainHeight)) * 6;
 
             float density = (((chunk.coords.y * settings.voxelScale) * (chunk.size - 1f) + y) - (terrainHeight * 5)) / settings.heightAmplifier;
             // density += noise.GetPerlin ((chunkX + x) / (noiseScale / 20), 0, (chunkZ + z) / (noiseScale / 20)) / 1f;

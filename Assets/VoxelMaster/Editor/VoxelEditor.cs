@@ -6,7 +6,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
-[CustomEditor (typeof (VoxelWorld))]
+// [CustomEditor (typeof (VoxelWorld))]
 public class VoxelEditor : Editor {
 
     private List<Type> dataStructures = Util.GetEnumerableOfType<VoxelDataStructure> ().ToList ();

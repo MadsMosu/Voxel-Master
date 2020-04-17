@@ -6,7 +6,6 @@ public class Octree {
 
     private static readonly Vector3Int[][] diagonalNeighborLocations = new Vector3Int[][] {
         new Vector3Int[4] { new Vector3Int (-1, 1, -1), new Vector3Int (-1, 1, 1), new Vector3Int (1, 1, 1), new Vector3Int (1, 1, -1) },
-        new Vector3Int[4] { new Vector3Int (-1, 0, -1), new Vector3Int (-1, 0, 1), new Vector3Int (1, 0, 1), new Vector3Int (1, 0, -1) },
         new Vector3Int[4] { new Vector3Int (-1, -1, -1), new Vector3Int (-1, -1, 1), new Vector3Int (1, -1, 1), new Vector3Int (1, -1, -1) }
     };
 
@@ -182,15 +181,13 @@ public class Octree {
         return nodes;
     }
 
-    public List<OctreeNode> GetDiagonalLeafChildren (uint currentNodeLocation, uint currentNodeParrentLocation) {
-        var diagonalNeighbors = new List<OctreeNode> ();
+    public List<uint> GetDiagonalNeighbours (uint currentNodeLocation, byte distance) {
+        var diagonalNeighbors = new List<uint> ();
         var currentNode = GetNode (currentNodeLocation);
         for (int i = 0; i < diagonalNeighborLocations.Length; i++) {
             for (int j = 0; j < diagonalNeighborLocations[i].Length; j++) {
-                var nodeLocation = GetNodeIndexAtCoord (currentNode.chunk.coords + diagonalNeighborLocations[i][j]);
-                var nodeParentLocation = nodeLocation >> 3;
-                if (nodeParentLocation == currentNodeParrentLocation) continue;
-                diagonalNeighbors.AddRange (GetChildren (nodeParentLocation));
+                var nodeLocation = GetNodeIndexAtCoord (currentNode.chunk.coords + diagonalNeighborLocations[i][j] * distance);
+                diagonalNeighbors.Add (nodeLocation);
             }
         }
         return diagonalNeighbors;

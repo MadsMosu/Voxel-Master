@@ -47,7 +47,7 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
         byte caseCode = 0;
         byte addToCaseCode = 1;
         for (int i = 0; i < cubeDensities.Length; i++) {
-            cubeDensities[i] = volume[origin + ((cellPos + Tables.CornerIndex[i]) * step) * step].density;
+            cubeDensities[i] = volume[origin + ((cellPos + Tables.CornerIndex[i])) * step].density;
             if (cubeDensities[i] < isoLevel) {
                 caseCode |= addToCaseCode;
             }
@@ -73,9 +73,9 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
             float densityB = cubeDensities[cornerB];
 
             var p0Int = (cellPos + Tables.CornerIndex[cornerA]);
-            var p0 = (new Vector3 (p0Int.x, p0Int.y, p0Int.z) * step) * step;
+            var p0 = new Vector3 (p0Int.x, p0Int.y, p0Int.z) * step;
             var p1Int = (cellPos + Tables.CornerIndex[cornerB]);
-            var p1 = (new Vector3 (p1Int.x, p1Int.y, p1Int.z) * step) * step;
+            var p1 = new Vector3 (p1Int.x, p1Int.y, p1Int.z) * step;
             // if (step > 1) {
             //     Debug.Log ($"P0: {p0}, P1: {p1}");
             // }
@@ -291,9 +291,9 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
     // }
 
     private Vector3 GetRegularCornerNormal (IVoxelData volume, Vector3Int origin, Vector3Int cornerPos, int step) {
-        float dx = volume[origin + ((new Vector3Int (cornerPos.x + 1, cornerPos.y, cornerPos.z)) * step) * step].density - volume[origin + ((new Vector3Int (cornerPos.x - 1, cornerPos.y, cornerPos.z)) * step) * step].density;
-        float dy = volume[origin + ((new Vector3Int (cornerPos.x, cornerPos.y + 1, cornerPos.z)) * step) * step].density - volume[origin + ((new Vector3Int (cornerPos.x, cornerPos.y - 1, cornerPos.z)) * step) * step].density;
-        float dz = volume[origin + ((new Vector3Int (cornerPos.x, cornerPos.y, cornerPos.z + 1)) * step) * step].density - volume[origin + ((new Vector3Int (cornerPos.x, cornerPos.y, cornerPos.z - 1)) * step) * step].density;
+        float dx = volume[origin + ((new Vector3Int (cornerPos.x + 1, cornerPos.y, cornerPos.z)) * step)].density - volume[origin + ((new Vector3Int (cornerPos.x - 1, cornerPos.y, cornerPos.z)) * step)].density;
+        float dy = volume[origin + ((new Vector3Int (cornerPos.x, cornerPos.y + 1, cornerPos.z)) * step)].density - volume[origin + ((new Vector3Int (cornerPos.x, cornerPos.y - 1, cornerPos.z)) * step)].density;
+        float dz = volume[origin + ((new Vector3Int (cornerPos.x, cornerPos.y, cornerPos.z + 1)) * step)].density - volume[origin + ((new Vector3Int (cornerPos.x, cornerPos.y, cornerPos.z - 1)) * step)].density;
         return new Vector3 (dx, dy, dz);
 
     }
