@@ -25,7 +25,7 @@ public class Voxelizer : EditorWindow {
     public void Awake () { }
 
     public void OnGUI () {
-        asset = (GameObject) EditorGUILayout.ObjectField ("GameObject", asset, typeof (GameObject), false);
+        asset = (GameObject) EditorGUILayout.ObjectField ("GameObject: ", asset, typeof (GameObject), false);
         resolution = EditorGUILayout.Vector3IntField ("Resolution: ", resolution);
 
         if (asset != null && resolution != Vector3Int.zero && voxels == null) {
@@ -91,7 +91,7 @@ public class Voxelizer : EditorWindow {
 
                     float density = GetVoxelDensity (new Vector3 (x, y, z), regions, triangle, S);
                     if (density != 0f) {
-                        Vector3Int resolutionCoord = MapModelSpaceToResolution (new Vector3 (x, y, z));
+                        Vector3Int resolutionCoord = MapModelSpaceToResolution (new Vector3 (x, y, z) + boundingBox.extents);
                         voxels[Util.Map3DTo1D (resolutionCoord, resolution)] = new Voxel { density = density };
                     }
                     dist += xStep;
@@ -100,10 +100,11 @@ public class Voxelizer : EditorWindow {
             }
             dist += zStep;
         }
-        Debug.Log ("hello");
+        // Debug.Log ("hello");
     }
 
     private Vector3Int MapModelSpaceToResolution (Vector3 pos) {
+        // Debug.Log (pos);
         return new Vector3Int (
             (int) (pos.x / boundingBox.size.x * resolution.x),
             (int) (pos.y / boundingBox.size.y * resolution.y),
@@ -159,6 +160,9 @@ public class Voxelizer : EditorWindow {
                 MeshRenderer meshRenderer = meshFilters[i].gameObject.GetComponent<MeshRenderer> ();
                 boundingBox.Encapsulate (meshRenderer.bounds);
             }
+        }
+        if (boundingBox.min.x < 0) {
+            asset.transform.position += new Vector3 (Mathf.Abs (boundingBox.min.x), 0, 0);
         }
         Vector3 localCenter = boundingBox.center - asset.transform.position;
         boundingBox.center = localCenter;
