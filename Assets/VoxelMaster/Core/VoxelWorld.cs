@@ -159,8 +159,8 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
 
         for (int i = 0; i < neighbourOffsets.Length; i++) {
             lod0Nodes.Add (Octree.RelativeLeafNodeLocation (currentNodeLocation, neighbourOffsets[i]));
-            lod1Nodes.Add (Octree.RelativeLeafNodeLocation (currentNodeLocation >> 6, neighbourOffsets[i]));
-            lod2Nodes.Add (Octree.RelativeLeafNodeLocation (currentNodeLocation >> 9, neighbourOffsets[i]));
+            lod1Nodes.Add (Octree.RelativeLeafNodeLocation (currentNodeLocation >> 3, neighbourOffsets[i]));
+            lod2Nodes.Add (Octree.RelativeLeafNodeLocation (currentNodeLocation >> 6, neighbourOffsets[i]));
         }
 
         lod0Nodes.ToList ().ForEach (code => {
@@ -175,13 +175,22 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
         });
         lod1Nodes.ToList ().ForEach (code => {
             var node = chunksOctree.GetNode (code);
-            Debug.Assert (node.chunk == null);
             meshProvider.RequestChunkMesh (new MeshGenerationRequest {
                 origin = Util.FloorVector3 (node.bounds.min),
                     locationCode = code,
                     voxelScale = 1f,
                     callback = OnChunkMesh,
                     step = 1 << 1
+            });
+        });
+        lod2Nodes.ToList ().ForEach (code => {
+            var node = chunksOctree.GetNode (code);
+            meshProvider.RequestChunkMesh (new MeshGenerationRequest {
+                origin = Util.FloorVector3 (node.bounds.min),
+                    locationCode = code,
+                    voxelScale = 1f,
+                    callback = OnChunkMesh,
+                    step = 1 << 2
             });
         });
     }
