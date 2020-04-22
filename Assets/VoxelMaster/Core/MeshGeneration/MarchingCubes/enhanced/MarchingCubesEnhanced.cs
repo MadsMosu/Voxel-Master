@@ -17,12 +17,13 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
         List<Vector3> vertices = new List<Vector3> ();
         List<int> triangleIndices = new List<int> ();
         List<Vector3> normals = new List<Vector3> ();
+        Cache cache = new Cache (chunkSize);
 
         for (int z = 0; z < chunkSize; z++)
             for (int y = 0; y < chunkSize; y++)
                 for (int x = 0; x < chunkSize; x++) {
                     Vector3Int cellPos = new Vector3Int (x, y, z);
-                    PolygonizeCell (volume, origin, cellPos, step, scale, ref vertices, ref triangleIndices, ref normals);
+                    PolygonizeCell (volume, origin, cellPos, step, scale, ref vertices, ref triangleIndices, ref normals, cache);
                 }
 
         if (step > 1) {
@@ -34,14 +35,14 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
                             Tables.transFullFaceOrientation[side][0].y * (chunkSize - 1) + u * Tables.transFullFaceOrientation[side][1].y + v * Tables.transFullFaceOrientation[side][2].y,
                             Tables.transFullFaceOrientation[side][0].z * (chunkSize - 1) + u * Tables.transFullFaceOrientation[side][1].z + v * Tables.transFullFaceOrientation[side][2].z
                         );
-                        PolygonizeTransitionCell (volume, origin, cellPos, scale, ref vertices, ref triangleIndices, ref normals, u, v, side, step);
+                        PolygonizeTransitionCell (volume, origin, cellPos, scale, ref vertices, ref triangleIndices, ref normals, u, v, side, step, cache);
                     }
         }
 
         return new MeshData (vertices.ToArray (), triangleIndices.ToArray (), normals.ToArray ());
     }
 
-    internal void PolygonizeCell (IVoxelData volume, Vector3Int origin, Vector3Int cellPos, int step, float scale, ref List<Vector3> vertices, ref List<int> triangleIndices, ref List<Vector3> normals) {
+    internal void PolygonizeCell (IVoxelData volume, Vector3Int origin, Vector3Int cellPos, int step, float scale, ref List<Vector3> vertices, ref List<int> triangleIndices, ref List<Vector3> normals, Cache cache) {
 
         float[] cubeDensities = new float[8];
         byte caseCode = 0;
@@ -63,6 +64,11 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
 
         long vertexCount = regularCell.GetVertexCount ();
         long triangleCount = regularCell.GetTriangleCount ();
+        ushort[] vertexData = Tables.RegularVertexData[caseCode];
+
+        var extractedVertexData = vertexData.Select (hex => new Tables.RegularCellVertexData ((hex & 0xFF00) >> 8, hex & 0xFF));
+        var cellVerticesIndices = extractedVertexData.Select (extractedVertexData => GetRegularCellVertex (cellPos, extractedVertexData));
+
         for (int i = 0; i < vertexCount; i++) {
             byte edgeCode = (byte) (Tables.RegularVertexData[caseCode][i]);
 
@@ -114,7 +120,12 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
         }
     }
 
-    internal void PolygonizeTransitionCell (IVoxelData volume, Vector3Int origin, Vector3Int cellPos, float scale, ref List<Vector3> vertices, ref List<int> triangleIndices, ref List<Vector3> normals, int u, int v, int side, int step) {
+    private Vector3 GetRegularCellVertex (Vector3Int cellPos, Tables.RegularCellVertexData vertexData) {
+
+        return Vector3.zero;
+    }
+
+    internal void PolygonizeTransitionCell (IVoxelData volume, Vector3Int origin, Vector3Int cellPos, float scale, ref List<Vector3> vertices, ref List<int> triangleIndices, ref List<Vector3> normals, int u, int v, int side, int step, Cache cache) {
         float[] transFullFaceDensities = new float[9];
 
         int[] caseCodeCoeffs = new int[9] { 0x01, 0x02, 0x04, 0x80, 0x100, 0x08, 0x40, 0x20, 0x10 };

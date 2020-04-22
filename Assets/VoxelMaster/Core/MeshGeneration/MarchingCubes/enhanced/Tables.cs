@@ -65,7 +65,45 @@ public static class Tables {
         public byte[] GetIndices () {
             return vertexIndex;
         }
-    }
+    };
+
+    public struct RegularCellVertexData {
+        public int reuseInfo, edgeLocation, reuseDx, reuseDy, reuseDz, reusableIndex, cornerAIndex, cornerBIndex;
+        public bool reuse, newVertex;
+
+        public RegularCellVertexData (int reuseInfo, int edgeLocation) {
+            this.reuseInfo = reuseInfo;
+            this.edgeLocation = edgeLocation;
+
+            reuse = (reuseInfo & 0x30) != 0;
+            reuseDx = -((reuseInfo & 0x10) >> 4);
+            reuseDy = -((reuseInfo & 0x20) >> 5);
+            reuseDz = -((reuseInfo & 0x40) >> 6);
+            newVertex = (reuseInfo & 0x80) != 0;
+            reusableIndex = reuseInfo & 0x0F;
+            cornerAIndex = (edgeLocation & 0xF0) >> 4;
+            cornerBIndex = edgeLocation & 0xF;
+        }
+    };
+
+    public struct transitionCellVertexData {
+        public int reuseInfo, edgeLocation, reuseDu, reuseDv, reusableIndex, cornerAIndex, cornerBIndex;
+        public bool reuse, newReusable, newInterior;
+
+        public transitionCellVertexData (int reuseInfo, int edgeLocation) {
+            this.reuseInfo = reuseInfo;
+            this.edgeLocation = edgeLocation;
+
+            reuse = (reuseInfo & 0x30) != 0;
+            reuseDu = -((reuseInfo & 0x10) >> 4);
+            reuseDv = -((reuseInfo & 0x20) >> 5);
+            newInterior = (reuseInfo & 0x40) != 0;
+            newReusable = (reuseInfo & 0x80) != 0;
+            reusableIndex = reuseInfo & 0xF;
+            cornerAIndex = (edgeLocation & 0xF0) >> 4;
+            cornerBIndex = edgeLocation & 0xF;
+        }
+    };
 
     // public static readonly Vector3Int[] CornerIndex = new Vector3Int[] {
     //     new Vector3Int (0, 0, 0),
