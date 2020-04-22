@@ -13,7 +13,7 @@ public class VoxelChunk : IVoxelData {
 
     public Vector3Int coords { get; private set; }
     public int size { get; private set; }
-    public float voxelScale { get; private set; }
+    public Vector3 voxelScale { get; private set; }
 
     public bool hasData { get; private set; } = false;
 
@@ -30,7 +30,7 @@ public class VoxelChunk : IVoxelData {
         set => this [new Vector3Int (x, y, z)] = value;
     }
 
-    public VoxelChunk (Vector3Int coords, int size, float voxelScale, VoxelDataStructure voxels) {
+    public VoxelChunk (Vector3Int coords, int size, Vector3 voxelScale, VoxelDataStructure voxels) {
         this.coords = coords;
         this.size = size;
         this.voxelScale = voxelScale;

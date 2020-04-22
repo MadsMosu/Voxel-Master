@@ -93,9 +93,9 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
     bool viewerCoordinatesChanged = false;
     void UpdateViewerCoordinates () {
         viewerCoordinatesChanged = false;
-        int targetChunkX = Int_floor_division ((int) viewer.position.x, chunkSize);
-        int targetChunkY = Int_floor_division ((int) viewer.position.y, chunkSize);
-        int targetChunkZ = Int_floor_division ((int) viewer.position.z, chunkSize);
+        int targetChunkX = Util.Int_floor_division ((int) viewer.position.x, chunkSize);
+        int targetChunkY = Util.Int_floor_division ((int) viewer.position.y, chunkSize);
+        int targetChunkZ = Util.Int_floor_division ((int) viewer.position.z, chunkSize);
         var newViewerCoordinates = new Vector3Int (targetChunkX, targetChunkY, targetChunkZ);
         if (newViewerCoordinates != viewerCoordinates) viewerCoordinatesChanged = true;
         viewerCoordinates = newViewerCoordinates;
@@ -273,18 +273,12 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
 
     }
 
-    private int Int_floor_division (int value, int divider) {
-        int q = value / divider;
-        if (value % divider < 0) return q - 1;
-        else return q;
-    }
-
     private Voxel GetVoxel (Vector3Int coord) {
 
         var chunk = new Vector3Int (
-            Int_floor_division (coord.x, (chunkSize - 1)),
-            Int_floor_division (coord.y, (chunkSize - 1)),
-            Int_floor_division (coord.z, (chunkSize - 1))
+            Util.Int_floor_division (coord.x, (chunkSize - 1)),
+            Util.Int_floor_division (coord.y, (chunkSize - 1)),
+            Util.Int_floor_division (coord.z, (chunkSize - 1))
         );
         var voxelCoordInChunk = new Vector3Int (
             coord.x % (chunkSize - 1),
@@ -323,7 +317,7 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
     public void AddChunk (Vector3Int pos) {
         if (chunks.GetNodeIndexAtCoord (pos) != 0) return;
         var chunkVoxels = Util.CreateInstance<VoxelDataStructure> (dataStructureType);
-        var chunk = new VoxelChunk (pos, chunkSize, voxelScale, chunkVoxels);
+        var chunk = new VoxelChunk (pos, chunkSize, new Vector3 (voxelScale, voxelScale, voxelScale), chunkVoxels);
         chunk.voxelWorld = this;
         chunks.AddChunk (pos, chunk);
 
