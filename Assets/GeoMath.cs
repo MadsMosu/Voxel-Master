@@ -1,24 +1,28 @@
 using UnityEngine;
 
-public static class MathToolBox {
+public static class GeoMath {
 
     public struct Triangle {
         public Vector3 a, b, c;
-        public Line3D AC, CB, BA;
+        public Line3D AB, BA, BC, CB, AC, CA;
         public Triangle (Vector3 a, Vector3 b, Vector3 c) {
             this.a = a;
             this.b = b;
             this.c = c;
-            this.AC = new Line3D (a, c);
-            this.CB = new Line3D (c, b);
+            this.AB = new Line3D (a, b);
             this.BA = new Line3D (b, a);
+            this.BC = new Line3D (b, c);
+            this.CB = new Line3D (c, b);
+            this.AC = new Line3D (a, c);
+            this.CA = new Line3D (c, a);
         }
         public Vector3 Center () {
             return (a + b + c) / 3;
         }
 
         public Vector3 SurfaceNormal () {
-            return Vector3.Cross (b - a, c - a);
+            Vector3 v = Vector3.Cross (b - a, c - a);
+            return v / v.magnitude;
         }
 
     }
