@@ -206,10 +206,6 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
             (Tables.transFullFaceOrientation[side][0].y * chunkSize + (u + cellOriginU) * 0.5f * Tables.transFullFaceOrientation[side][1].y + (v + cellOriginV) * 0.5f * Tables.transFullFaceOrientation[side][2].y + w * 0.5f * Tables.transFullFaceOrientation[side][3].y) * step,
             (Tables.transFullFaceOrientation[side][0].z * chunkSize + (u + cellOriginU) * 0.5f * Tables.transFullFaceOrientation[side][1].z + (v + cellOriginV) * 0.5f * Tables.transFullFaceOrientation[side][2].z + w * 0.5f * Tables.transFullFaceOrientation[side][3].z) * step
         );
-        // if (step > 1) {
-
-        //     Debug.Log (transCellPos);
-        // }
         float density = volume[origin + new Vector3Int ((int) transCellPos.x, (int) transCellPos.y, (int) transCellPos.z)].density;
         return density;
     }
@@ -233,7 +229,7 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
         }
     }
 
-    private Vector3 GetTransFullFaceCornerPos (Vector3 cellPos, int side, int u, int v, int step) {
+    private Vector3 GetTransFullFaceCornerPos (Vector3Int cellPos, int side, int u, int v, int step) {
         var cornerPos = new Vector3 (
             cellPos.x + (float) (Tables.transFullFaceOrientation[side][0].x) + (u * 0.5f) * Tables.transFullFaceOrientation[side][1].x + (v * 0.5f) * Tables.transFullFaceOrientation[side][2].x,
             cellPos.y + (float) (Tables.transFullFaceOrientation[side][0].y) + (u * 0.5f) * Tables.transFullFaceOrientation[side][1].y + (v * 0.5f) * Tables.transFullFaceOrientation[side][2].y,

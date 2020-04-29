@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using UnityEngine;
-using static ThreadedMeshProvider;
 
 //[ExecuteInEditMode]
 // [System.Serializable]
@@ -19,7 +18,7 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
 
     private WorldGenerator worldGenerator;
     private MeshGeneratorSettings meshGeneratorSettings;
-    private ThreadedMeshProvider meshProvider;
+    private MeshProvider meshProvider;
     // private Dictionary<Vector3Int, Mesh> chunkMeshes = new Dictionary<Vector3Int, Mesh> ();
     private List<VoxelChunk> dirtChunks = new List<VoxelChunk> ();
     private List<VoxelMaterial> _materials = new List<VoxelMaterial> ();
@@ -92,7 +91,7 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
             isoLevel = isoLevel
         };
 
-        meshProvider = new ThreadedMeshProvider (this, Util.CreateInstance<VoxelMeshGenerator> (meshGeneratorType), meshGeneratorSettings);
+        meshProvider = new MeshProvider (meshGeneratorSettings);
 
         ExpandChunkGeneration ();
         UpdateViewerCoordinates ();
@@ -133,7 +132,6 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
         }
 
         worldGenerator.MainThreadUpdate ();
-        meshProvider.MainThreadUpdate ();
 
         RenderChunks ();
         // UpdateCollisionMeshes ();
@@ -165,51 +163,46 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
 
         lod0Nodes.ToList ().ForEach (code => {
             var node = chunksOctree.GetNode (code);
-            meshProvider.RequestChunkMesh (new MeshGenerationRequest {
-                origin = Util.FloorVector3 (node.bounds.min),
-                    locationCode = code,
-                    voxelScale = 1f,
-                    callback = OnChunkMesh,
-                    step = 1 << 0
-            });
+            CreateMesh (
+                meshProvider.GetMesh (this, new Vector3Int ((int) node.bounds.min.x, (int) node.bounds.min.x, (int) node.bounds.min.x), 1 << 0),
+                node.locationCode
+            );
+
         });
-        lod1Nodes.ToList ().ForEach (code => {
-            var node = chunksOctree.GetNode (code);
-            meshProvider.RequestChunkMesh (new MeshGenerationRequest {
-                origin = Util.FloorVector3 (node.bounds.min),
-                    locationCode = code,
-                    voxelScale = 1f,
-                    callback = OnChunkMesh,
-                    step = 1 << 1
-            });
-        });
-        lod2Nodes.ToList ().ForEach (code => {
-            var node = chunksOctree.GetNode (code);
-            meshProvider.RequestChunkMesh (new MeshGenerationRequest {
-                origin = Util.FloorVector3 (node.bounds.min),
-                    locationCode = code,
-                    voxelScale = 1f,
-                    callback = OnChunkMesh,
-                    step = 1 << 2
-            });
-        });
+        // lod1Nodes.ToList ().ForEach (code => {
+        //     var node = chunksOctree.GetNode (code);
+        //     CreateMesh (
+        //         meshProvider.GetMesh (this, new Vector3Int ((int) node.bounds.min.x, (int) node.bounds.min.x, (int) node.bounds.min.x), 1 << 1),
+        //         node.locationCode
+        //     );
+        // });
+        // lod2Nodes.ToList ().ForEach (code => {
+        //     var node = chunksOctree.GetNode (code);
+        //     meshProvider.RequestChunkMesh (new MeshGenerationRequest {
+        //         origin = Util.FloorVector3 (node.bounds.min),
+        //             locationCode = code,
+        //             voxelScale = 1f,
+        //             callback = OnChunkMesh,
+        //             step = 1 << 2
+        //     });
+        // });
     }
 
     private Dictionary<uint, Mesh> previewMeshes = new Dictionary<uint, Mesh> ();
     private Dictionary<uint, MeshCollider> colliders = new Dictionary<uint, MeshCollider> ();
-    private void OnChunkMesh (MeshGenerationResult res) {
-        var mesh = res.meshData.BuildMesh ();
-        previewMeshes[res.locationCode] = mesh;
+    private void CreateMesh (MeshData meshData, uint locationCode) {
+        var mesh = meshData.BuildMesh ();
+        previewMeshes[locationCode] = mesh;
 
-        MeshCollider collider;
-        if (colliders.ContainsKey (res.locationCode))
-            collider = colliders[res.locationCode];
-        else
-            colliders[res.locationCode] = new GameObject ().AddComponent<MeshCollider> ();
+        // MeshCollider collider;
+        // if (colliders.ContainsKey (locationCode))
+        //     collider = colliders[locationCode];
+        // else
+        //     colliders[locationCode] = new GameObject ().AddComponent<MeshCollider> ();
 
-        colliders[res.locationCode].sharedMesh = mesh;
-        colliders[res.locationCode].transform.parent = transform;
-        colliders[res.locationCode].transform.position = chunksOctree.GetNode (res.locationCode).bounds.min;
+        // colliders[locationCode].sharedMesh = mesh;
+        // colliders[locationCode].transform.parent = transform;
+        // colliders[locationCode].transform.position = chunksOctree.GetNode (locationCode).bounds.min;
 
     }
 

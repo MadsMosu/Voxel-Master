@@ -1,0 +1,437 @@
+#pragma kernel PolygoniseRegularCell
+#pragma kernel PolygoniseTransitionCell
+#include "Tables.compute"
+
+struct Triangle {
+    float3 vertex0, vertex1, vertex2;
+};
+
+struct TriangleNormals {   
+    float3 vertexNormal0, vertexNormal1, vertexNormal2;
+};
+
+struct TriangleIndices {
+    int index1, index2, index3;
+};
+
+struct Voxel {
+    float density;
+    int materialIndex;
+};
+
+float isoLevel, scale;
+int chunkSize, step;
+
+static const float shiftFactor = 0.30;
+static const int caseCodeCoeffs[] = {0x01, 0x02, 0x04, 0x80, 0x100, 0x08, 0x40, 0x20, 0x10};
+
+RWStructuredBuffer<Voxel> RegularCellVoxelsBuffer;
+RWStructuredBuffer<Voxel> TransCellVoxelsBuffer;
+RWStructuredBuffer<float3> VerticesBuffer;
+RWStructuredBuffer<float3> NormalsBuffer;
+// AppendStructuredBuffer<Triangle> TrianglesBuffer;
+// AppendStructuredBuffer<TriangleNormals> TriangleNormalsBuffer;
+AppendStructuredBuffer<TriangleIndices> IndicesBuffer;
+
+
+// float3 regularCellVertexCache[16*16*16*4];
+// float3 transitionCellVertexCache[16*16*16*10];
+
+// float3 VertexInterp(float3 vPos1, float3 vPos2, float densityA, float densityB)
+// {
+//     if (abs(densityB - densityA) > 0.000001) {
+//         return lerp(vPos1, vPos2, (isoLevel - densityA) / (densityB - densityA));
+//     } else {
+//         return lerp(vPos1, vPos2, 0.5);
+//     }
+// }
+
+int IndexFromCoord(uint3 coords) {
+    return coords.x + coords.y * chunkSize + coords.z * chunkSize * chunkSize;
+}
+
+// int GetRegularCacheIndex(int3 cellPos, int reusableIndex) {
+//     int cacheIndex = cellPos.x + chunkSize * cellPos.y + chunkSize * chunkSize * cellPos.z + chunkSize * chunkSize * chunkSize * reusableIndex;
+//     return cacheIndex;
+// }
+
+// int GetTransitionCacheIndex(int side, int u, int v, int reusableIndex) {
+//     int cacheIndex = side + 6 * u + 6 * chunkSize * chunkSize * reusableIndex;
+//     return cacheIndex;
+// }
+
+// float3 GetRegularCellCacheVertex(int3 cellPos, int reusableIndex) {
+//     int cacheIndex =  regularCellVertexCache[GetRegularCacheIndex (cellPos, reusableIndex)];
+//     return cacheIndex;
+// }
+
+// void SetRegularCellCacheVertex(int vertexIndex, int3 cellPos, int reusableIndex) {
+//     int cacheIndex = GetRegularCacheIndex(cellPos, reusableIndex);
+//     regularCellVertexCache[cacheIndex] = vertexIndex;
+// }
+
+// float3 GetTransitionCellCacheVertex(int side, int u, int v, int reusableIndex) {
+//     int cacheIndex = GetTransitionCacheIndex (side, u, v, reusableIndex);
+//     return transitionCellVertexCache[cacheIndex];
+// }
+
+// void SetTransitionCellCacheVertex(int vertexIndex, int side, int u, int v, int reusableIndex) {
+//     int cacheIndex = GetTransitionCacheIndex(side, u, v, reusableIndex);
+//     transitionCellVertexCache[cacheIndex] = vertexIndex;
+// }
+
+
+
+Voxel GetRegularCellVoxel(int3 cellPos) {
+    int index = (cellPos.x + 1) + (chunkSize + 3) * (cellPos.y + 1) + (chunkSize + 3) * (chunkSize + 3) * (cellPos.z + 1);
+    return RegularCellVoxelsBuffer[index];
+}
+
+
+Voxel GetTransCellVoxel(uint3 cellPos, int side, int u, int v, int w) {
+    int cellOriginU = 2 * (transReverseOrientation[side][0].x * (chunkSize - 1) + cellPos.x * transReverseOrientation[side][1].x + cellPos.y * transReverseOrientation[side][2].x + cellPos.z * transReverseOrientation[side][3].x);
+    int cellOriginV = 2 * (transReverseOrientation[side][0].y * (chunkSize - 1) + cellPos.x * transReverseOrientation[side][1].y + cellPos.y * transReverseOrientation[side][2].y + cellPos.z * transReverseOrientation[side][3].y);
+    int cellOriginW = 0;
+    int shiftedU = cellOriginU + u + 1;
+    int shiftedV = cellOriginV + v + 1;
+    int shiftedW = cellOriginW + w + 1;
+    
+    int index = side + 6 + shiftedU + 16 * (2 * chunkSize + 3) * shiftedV + 6 * (2 * chunkSize + 3) * (2 * chunkSize + 3) * shiftedW;
+    return TransCellVoxelsBuffer[index];
+}
+
+
+float GetTransCellDensity(uint3 cellPos, int side, int u, int v, int w) {
+    int cellOriginU = 2 * (transReverseOrientation[side][0].x * (chunkSize - 1) + cellPos.x * transReverseOrientation[side][1].x + cellPos.y * transReverseOrientation[side][2].x + cellPos.z * transReverseOrientation[side][3].x);
+    int cellOriginV = 2 * (transReverseOrientation[side][0].y * (chunkSize - 1) + cellPos.x * transReverseOrientation[side][1].y + cellPos.y * transReverseOrientation[side][2].y + cellPos.z * transReverseOrientation[side][3].y);
+    float3 transCellPos =  {
+        (transFullFaceOrientation[side][0].x * chunkSize + (u + cellOriginU) * 0.5f * transFullFaceOrientation[side][1].x + (v + cellOriginV) * 0.5f * transFullFaceOrientation[side][2].x + w * 0.5f * transFullFaceOrientation[side][3].x) * step,
+        (transFullFaceOrientation[side][0].y * chunkSize + (u + cellOriginU) * 0.5f * transFullFaceOrientation[side][1].y + (v + cellOriginV) * 0.5f * transFullFaceOrientation[side][2].y + w * 0.5f * transFullFaceOrientation[side][3].y) * step,
+        (transFullFaceOrientation[side][0].z * chunkSize + (u + cellOriginU) * 0.5f * transFullFaceOrientation[side][1].z + (v + cellOriginV) * 0.5f * transFullFaceOrientation[side][2].z + w * 0.5f * transFullFaceOrientation[side][3].z) * step
+    };
+
+    float density = GetTransCellVoxel(cellPos, side, u, v, w).density;
+    return density;
+}
+
+float GetRegularCellDensity(uint3 cellPos, int side, int u, int v) {
+    int3 coords = {
+        cellPos.x + transFullFaceOrientation[side][0].x + u * transFullFaceOrientation[side][1].x + v * transFullFaceOrientation[side][2].x,
+        cellPos.y + transFullFaceOrientation[side][0].y + u * transFullFaceOrientation[side][1].y + v * transFullFaceOrientation[side][2].y,
+        cellPos.z + transFullFaceOrientation[side][0].z + u * transFullFaceOrientation[side][1].z + v * transFullFaceOrientation[side][2].z
+    };
+    float density = GetRegularCellVoxel(cellPos).density;
+    return density;
+}
+
+float GetTransCornerDensity(uint3 cellPos, int side, int corner) {
+    if (corner < 9) {
+        return GetTransCellDensity (cellPos, side, transFullCorners[corner].x, transFullCorners[corner].y, 0);
+    } else {
+        int cornerIndex = corner - 9;
+        return GetRegularCellDensity (cellPos, side, transRegularCorners[cornerIndex].x, transRegularCorners[cornerIndex].y);
+    }
+}
+
+float3 ShiftRegularCornerPos(int3 cornerOffset, float3 cornerPos, int step) {
+    if (cornerOffset.x == 0) {
+        cornerPos.x += shiftFactor * step;
+    } else if (cornerOffset.x == chunkSize) {
+        cornerPos.x -= shiftFactor * step;
+    }
+
+    if (cornerOffset.y == 0) {
+        cornerPos.y += shiftFactor * step;
+    } else if (cornerOffset.y == chunkSize) {
+        cornerPos.y -= shiftFactor * step;
+    }
+
+    if (cornerOffset.z == 0) {
+        cornerPos.z += shiftFactor * step;
+    } else if (cornerOffset.z == chunkSize) {
+        cornerPos.z -= shiftFactor * step;
+    }
+    return cornerPos;
+}
+
+float3 GetTransFullFaceCornerPos(uint3 cellPos, int side, int u, int v) {
+    float3 cornerPos =  {
+        cellPos.x + (float)(transFullFaceOrientation[side][0].x) + (u * 0.5f) * transFullFaceOrientation[side][1].x + (v * 0.5f) * transFullFaceOrientation[side][2].x,
+        cellPos.y + (float)(transFullFaceOrientation[side][0].y) + (u * 0.5f) * transFullFaceOrientation[side][1].y + (v * 0.5f) * transFullFaceOrientation[side][2].y,
+        cellPos.z + (float)(transFullFaceOrientation[side][0].z) + (u * 0.5f) * transFullFaceOrientation[side][1].z + (v * 0.5f) * transFullFaceOrientation[side][2].z
+    };
+    return cornerPos * step;
+}
+
+float3 GetRegularCornerPos(uint3 cellPos, int side, int u, int v) {
+    int3 cornerPos = {
+        cellPos.x + transFullFaceOrientation[side][0].x + u * transFullFaceOrientation[side][1].x + v * transFullFaceOrientation[side][2].x,
+        cellPos.y + transFullFaceOrientation[side][0].y + u * transFullFaceOrientation[side][1].y + v * transFullFaceOrientation[side][2].y,
+        cellPos.z + transFullFaceOrientation[side][0].z + u * transFullFaceOrientation[side][1].z + v * transFullFaceOrientation[side][2].z
+    };
+    float3 pos = ShiftRegularCornerPos (cornerPos, float3 (cornerPos.x, cornerPos.y, cornerPos.z) * step, step);
+    return pos;
+}
+
+float3 GetTransCornerPos(uint3 cellPos, int side, int corner) {
+    if (corner < 9) {
+        return GetTransFullFaceCornerPos(cellPos, side, transFullCorners[corner].x, transFullCorners[corner].y);
+    } else {
+        int cornerIndex = corner - 9;
+        return GetRegularCornerPos (cellPos, side, transRegularCorners[cornerIndex].x, transRegularCorners[cornerIndex].y);
+    }
+}
+
+
+
+
+
+float3 GetRegularCornerNormal(int3 cornerPos) {
+    float dx = GetRegularCellVoxel(int3 (cornerPos.x + 1, cornerPos.y, cornerPos.z)).density - GetRegularCellVoxel(int3 (cornerPos.x - 1, cornerPos.y, cornerPos.z)).density; 
+    float dy = GetRegularCellVoxel(int3 (cornerPos.x, cornerPos.y + 1, cornerPos.z)).density - GetRegularCellVoxel(int3 (cornerPos.x, cornerPos.y  - 1, cornerPos.z)).density; 
+    float dz = GetRegularCellVoxel(int3 (cornerPos.x, cornerPos.y, cornerPos.z  + 1)).density - GetRegularCellVoxel(int3 (cornerPos.x, cornerPos.y, cornerPos.z  - 1)).density;
+    return float3 (dx, dy, dz); 
+}
+
+float3 GetTransCornerNormal(uint3 cellPos, int side, int corner) {
+    if (corner < 9) {
+        return float3 (
+            GetTransCellDensity(cellPos, side, transFullCorners[corner].x + transReverseOrientation[side][1].x, transFullCorners[corner].y + transReverseOrientation[side][1].y, transReverseOrientation[side][1].z) - GetTransCellDensity (cellPos, side, transFullCorners[corner].x - transReverseOrientation[side][1].x, transFullCorners[corner].y - transReverseOrientation[side][1].y, -transReverseOrientation[side][1].z),
+            GetTransCellDensity (cellPos, side, transFullCorners[corner].x + transReverseOrientation[side][2].x, transFullCorners[corner].y + transReverseOrientation[side][2].y, transReverseOrientation[side][2].z) - GetTransCellDensity (cellPos, side, transFullCorners[corner].x - transReverseOrientation[side][2].x, transFullCorners[corner].y - transReverseOrientation[side][2].y, -transReverseOrientation[side][2].z),
+            GetTransCellDensity (cellPos, side, transFullCorners[corner].x + transReverseOrientation[side][3].x, transFullCorners[corner].y + transReverseOrientation[side][3].y, transReverseOrientation[side][3].z) - GetTransCellDensity (cellPos, side, transFullCorners[corner].x - transReverseOrientation[side][3].x, transFullCorners[corner].y - transReverseOrientation[side][3].y, -transReverseOrientation[side][3].z)
+        );
+    } else {
+        int cornerIndex = corner -9;
+        return GetRegularCornerNormal(int3 (
+            cellPos.x + (transFullFaceOrientation[side][0].x + transRegularCorners[cornerIndex].x * transFullFaceOrientation[side][1].x + transRegularCorners[cornerIndex].y * transFullFaceOrientation[side][2].x),
+            cellPos.y + (transFullFaceOrientation[side][0].y + transRegularCorners[cornerIndex].x * transFullFaceOrientation[side][1].y + transRegularCorners[cornerIndex].y * transFullFaceOrientation[side][2].y),
+            cellPos.z + (transFullFaceOrientation[side][0].z + transRegularCorners[cornerIndex].x * transFullFaceOrientation[side][1].z + transRegularCorners[cornerIndex].y * transFullFaceOrientation[side][2].z)
+        ));
+    }
+}
+
+float3 GetVertexNormal(float3 ANormal, float3 BNormal, float lerpFactor) {
+    float dx = ANormal.x + lerpFactor * (BNormal.x - ANormal.x);
+    float dy = ANormal.y + lerpFactor * (BNormal.y - ANormal.y);
+    float dz = ANormal.z + lerpFactor * (BNormal.z - ANormal.z);
+    return normalize(float3 (-dx,-dy,-dz));
+}
+
+
+
+int GetNewRegularVertex(uint3 cellPos, int cornerA, int cornerB, float cubeDensities[8], int vertexIndex) {
+    float densityA = cubeDensities[cornerA];
+    float densityB = cubeDensities[cornerB];
+
+    int3 APosInt = cellPos + CornerIndex[cornerA];
+    float3 APos = APosInt * step;
+    int3 BPosInt = cellPos + CornerIndex[cornerB];
+    float3 BPos = BPosInt * step;
+
+    float3 ANormal = GetRegularCornerNormal(APosInt);
+    float3 BNormal = GetRegularCornerNormal(BPosInt);
+
+    // if (step > 1) {
+    //     APos = ShiftRegularCornerPos(APosInt, APos, step);
+    //     BPos = ShiftRegularCornerPos(BPosInt, BPos, step);
+    // }
+
+    float lerpFactor;
+    if (abs(densityB - densityA) > 0.000001) {
+        lerpFactor = (isoLevel - densityA) / (densityB - densityA);
+    } else {
+        lerpFactor = 0.5;
+    }
+
+    float3 Q = APos + lerpFactor * (BPos - APos);
+    // float3 Q = APos;
+
+    // int index = VerticesBuffer.IncrementCounter() - 1;
+    int index = IndexFromCoord(cellPos) * 12 + vertexIndex;
+    VerticesBuffer[index] = Q * scale;
+    NormalsBuffer[index] = GetVertexNormal(ANormal, BNormal, lerpFactor);
+
+    return index;
+}
+
+int GetNewTransVertex(uint3 cellPos, int side, int cornerA, int cornerB, float transFullFaceDensities[9]) {
+    float3 APos = GetTransCornerPos(cellPos, side, cornerA);
+    float3 BPos = GetTransCornerPos(cellPos, side, cornerB);
+
+    float3 ANormal = GetTransCornerNormal(cellPos, side, cornerA);
+    float3 BNormal = GetTransCornerNormal(cellPos, side, cornerB);
+
+    float densityA;
+    if (cornerA < 9) {
+        densityA = transFullFaceDensities[cornerA];
+    } else {
+        densityA = GetTransCornerDensity(cellPos, side, cornerA);
+    }
+
+    float densityB;
+    if (cornerB < 9) {
+        densityB = transFullFaceDensities[cornerB];
+    } else {
+        densityB = GetTransCornerDensity(cellPos, side, cornerB);
+    }
+
+    float lerpFactor;
+    if (abs(densityB - densityA) > 0.000001) {
+        lerpFactor = (isoLevel - densityA) / (densityB - densityA);
+    } else {
+        lerpFactor = 0.5;
+    }
+
+    float3 Q = APos * lerpFactor * (BPos - APos);
+
+    int index = VerticesBuffer.IncrementCounter() - 1;
+    VerticesBuffer[index] = Q * scale;
+    NormalsBuffer[index] = GetVertexNormal(ANormal, BNormal, lerpFactor);
+
+    return index;
+
+}
+
+struct VerticesData {
+    RegularCell triangulationInfo;
+    int indicesMap[12];
+};
+
+
+[numthreads(8,8,8)]
+void PolygoniseRegularCell(uint3 cellPos : SV_DispatchThreadID) {
+    float cubeDensities[8];
+    int caseCode = 0;
+    int addToCaseCode = 1;
+    for (int i = 0; i < 8; i++) {
+        cubeDensities[i] = GetRegularCellVoxel(cellPos + CornerIndex[i]).density;
+        if (cubeDensities[i] < isoLevel) {
+            caseCode |= addToCaseCode;
+        } 
+        addToCaseCode *= 2;
+    }
+
+    if (caseCode == 0 || caseCode == 255) return;
+    int regularCellClass = RegularCellClass[caseCode];
+    RegularCell triangulationInfo = RegularCellData[regularCellClass];
+
+    int vertexCount = triangulationInfo.GetVertexCount();
+    int indicesMapping[12]; //max vertex count is 12
+
+    int cellData[] = RegularVertexData[caseCode];
+    for (int v = 0; v < vertexCount; v++ ) {
+        int vertexData = cellData[v];
+        int cornerA = (vertexData >> 4) & 0x0F;
+        int cornerB = vertexData & 0x0F;
+
+        indicesMapping[v] = GetNewRegularVertex(cellPos, cornerA, cornerB, cubeDensities, v);
+    }
+
+    int triangleCount = triangulationInfo.GetTriangleCount();
+    for (int t = 0; t < triangleCount; t++) {
+        int index0 = triangulationInfo.triangleIndices[3 * t];
+        int index1 = triangulationInfo.triangleIndices[3 * t + 1];
+        int index2 = triangulationInfo.triangleIndices[3 * t + 2];
+
+        int mappedIndex0 = indicesMapping[index0];
+        int mappedIndex1 = indicesMapping[index1];
+        int mappedIndex2 = indicesMapping[index2];
+
+        float3 vertex0 = VerticesBuffer[mappedIndex0];
+        float3 vertex1 = VerticesBuffer[mappedIndex1];
+        float3 vertex2 = VerticesBuffer[mappedIndex2];
+        if (
+            ((vertex0.x == vertex1.x) && (vertex0.x == vertex2.x) && (vertex1.x == vertex2.x)) &&
+            ((vertex0.y == vertex1.y) && (vertex0.y == vertex2.y) && (vertex1.y == vertex2.y)) &&
+            ((vertex0.z == vertex1.z) && (vertex0.z == vertex2.z) && (vertex1.z == vertex2.z))
+        ) continue;
+
+        float3 vertexNormal0 = NormalsBuffer[mappedIndex0];
+        float3 vertexNormal1 = NormalsBuffer[mappedIndex1];
+        float3 vertexNormal2 = NormalsBuffer[mappedIndex2];
+
+        // Triangle tri = {vertex0, vertex1, vertex2};
+        // TrianglesBuffer.Append(tri);
+
+        // TriangleNormals triNormals = {vertexNormal0, vertexNormal1, vertexNormal2};
+        // TriangleNormalsBuffer.Append(triNormals);
+
+        TriangleIndices indices = {mappedIndex0, mappedIndex2, mappedIndex1};
+        IndicesBuffer.Append(indices);
+    }
+}
+
+[numthreads(1,8,8)]
+void PolygoniseTransitionCell(uint3 threadId : SV_DispatchThreadID) {
+    int side = threadId.x;
+    int u = threadId.y;
+    int v = threadId.z;
+
+    uint3 cellPos = {
+        transFullFaceOrientation[side][0].x * (chunkSize - 1) + u * transFullFaceOrientation[side][1].x + v * transFullFaceOrientation[side][2].x,
+        transFullFaceOrientation[side][0].y * (chunkSize - 1) + u * transFullFaceOrientation[side][1].y + v * transFullFaceOrientation[side][2].y,
+        transFullFaceOrientation[side][0].z * (chunkSize - 1) + u * transFullFaceOrientation[side][1].z + v * transFullFaceOrientation[side][2].z
+    };
+
+    float transFullFaceDensities[9]; 
+    int transCaseCode = 0;
+    for (int i = 0; i < 9; i++) {
+        transFullFaceDensities[i] = GetTransCornerDensity(cellPos, side, i);
+        if (transFullFaceDensities[i] < isoLevel) {
+            transCaseCode |= caseCodeCoeffs[i];
+        }
+    }
+
+    if (transCaseCode == 0 || transCaseCode == 511) return;
+
+    int transCellClass = TransitionCellClass[transCaseCode];
+    TransitionCell triangulationInfo = TransitionCellData[transCellClass & 0x7F];
+
+    int vertexCount = triangulationInfo.GetVertexCount();
+    int indicesMapping[12]; //max vertices count is 12
+    bool flipWinding = (transCellClass & 0x80) == 0;
+
+    int cellData[12];
+    if (transCaseCode <= 226) {
+        cellData = TransitionVertexData[transCaseCode];
+    } else {
+        cellData = TransitionVertexData1[transCaseCode];
+    }
+
+
+    for (int vert = 0; vert < vertexCount; vert++) {
+        int vertexData = cellData[vert];
+        int cornerA = (vertexData >> 4) & 0x0F;
+        int cornerB = vertexData & 0x0F;
+
+        indicesMapping[v] = GetNewTransVertex(cellPos, side, cornerA, cornerB, transFullFaceDensities);
+    }
+
+    int triangleCount = triangulationInfo.GetTriangleCount();
+    for (int t = 0; t < triangleCount; t++) {
+        int index0 = triangulationInfo.triangleIndices[3 * t];
+        int index1 = triangulationInfo.triangleIndices[3 * t + 1];
+        int index2 = triangulationInfo.triangleIndices[3 * t + 2];
+
+        int mappedIndex0 = indicesMapping[index0];
+        int mappedIndex1 = indicesMapping[index1];
+        int mappedIndex2 = indicesMapping[index2];
+
+        float3 vertex0 = VerticesBuffer[mappedIndex0];
+        float3 vertex1 = VerticesBuffer[mappedIndex1];
+        float3 vertex2 = VerticesBuffer[mappedIndex2];
+        if (
+            ((vertex0.x == vertex1.x) || (vertex0.x == vertex2.x) || (vertex1.x == vertex2.x)) &&
+            ((vertex0.y == vertex1.y) || (vertex0.y == vertex2.y) || (vertex1.y == vertex2.y)) &&
+            ((vertex0.z == vertex1.z) || (vertex0.z == vertex2.z) || (vertex1.z == vertex2.z))
+        ) continue;
+
+        // if (flipWinding) {
+        //     TriangleIndices indices = {mappedIndex0, mappedIndex2, mappedIndex1};
+        //     IndicesBuffer.Append(indices);
+        // } else {
+        //     TriangleIndices indices = {mappedIndex0, mappedIndex1, mappedIndex2};
+        //     IndicesBuffer.Append(indices);
+        // }
+    }
+}
