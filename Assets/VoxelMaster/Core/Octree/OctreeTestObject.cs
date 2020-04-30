@@ -1,16 +1,18 @@
 using UnityEngine;
 
-public class OctreeTestObject : MonoBehaviour {
+namespace VoxelMaster.Core {
+    public class OctreeTestObject : MonoBehaviour {
 
-    private Octree octree;
+        private Octree octree;
 
-    void Start () {
-        octree = new Octree (16, 10);
+        void Start() {
+            octree = new Octree(16, 10);
+        }
+
+        void OnDrawGizmos() {
+            if (octree != null)
+                octree.DrawLeafNodes();
+        }
+
     }
-
-    void OnDrawGizmos () {
-        if (octree != null)
-            octree.DrawLeafNodes ();
-    }
-
 }

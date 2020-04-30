@@ -11,11 +11,16 @@ struct TriangleIndices {
     dword index1, index2, index3;
 };
 
+struct Voxel {
+    float density;
+    int materialIndex;
+};
+
 float isoLevel;
 int chunkWidth;
 int chunkHeight;
 int chunkDepth;
-RWStructuredBuffer<float> DensitiesBuffer;
+RWStructuredBuffer<Voxel> DensitiesBuffer;
 AppendStructuredBuffer<TriangleVertices> TrianglesBuffer; 
 RWStructuredBuffer<float3> SurfaceNormalsBuffer;
 RWStructuredBuffer<TriangleIndices> TriangleIndicesBuffer;
@@ -41,14 +46,14 @@ void MarchingCubes(uint3 cellPos : SV_DispatchThreadID)
     }
 
     float cubeDensity[8] = {
-        DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[0])],
-        DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[1])],
-        DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[2])],
-        DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[3])],
-        DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[4])],
-        DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[5])],
-        DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[6])],
-        DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[7])]
+        DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[0])].density,
+        DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[1])].density,
+        DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[2])].density,
+        DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[3])].density,
+        DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[4])].density,
+        DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[5])].density,
+        DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[6])].density,
+        DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[7])].density
     };
 
 

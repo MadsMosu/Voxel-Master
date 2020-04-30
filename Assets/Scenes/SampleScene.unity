@@ -537,7 +537,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 871260432}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: be76e5f14cfee674cb30b491fb72b09b, type: 3}
   m_Name: 
@@ -733,7 +733,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 871260432}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: -12.08, y: 78.5, z: 53.52}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -768,17 +768,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb70396b3ad3cbd4b929abd099dab9e8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  voxelScale: 1
-  isoLevel: 0
-  chunkSize: 16
   viewer: {fileID: 871260437}
-  viewerCoordinates: {x: 1, y: 0, z: -1}
-  generationRadius: 16
-  dataStructureType: SimpleDataStructure, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
-    PublicKeyToken=null
-  meshGeneratorType: MarchingCubesEnhanced, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
-    PublicKeyToken=null
-  material: {fileID: 2100000, guid: aafdef48947a4284fb6592e0dec45324, type: 2}
+  viewerRadius: 16
+  material: {fileID: 2100000, guid: f4a082d0cf9dba842808c8f8020e1ecf, type: 2}
 --- !u!4 &1114245770
 Transform:
   m_ObjectHideFlags: 0

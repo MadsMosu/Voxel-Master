@@ -57,4 +57,10 @@ public static class Util {
         return regex.Replace (className, " $&");
     }
 
+    public static int Int_floor_division(int value, int divider) {
+        int q = value / divider;
+        if (value % divider < 0) return q - 1;
+        else return q;
+    }
+
 }
