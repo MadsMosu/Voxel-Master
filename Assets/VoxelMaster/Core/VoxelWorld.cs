@@ -157,14 +157,11 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
         lod0Nodes.Add (currentNodeLocation);
         lod0Nodes.Add (currentNodeLocation >> 3);
 
-        for (int x = -2; x <= 2; x++)
-            for (int y = -2; y <= 2; y++)
-                for (int z = -2; z <= 2; z++) {
-                    if (x == 0 && y == 0 && z == 0) continue;
-                    lod0Nodes.Add (Octree.RelativeLeafNodeLocation (currentNodeLocation, new Vector3Int (x, y, z)));
-                    lod1Nodes.Add (Octree.RelativeLeafNodeLocation (currentNodeLocation >> 3, new Vector3Int (x, y, z)));
-                    lod2Nodes.Add (Octree.RelativeLeafNodeLocation (currentNodeLocation >> 6, new Vector3Int (x, y, z)));
-                }
+        for (int i = 0; i < neighbourOffsets.Length; i++) {
+            lod0Nodes.Add (Octree.RelativeLeafNodeLocation (currentNodeLocation, neighbourOffsets[i]));
+            lod1Nodes.Add (Octree.RelativeLeafNodeLocation (currentNodeLocation >> 3, neighbourOffsets[i]));
+            lod2Nodes.Add (Octree.RelativeLeafNodeLocation (currentNodeLocation >> 6, neighbourOffsets[i]));
+        }
 
         lod0Nodes.ToList ().ForEach (code => {
             var node = chunksOctree.GetNode (code);
@@ -179,7 +176,6 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
 
         lod1Nodes.ToList ().ForEach (code => {
             var node = chunksOctree.GetNode (code);
-            Debug.Assert (node.chunk == null);
             meshProvider.RequestChunkMesh (new MeshGenerationRequest {
                 origin = Util.FloorVector3 (node.bounds.min),
                     locationCode = code,
@@ -188,10 +184,8 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
                     step = 1 << 1
             });
         });
-
         lod2Nodes.ToList ().ForEach (code => {
             var node = chunksOctree.GetNode (code);
-            Debug.Assert (node.chunk == null);
             meshProvider.RequestChunkMesh (new MeshGenerationRequest {
                 origin = Util.FloorVector3 (node.bounds.min),
                     locationCode = code,
@@ -200,7 +194,6 @@ public class VoxelWorld : MonoBehaviour, IVoxelData {
                     step = 1 << 2
             });
         });
-        return;
     }
 
     private Dictionary<uint, Mesh> previewMeshes = new Dictionary<uint, Mesh> ();
