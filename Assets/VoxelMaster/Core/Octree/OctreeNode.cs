@@ -1,8 +1,11 @@
 using UnityEngine;
+using VoxelMaster.Chunk;
 
-public class OctreeNode {
-    public VoxelChunk chunk;
-    public uint locationCode;
-    public byte childrenFlags;
-    public Bounds bounds;
+namespace VoxelMaster.Core {
+    public class OctreeNode {
+        public VoxelChunk chunk;
+        public uint locationCode;
+        public byte childrenFlags;
+        public Bounds bounds;
+    }
 }

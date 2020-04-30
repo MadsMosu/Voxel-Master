@@ -21,15 +21,18 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: TerrainMaterial
-  m_Shader: {fileID: 4800000, guid: 933532a4fcc9baf4fa0491de14d08ed7, type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: 837d573147674934cb11a84cd2fce896,
+    type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 2050
+  m_CustomRenderQueue: 2000
   stringTagMap:
-    RenderType: Opaque
-  disabledShaderPasses: []
+    MotionVector: User
+  disabledShaderPasses:
+  - TransparentBackface
+  - MOTIONVECTORS
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -129,8 +132,27 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _Triplanar_1810F407_Texture_1:
+        m_Texture: {fileID: 2800000, guid: 9b8531a899bd27a419d8aab0cc184d8f, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Triplanar_1F5266CC_Texture_1:
+        m_Texture: {fileID: 2800000, guid: 8c3dea29786b52441b088cf557ae4a0e, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Triplanar_66E297D7_Texture_1:
+        m_Texture: {fileID: 2800000, guid: f15f140310e982e46b60a1b528f968f7, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Triplanar_D16B69D5_Texture_1:
+        m_Texture: {fileID: 2800000, guid: abac1c1659d94c8479774637be17c963, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Floats:
     - _AlphaClip: 0
+    - _AlphaCutoffEnable: 0
+    - _AlphaDstBlend: 0
+    - _AlphaSrcBlend: 1
     - _Blend: 0
     - _BlendBlendAlpha: 0.5400593
     - _BlendBlendDistance: 0.6824926
@@ -138,13 +160,18 @@ Material:
     - _BlendEnableColor: 0
     - _BlendEnableThis: 1
     - _BlendIsAdditive: 0
+    - _BlendMode: 0
     - _BumpScale: 1
     - _CubemapFresnel: 4.316328
     - _CubemapGlossiness: 1
     - _CubemapStrength: 0.4807122
     - _CubemapUseCustomCubemap: 0
     - _Cull: 2
+    - _CullMode: 2
+    - _CullModeForward: 2
     - _Cutoff: 0.5
+    - _DoubleSidedEnable: 0
+    - _DoubleSidedNormalMode: 2
     - _DstBlend: 0
     - _EnvironmentReflections: 1
     - _FirstWaveHeightStrength: 0.5
@@ -163,6 +190,9 @@ Material:
     - _OverallWaveHeight: 2.826293
     - _QueueOffset: 0
     - _ReceiveShadows: 1
+    - _ReceivesSSR: 1
+    - _RenderQueueType: 1
+    - _RequireSplitLighting: 0
     - _SSRefractionDecaydistance: 50
     - _SSRefractionRefractionFresnel: 5
     - _SSRefractionStrength: 0
@@ -175,14 +205,32 @@ Material:
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
+    - _StencilRef: 2
+    - _StencilRefDepth: 0
+    - _StencilRefDistortionVec: 64
+    - _StencilRefGBuffer: 2
+    - _StencilRefMV: 128
+    - _StencilWriteMask: 3
+    - _StencilWriteMaskDepth: 48
+    - _StencilWriteMaskDistortionVec: 64
+    - _StencilWriteMaskGBuffer: 51
+    - _StencilWriteMaskMV: 176
     - _Surface: 0
+    - _SurfaceType: 0
     - _TessellationFarCap: 20
     - _TessellationNearCap: 0
     - _TessellationStrength: 2.48368
     - _ThirdWaveEnableThis: 1
     - _ThirdWaveHeightStrength: 0.5
     - _ThirdWaveNormalStrength: 0.5
+    - _TransparentBackfaceEnable: 0
+    - _TransparentCullMode: 2
+    - _TransparentSortPriority: 0
+    - _UseShadowThreshold: 0
     - _WorkflowMode: 1
+    - _ZTestDepthEqualForOpaque: 3
+    - _ZTestGBuffer: 4
+    - _ZTestTransparent: 4
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.4481132, g: 1, b: 0.66112214, a: 1}
@@ -190,7 +238,8 @@ Material:
     - _BlendTextureUandVspeedZWNotused: {r: -0.05, g: -0.075, b: 0, a: 0}
     - _Color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
     - _CubemapBaseColor: {r: 1, g: 1, b: 1, a: 1}
-    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _DoubleSidedConstants: {r: 1, g: 1, b: -1, a: 0}
+    - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}
     - _FirstWaveUandVspeed: {r: 0.1, g: 0.1, b: 0, a: 0}
     - _FourthWaveUandVspeed: {r: -0.05, g: -0.075, b: 0, a: 0}
     - _SecondWaveUandVspeed: {r: -0.05, g: -0.075, b: 0, a: 0}

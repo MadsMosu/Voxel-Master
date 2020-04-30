@@ -1,7 +1,7 @@
-public class WorldGeneratorSettings {
+public struct WorldGeneratorSettings {
     public int seed;
-    public float noiseScale = 1;
-    public float baseHeight = 1f;
-    public float heightAmplifier = 1f;
-    public float voxelScale = 1f;
+    public float noiseScale;
+    public float baseHeight;
+    public float heightAmplifier;
+    public float voxelScale;
 }

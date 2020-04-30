@@ -1,3 +1,4 @@
+
 using System;
 using System.IO;
 using System.Linq;
@@ -52,6 +53,10 @@ public class SimpleDataStructure : VoxelDataStructure {
 
     public override Voxel[] ToArray () {
         return voxels;
+    }
+
+    public override void SetVoxels(Voxel[] voxels) {
+        this.voxels = voxels;
     }
 }
 
