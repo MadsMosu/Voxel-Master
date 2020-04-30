@@ -10,6 +10,7 @@ public abstract class VoxelDataStructure {
     public abstract Voxel GetVoxel (Vector3Int coords);
     public abstract void SetVoxel (Vector3Int coords, Voxel voxel);
 
+    public abstract void SetVoxels(Voxel[] voxels);
     public abstract Voxel[] ToArray ();
 
     public abstract void Save (BufferedStream stream);

@@ -1,39 +1,51 @@
+using Assets.VoxelMaster.Core;
 using System;
+using Unity.Collections;
+using Unity.Jobs;
 using UnityEngine;
+using VoxelMaster.Chunk;
 
-[Serializable]
-public class BaseHeightmapGenerator : FeatureGenerator {
+namespace VoxelMaster.WorldGeneration {
 
-    FastNoise noise = new FastNoise ();
+    [Serializable]
+    public class BaseHeightmapGenerator : FeatureGenerator {
 
-    public override void Generate (WorldGeneratorSettings settings, VoxelChunk chunk) {
+        FastNoise noise = new FastNoise();
 
-        noise.SetSeed (settings.seed);
+        public override void Generate(WorldGeneratorSettings settings, VoxelChunk chunk) {
 
-        var chunkSizeMinusOne = chunk.size - 1f;
+            noise.SetSeed(settings.seed);
 
-        var chunkX = (chunk.coords.x * settings.voxelScale) * chunk.size;
-        var chunkY = (chunk.coords.y * settings.voxelScale) * chunk.size;
-        var chunkZ = (chunk.coords.z * settings.voxelScale) * chunk.size;
+            var chunkSizeMinusOne = chunk.size - 1f;
 
-        float noiseScale = .3f;
-        chunk.voxels.Traverse ((x, y, z, voxel) => {
+            var chunkX = (chunk.coords.x * settings.voxelScale) * chunkSizeMinusOne;
+            var chunkY = (chunk.coords.y * settings.voxelScale) * chunkSizeMinusOne;
+            var chunkZ = (chunk.coords.z * settings.voxelScale) * chunkSizeMinusOne;
 
-            float terrainHeight = noise.GetPerlinFractal ((chunkX + x) / noiseScale, 0, (chunkZ + z) / noiseScale);
-            // float terrainHeight = noise.GetPerlin ((chunkX + x) / noiseScale, 0, (chunkZ + z) / noiseScale) + 2;
-            // float terrainHeight = 0;
+            float mountainScale = 2f;
+            float mountainAmplifier = 70f;
 
-            terrainHeight = (1f - Math.Abs (terrainHeight)) * 2;
+            bool hasChecked = false;
+            bool prevVoxelSign = false;
+            chunk.voxels.Traverse((x, y, z, voxel) => {
 
-            float density = (((chunk.coords.y * settings.voxelScale) * (chunk.size - 1f) + y) - (terrainHeight * 5)) / settings.heightAmplifier;
-            // density += noise.GetPerlin ((chunkX + x) / (noiseScale / 20), 0, (chunkZ + z) / (noiseScale / 20)) / 1f;
+                float mountainHeight = noise.GetPerlinFractal((chunkX + x) / mountainScale, 0, (chunkZ + z) / mountainScale);
 
-            chunk.voxels.SetVoxel (new Vector3Int (x, y, z), new Voxel { density = -density, materialIndex = 0 });
-            // chunk.voxels.SetVoxel (new Vector3Int (x, y, z), new Voxel {
-            //     density = noise.GetPerlin ((chunkX + x) / noiseScale, (chunkY + y) / noiseScale, (chunkZ + z) / noiseScale),
-            //         materialIndex = 0
-            // });
+                mountainHeight = ((1f - Math.Abs(mountainHeight)) * mountainAmplifier) - mountainAmplifier / 2;
 
-        });
+                float density = (((chunk.coords.y * settings.voxelScale) * (chunk.size - 1f) + y) - mountainHeight);
+
+                chunk.voxels.SetVoxel(new Vector3Int(x, y, z), new Voxel { density = density, materialIndex = 0 });
+
+                if (hasChecked) {
+                    if (prevVoxelSign != density < 0) chunk.hasSolids = true;
+                }
+                else {
+                    hasChecked = true;
+                }
+                prevVoxelSign = density < 0;
+
+            });
+        }
     }
 }
