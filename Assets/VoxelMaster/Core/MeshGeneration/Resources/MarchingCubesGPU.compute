@@ -73,11 +73,11 @@ void MarchingCubes(uint3 cellPos : SV_DispatchThreadID)
         int a0 = cornerIndexAFromEdge[triTable[cubeIndex][i]];
         int b0 = cornerIndexBFromEdge[triTable[cubeIndex][i]];
 
-        int a1 = cornerIndexAFromEdge[triTable[cubeIndex][i + 1]];
-        int b1 = cornerIndexBFromEdge[triTable[cubeIndex][i + 1]];
+        int a1 = cornerIndexAFromEdge[triTable[cubeIndex][i + 2]];
+        int b1 = cornerIndexBFromEdge[triTable[cubeIndex][i + 2]];
 
-        int a2 = cornerIndexAFromEdge[triTable[cubeIndex][i + 2]];
-        int b2 = cornerIndexBFromEdge[triTable[cubeIndex][i + 2]];
+        int a2 = cornerIndexAFromEdge[triTable[cubeIndex][i + 1]];
+        int b2 = cornerIndexBFromEdge[triTable[cubeIndex][i + 1]];
 
         TriangleVertices tri;
         tri.a = VertexInterp((cellPos + cubeVertOffsets[a0]), (cellPos + cubeVertOffsets[b0]), cubeDensity[a0], cubeDensity[b0]);

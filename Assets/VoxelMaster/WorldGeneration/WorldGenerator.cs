@@ -50,24 +50,24 @@ namespace VoxelMaster.WorldGeneration {
         }
 
         void StartGenerationThread(VoxelChunk chunk, Action<VoxelChunk> onChunkData) {
-            // ThreadPool.QueueUserWorkItem (delegate {
-            //     GenerateChunkDataThread (chunk, onChunkData);
-            // });
-            //Task.Run(delegate {
-            //    GenerateChunkDataThread(chunk, onChunkData);
-            //});
+            ThreadPool.QueueUserWorkItem(delegate {
+                GenerateChunkDataThread(chunk, onChunkData);
+            });
+            Task.Run(delegate {
+                GenerateChunkDataThread(chunk, onChunkData);
+            });
         }
 
-        //FeatureGenerator featureGenerator = new BaseHeightmapGenerator();
-        //void GenerateChunkDataThread(VoxelChunk chunk, Action<VoxelChunk> onChunkData) {
-        //    featureGenerator.Generate(settings, chunk);
-        //    lock (generatedChunkQueue) {
-        //        generatedChunkQueue.Enqueue(new ChunkGenerationData {
-        //            voxelChunk = chunk,
-        //            callback = onChunkData
-        //        });
-        //    }
-        //}
+        FeatureGenerator featureGenerator = new BaseHeightmapGenerator();
+        void GenerateChunkDataThread(VoxelChunk chunk, Action<VoxelChunk> onChunkData) {
+            featureGenerator.Generate(settings, chunk);
+            lock (generatedChunkQueue) {
+                generatedChunkQueue.Enqueue(new ChunkGenerationData {
+                    voxelChunk = chunk,
+                    callback = onChunkData
+                });
+            }
+        }
         public struct ChunkGenerationData {
             public VoxelChunk voxelChunk;
             public Action<VoxelChunk> callback;

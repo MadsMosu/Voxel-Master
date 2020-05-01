@@ -40,11 +40,9 @@ namespace VoxelMaster {
                 baseHeight = 2,
                 heightAmplifier = 2,
                 noiseScale = 1,
-                seed = 232,
+                seed = 23342,
                 voxelScale = 1
             }));
-
-
         }
 
         void ExpandChunkGeneration() {
