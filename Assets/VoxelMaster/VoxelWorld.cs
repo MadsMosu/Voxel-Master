@@ -109,7 +109,7 @@ namespace VoxelMaster {
             chunkDictionary.Add(coord, chunk);
         }
 
-        private void OnDrawGizmos() {
+        private void OnDrawGizmosSelected() {
             lock (chunkDictionary) {
                 foreach (KeyValuePair<Vector3Int, VoxelChunk> entry in chunkDictionary) {
                     var pos = entry.Key * chunkSize;
