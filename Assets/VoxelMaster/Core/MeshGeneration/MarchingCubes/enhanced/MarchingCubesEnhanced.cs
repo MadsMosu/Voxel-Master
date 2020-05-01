@@ -13,7 +13,7 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
 
     }
 
-    public override MeshData GenerateMesh (IVoxelData volume, Vector3Int origin, int step, float scale) {
+    public override MeshData GenerateMesh (IVoxelData volume, Vector3 origin, int step, float scale) {
         List<Vector3> vertices = new List<Vector3> ();
         List<int> triangleIndices = new List<int> ();
         List<Vector3> normals = new List<Vector3> ();
@@ -41,7 +41,7 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
         return new MeshData (vertices.ToArray (), triangleIndices.ToArray (), normals.ToArray ());
     }
 
-    internal void PolygonizeCell (IVoxelData volume, Vector3Int origin, Vector3Int cellPos, int step, float scale, ref List<Vector3> vertices, ref List<int> triangleIndices, ref List<Vector3> normals) {
+    internal void PolygonizeCell (IVoxelData volume, Vector3 origin, Vector3Int cellPos, int step, float scale, ref List<Vector3> vertices, ref List<int> triangleIndices, ref List<Vector3> normals) {
 
         float[] cubeDensities = new float[8];
         byte caseCode = 0;
@@ -114,7 +114,7 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
         }
     }
 
-    internal void PolygonizeTransitionCell (IVoxelData volume, Vector3Int origin, Vector3Int cellPos, float scale, ref List<Vector3> vertices, ref List<int> triangleIndices, ref List<Vector3> normals, int u, int v, int side, int step) {
+    internal void PolygonizeTransitionCell (IVoxelData volume, Vector3 origin, Vector3Int cellPos, float scale, ref List<Vector3> vertices, ref List<int> triangleIndices, ref List<Vector3> normals, int u, int v, int side, int step) {
         float[] transFullFaceDensities = new float[9];
 
         int[] caseCodeCoeffs = new int[9] { 0x01, 0x02, 0x04, 0x80, 0x100, 0x08, 0x40, 0x20, 0x10 };
@@ -189,7 +189,7 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
         }
     }
 
-    private float GetTransCornerDensity (IVoxelData volume, Vector3Int origin, Vector3Int cellPos, byte corner, int side, int step) {
+    private float GetTransCornerDensity (IVoxelData volume, Vector3 origin, Vector3Int cellPos, byte corner, int side, int step) {
         if (corner < 9) {
             return GetTransCellDensity (volume, origin, cellPos, side, Tables.transFullCorners[corner].x, Tables.transFullCorners[corner].y, 0, step);
         } else {
@@ -198,7 +198,7 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
         }
     }
 
-    private float GetTransCellDensity (IVoxelData volume, Vector3Int origin, Vector3Int cellPos, int side, int u, int v, int w, int step) {
+    private float GetTransCellDensity (IVoxelData volume, Vector3 origin, Vector3Int cellPos, int side, int u, int v, int w, int step) {
         var cellOriginU = 2 * (Tables.transReverseOrientation[side][0].x * (chunkSize - 1) + cellPos.x * Tables.transReverseOrientation[side][1].x + cellPos.y * Tables.transReverseOrientation[side][2].x + cellPos.z * Tables.transReverseOrientation[side][3].x);
         var cellOriginV = 2 * (Tables.transReverseOrientation[side][0].y * (chunkSize - 1) + cellPos.x * Tables.transReverseOrientation[side][1].y + cellPos.y * Tables.transReverseOrientation[side][2].y + cellPos.z * Tables.transReverseOrientation[side][3].y);
         var transCellPos = new Vector3 (
@@ -214,7 +214,7 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
         return density;
     }
 
-    private float GetRegularCellDensity (IVoxelData volume, Vector3Int origin, Vector3Int cellPos, int side, int u, int v, int step) {
+    private float GetRegularCellDensity (IVoxelData volume, Vector3 origin, Vector3Int cellPos, int side, int u, int v, int step) {
         var coords = new Vector3Int (
             cellPos.x + Tables.transFullFaceOrientation[side][0].x + u * Tables.transFullFaceOrientation[side][1].x + v * Tables.transFullFaceOrientation[side][2].x,
             cellPos.y + Tables.transFullFaceOrientation[side][0].y + u * Tables.transFullFaceOrientation[side][1].y + v * Tables.transFullFaceOrientation[side][2].y,
@@ -273,7 +273,7 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
         }
         return cornerPos;
     }
-    private Vector3 GetTransCornerNormal (IVoxelData volume, Vector3Int origin, Vector3Int cellPos, int side, byte corner, int step) {
+    private Vector3 GetTransCornerNormal (IVoxelData volume, Vector3 origin, Vector3Int cellPos, int side, byte corner, int step) {
         if (corner < 9) {
             return new Vector3 (
                 GetTransCellDensity (volume, origin, cellPos, side, Tables.transFullCorners[corner].x + Tables.transReverseOrientation[side][1].x, Tables.transFullCorners[corner].y + Tables.transReverseOrientation[side][1].y, Tables.transReverseOrientation[side][1].z, step) - GetTransCellDensity (volume, origin, cellPos, side, Tables.transFullCorners[corner].x - Tables.transReverseOrientation[side][1].x, Tables.transFullCorners[corner].y - Tables.transReverseOrientation[side][1].y, -Tables.transReverseOrientation[side][1].z, step),
@@ -290,7 +290,7 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
         }
     }
 
-    private Vector3 GetRegularCornerNormal (IVoxelData volume, Vector3Int origin, Vector3Int cornerPos, int step) {
+    private Vector3 GetRegularCornerNormal (IVoxelData volume, Vector3 origin, Vector3Int cornerPos, int step) {
         float dx = volume[origin + ((new Vector3Int (cornerPos.x + 1, cornerPos.y, cornerPos.z)) * step)].density - volume[origin + ((new Vector3Int (cornerPos.x - 1, cornerPos.y, cornerPos.z)) * step)].density;
         float dy = volume[origin + ((new Vector3Int (cornerPos.x, cornerPos.y + 1, cornerPos.z)) * step)].density - volume[origin + ((new Vector3Int (cornerPos.x, cornerPos.y - 1, cornerPos.z)) * step)].density;
         float dz = volume[origin + ((new Vector3Int (cornerPos.x, cornerPos.y, cornerPos.z + 1)) * step)].density - volume[origin + ((new Vector3Int (cornerPos.x, cornerPos.y, cornerPos.z - 1)) * step)].density;
