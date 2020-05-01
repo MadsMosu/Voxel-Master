@@ -400,7 +400,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   material: {fileID: 2100000, guid: f4a082d0cf9dba842808c8f8020e1ecf, type: 2}
   size: 10
-  chunkSize: 16
+  chunkSize: 32
   isoLevel: 0
   original: 1
 --- !u!4 &443792678
