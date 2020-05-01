@@ -60,8 +60,8 @@ namespace VoxelMaster {
                     Mathf.Lerp (centerZ, transform.position.z + centerZ + centerZ * 0.5f, 0.5f)
                 );
 
-                GenerateSDF (transform.position, sphere1Center, radius / 4);
-                GenerateSDF (center, sphere2Center, radius / 4);
+                GenerateSDF (transform.position, sphere1Center, radius / 6);
+                GenerateSDF (center, sphere2Center, radius / 6);
 
             } else {
 
@@ -103,10 +103,9 @@ namespace VoxelMaster {
             int currentLabel = 1;
 
             chunk.voxels.Traverse ((x, y, z, voxel) => {
-                if (voxel.density <= 0f) return;
+                if (voxel.density < 0f) return;
 
-                bool[] neighborSigns = new bool[260];
-                int[] neighborLabels = new int[260];
+                List<int> neighborLabels = new List<int> ();
                 for (int nx = -1; nx <= 1; nx++)
                     for (int ny = -1; ny <= 1; ny++)
                         for (int nz = -1; nz <= 1; nz++) {
@@ -116,20 +115,22 @@ namespace VoxelMaster {
                                 (y + ny < 0 || y + ny >= chunkSize) ||
                                 (z + nz < 0 || z + nz >= chunkSize)
                             ) continue;
-                            // Debug.Log ($"x: {x}, y: {y}, z: {z}");
-                            neighborSigns[Util.Map3DTo1D (new Vector3Int (nx, ny, nz) + Vector3Int.one, 3)] = chunk.voxels.GetVoxel (new Vector3Int (x + nx, y + ny, z + nz)).density <= isoLevel;
-                            neighborLabels[Util.Map3DTo1D (new Vector3Int (nx, ny, nz) + Vector3Int.one, 3)] = labels[Util.Map3DTo1D (new Vector3Int (x + nx, y + ny, z + nz), chunkSize)];
+                            if (chunk.voxels.GetVoxel (new Vector3Int (x + nx, y + ny, z + nz)).density >= isoLevel) {
+                                neighborLabels.Add (labels[Util.Map3DTo1D (new Vector3Int (x + nx, y + ny, z + nz), chunkSize)]);
+                            }
                         }
-
-                if (!neighborSigns.Any (sign => true)) {
+                Debug.Log (neighborLabels.Count);
+                if (neighborLabels.Count == 0) {
                     linked.MakeSet (currentLabel);
                     labels[Util.Map3DTo1D (new Vector3Int (x, y, z), chunkSize)] = currentLabel;
+                    voxel.materialIndex = (byte) currentLabel;
                     currentLabel++;
                 } else {
                     int smallestLabel = neighborLabels.OrderBy (label => label).First ();
                     labels[Util.Map3DTo1D (new Vector3Int (x, y, z), chunkSize)] = smallestLabel;
+                    voxel.materialIndex = (byte) smallestLabel;
 
-                    for (int n = 0; n < neighborLabels.Length; n++) {
+                    for (int n = 0; n < neighborLabels.Count; n++) {
                         int neighborLabel = neighborLabels[n];
                         linked.Union (currentLabel, neighborLabel);
                     }
@@ -140,7 +141,8 @@ namespace VoxelMaster {
                 labels[i] = linked.Find (labels[i]);
             }
 
-            Debug.Log (labels);
+            Debug.Log (currentLabel);
+            UpdateMesh ();
 
         }
 

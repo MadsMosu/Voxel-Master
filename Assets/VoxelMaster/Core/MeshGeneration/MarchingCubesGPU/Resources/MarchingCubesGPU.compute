@@ -7,6 +7,10 @@ struct TriangleVertices
     float3 a, b, c;
 };
 
+struct TriangleColors {
+    float4 a, b, c;
+};
+
 struct TriangleIndices {
     dword index1, index2, index3;
 };
@@ -24,6 +28,8 @@ RWStructuredBuffer<float3> SurfaceNormalsBuffer;
 RWStructuredBuffer<TriangleIndices> TriangleIndicesBuffer;
 RWStructuredBuffer<float3> VerticesBuffer;
 
+// AppendStructuredBuffer<TriangleColors> ColorBuffer;
+
 
 
 float3 VertexInterp(float3 vPos1, float3 vPos2, float density1, float density2)
@@ -33,6 +39,14 @@ float3 VertexInterp(float3 vPos1, float3 vPos2, float density1, float density2)
 
 int IndexFromCoord(uint3 coords) {
     return coords.x + coords.y * chunkSize + coords.z * chunkSize * chunkSize;
+}
+
+float4 HUEtoRGB(in float H) {
+    float R = abs(H * 6 - 3) - 1;
+    float G = 2 - abs(H * 6 - 2);
+    float B = 2 - abs(H * 6 - 4);
+    float A = 1;
+    return saturate(float4(R,G,B, A));
 }
 
 
@@ -82,9 +96,30 @@ void MarchingCubes(uint3 cellPos : SV_DispatchThreadID)
         tri.b = VertexInterp((cellPos + cubeVertOffsets[a1]), (cellPos + cubeVertOffsets[b1]), cubeDensity[a1], cubeDensity[b1]);
         tri.c = VertexInterp((cellPos + cubeVertOffsets[a2]), (cellPos + cubeVertOffsets[b2]), cubeDensity[a2], cubeDensity[b2]); 
 
+        // float minDensity = 999999;
+        // int minDensityIndex = 0;
+        // for (int d = 0; d < 8; d++) {
+        //     if (cubeDensity[d] < minDensity)  {
+        //         minDensity = cubeDensity[d];
+        //         minDensityIndex = d;
+        //     }
+        // }
+        // int materialIndex = DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[minDensityIndex])].materialIndex;
+
+        // float4 color = HUEtoRGB(materialIndex * 30);
+
+        // TriangleColors colors = {
+        //     color,
+        //     color,
+        //     color
+        // };
+        // ColorBuffer.Append(colors);
+
         TrianglesBuffer.Append(tri); 
     }
 }
+
+
 
 [numthreads(1, 1, 1)]
 void GenerateTriangleIndicesAndNormals(uint3 vertexPosition : SV_DispatchThreadID) {

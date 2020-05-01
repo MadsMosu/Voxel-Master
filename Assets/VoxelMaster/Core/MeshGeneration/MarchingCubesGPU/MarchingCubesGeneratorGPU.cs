@@ -5,6 +5,7 @@ using VoxelMaster.Chunk;
 public class MarchingCubesGPU {
     private ComputeShader marchingCubesCompute;
     private ComputeBuffer trianglesBuffer, triangleCountBuffer, densitiesBuffer, verticesBuffer, surfaceNormalsBuffer, triangleIndicesBuffer;
+    // private ComputeBuffer colorBuffer;
     private int kernelMC, indicesAndNormalKernel;
 
     private int maxTriangles, numCells, numVoxels;
@@ -28,6 +29,8 @@ public class MarchingCubesGPU {
         surfaceNormalsBuffer = new ComputeBuffer (maxTriangles * 3, sizeof (float) * 3, ComputeBufferType.Structured);
         triangleIndicesBuffer = new ComputeBuffer (maxTriangles * 3, sizeof (int), ComputeBufferType.Structured);
 
+        // colorBuffer = new ComputeBuffer (maxTriangles, sizeof (float) * 4 * 3, ComputeBufferType.Structured);
+
         trianglesBuffer.SetCounterValue (0);
         marchingCubesCompute.SetFloat ("isoLevel", isoLevel);
         marchingCubesCompute.SetInt ("chunkSize", chunk.size);
@@ -36,6 +39,7 @@ public class MarchingCubesGPU {
 
         marchingCubesCompute.SetBuffer (kernelMC, "DensitiesBuffer", densitiesBuffer);
         marchingCubesCompute.SetBuffer (kernelMC, "TrianglesBuffer", trianglesBuffer);
+        // marchingCubesCompute.SetBuffer (kernelMC, "ColorBuffer", colorBuffer);
 
         marchingCubesCompute.Dispatch (kernelMC, chunk.size / 8, chunk.size / 8, chunk.size / 8);
 
@@ -67,6 +71,9 @@ public class MarchingCubesGPU {
         surfaceNormalsBuffer.GetData (surfaceNormals);
 
         //Vector3[] normals = CalculateVertexNormals(vertices, surfaceNormals);
+
+        // Color[] vertexColors = new Color[vertices.Length];
+        // colorBuffer.GetData (vertexColors);
 
         ReleaseBuffers ();
 
@@ -106,5 +113,6 @@ public class MarchingCubesGPU {
         verticesBuffer.Release ();
         surfaceNormalsBuffer?.Release ();
         triangleIndicesBuffer?.Release ();
+        // colorBuffer?.Release ();
     }
 }

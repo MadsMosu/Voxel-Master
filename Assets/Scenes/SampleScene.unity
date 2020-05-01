@@ -398,7 +398,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68a3524f2df9834438aabd63c5eac57a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  material: {fileID: 2100000, guid: 40539cd6d3ae1104d8a518d7abb86a33, type: 2}
+  material: {fileID: 2100000, guid: f4a082d0cf9dba842808c8f8020e1ecf, type: 2}
   size: 10
   chunkSize: 16
   isoLevel: 0
