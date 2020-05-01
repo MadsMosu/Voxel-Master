@@ -17,9 +17,7 @@ struct Voxel {
 };
 
 float isoLevel;
-int chunkWidth;
-int chunkHeight;
-int chunkDepth;
+int chunkSize;
 RWStructuredBuffer<Voxel> DensitiesBuffer;
 AppendStructuredBuffer<TriangleVertices> TrianglesBuffer; 
 RWStructuredBuffer<float3> SurfaceNormalsBuffer;
@@ -34,14 +32,14 @@ float3 VertexInterp(float3 vPos1, float3 vPos2, float density1, float density2)
 }
 
 int IndexFromCoord(uint3 coords) {
-    return coords.x + coords.y * chunkWidth + coords.z * chunkWidth * chunkHeight;
+    return coords.x + coords.y * chunkSize + coords.z * chunkSize * chunkSize;
 }
 
 
 [numthreads(8, 8, 8)]
 void MarchingCubes(uint3 cellPos : SV_DispatchThreadID) 
 {
-    if (cellPos.x >= chunkWidth - 1  || cellPos.y >= chunkHeight - 1|| cellPos.z >= chunkDepth - 1) {
+    if (cellPos.x >= chunkSize - 1  || cellPos.y >= chunkSize - 1|| cellPos.z >= chunkSize - 1) {
         return;
     }
 
