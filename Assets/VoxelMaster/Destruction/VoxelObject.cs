@@ -93,6 +93,7 @@ public class VoxelObject : MonoBehaviour {
     private void UpdateMesh () {
         mesh = meshGenerator.GenerateMesh (chunk).BuildMesh ();
         meshFilter.mesh = mesh;
+        meshCollider.convex = true;
         meshCollider.sharedMesh = mesh;
         needsUpdate = false;
     }

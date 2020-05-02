@@ -77,13 +77,17 @@ public static class VoxelSplitter {
 
                 Voxel[] regionVoxels = chunk.voxels.ExtractRegion (voxelSpaceBound);
                 GameObject go = new GameObject ();
+                go.transform.position = transform.position + voxelSpaceBound.min; 
                 VoxelObject voxelObject = go.AddComponent<VoxelObject> ();
                 voxelObject.chunkSize = voxelSpaceBound.size + Vector3Int.one;
                 voxelObject.chunk = new VoxelChunk (Vector3Int.zero, voxelSpaceBound.size + Vector3Int.one, 1f, new SimpleDataStructure ());
                 voxelObject.chunk.voxels.SetVoxels (regionVoxels);
                 voxelObject.material = material;
                 voxelObject.original = false;
+
+                go.AddComponent<Rigidbody>();
             };
+            GameObject.Destroy(transform.gameObject);
         }
     }
 }

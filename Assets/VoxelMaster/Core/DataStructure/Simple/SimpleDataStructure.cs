@@ -68,12 +68,10 @@ public class SimpleDataStructure : VoxelDataStructure {
         for (int x = bound.min.x; x <= bound.max.x; x++)
             for (int y = bound.min.y; y <= bound.max.y; y++)
                 for (int z = bound.min.z; z <= bound.max.z; z++) {
-                    if (x >= size.x || y >= size.y || y >= size.z) continue;
                     Vector3Int coords = new Vector3Int (x, y, z);
-                    // Debug.Log ($"coords: {coords}, 1DTo3D: {Util.Map1DTo3D (Util.Map3DTo1D (coords, size), size)}");
                     Voxel voxel;
                     if ((x < 0 || y < 0 || z < 0) || (x >= size.x || y >= size.y || z >= size.z)) {
-                        voxel = new Voxel { density = 0, materialIndex = 0 };
+                        voxel = new Voxel { density = -1, materialIndex = 0 };
                     } else {
                         voxel = voxels[Util.Map3DTo1D (coords, size)];
                     }
