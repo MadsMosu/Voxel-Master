@@ -8,6 +8,14 @@ public static class VoxelSplitter {
 
     public static BoundsInt voxelSpaceBound;
     public static void Split (VoxelObject voxelObject) {
+        for (int x = 0; x < voxelObject.chunkSize.x; x++)
+            for (int y = 0; y < voxelObject.chunkSize.y; y++)
+                for (int z = 0; z < voxelObject.chunkSize.z; z++) {
+                    if (x == Mathf.FloorToInt (voxelObject.chunkSize.x / 2) || y == Mathf.FloorToInt (voxelObject.chunkSize.y / 2) || z == Mathf.FloorToInt (voxelObject.chunkSize.z / 2)) {
+                        var coord = new Vector3Int (x, y, z);
+                        voxelObject.chunk.voxels.SetVoxel (coord, new Voxel { density = -1, materialIndex = 0 });
+                    }
+                }
         VoxelSplitter.SeparateIslands (voxelObject.chunk, voxelObject.transform, voxelObject.material);
     }
 
@@ -77,7 +85,7 @@ public static class VoxelSplitter {
 
                 Voxel[] regionVoxels = chunk.voxels.ExtractRegion (voxelSpaceBound);
                 GameObject go = new GameObject ();
-                go.transform.position = transform.position + voxelSpaceBound.min; 
+                go.transform.position = transform.position + voxelSpaceBound.min;
                 VoxelObject voxelObject = go.AddComponent<VoxelObject> ();
                 voxelObject.chunkSize = voxelSpaceBound.size + Vector3Int.one;
                 voxelObject.chunk = new VoxelChunk (Vector3Int.zero, voxelSpaceBound.size + Vector3Int.one, 1f, new SimpleDataStructure ());
@@ -85,9 +93,9 @@ public static class VoxelSplitter {
                 voxelObject.material = material;
                 voxelObject.original = false;
 
-                go.AddComponent<Rigidbody>();
+                go.AddComponent<Rigidbody> ();
             };
-            GameObject.Destroy(transform.gameObject);
+            GameObject.Destroy (transform.gameObject);
         }
     }
 }
