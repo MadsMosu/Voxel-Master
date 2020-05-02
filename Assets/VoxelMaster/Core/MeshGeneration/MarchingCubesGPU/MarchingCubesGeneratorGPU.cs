@@ -18,8 +18,8 @@ public class MarchingCubesGPU {
 
     int isoLevel = 0;
     public MeshData GenerateMesh (VoxelChunk chunk) {
-        numCells = chunk.size * chunk.size * chunk.size;
-        numVoxels = (chunk.size - 1) * (chunk.size - 1) * (chunk.size - 1);
+        numCells = chunk.size.x * chunk.size.y * chunk.size.z;
+        numVoxels = (chunk.size.x - 1) * (chunk.size.y - 1) * (chunk.size.z - 1);
         maxTriangles = numVoxels * 5;
 
         trianglesBuffer = new ComputeBuffer (maxTriangles, sizeof (float) * 3 * 3, ComputeBufferType.Append);
@@ -33,7 +33,8 @@ public class MarchingCubesGPU {
 
         trianglesBuffer.SetCounterValue (0);
         marchingCubesCompute.SetFloat ("isoLevel", isoLevel);
-        marchingCubesCompute.SetInt ("chunkSize", chunk.size);
+        marchingCubesCompute.SetInts ("chunkSize", chunk.size.x, chunk.size.y, chunk.size.z);
+        marchingCubesCompute.SetFloat ("voxelScale", chunk.voxelScale);
 
         densitiesBuffer.SetData (chunk.voxels.ToArray ());
 
@@ -41,7 +42,7 @@ public class MarchingCubesGPU {
         marchingCubesCompute.SetBuffer (kernelMC, "TrianglesBuffer", trianglesBuffer);
         // marchingCubesCompute.SetBuffer (kernelMC, "ColorBuffer", colorBuffer);
 
-        marchingCubesCompute.Dispatch (kernelMC, chunk.size / 8, chunk.size / 8, chunk.size / 8);
+        marchingCubesCompute.Dispatch (kernelMC, chunk.size.x, chunk.size.y, chunk.size.z);
 
         ComputeBuffer.CopyCount (trianglesBuffer, triangleCountBuffer, 0);
         int[] triCount = { 0 };

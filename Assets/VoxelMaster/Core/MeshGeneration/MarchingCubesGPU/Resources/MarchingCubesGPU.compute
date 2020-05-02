@@ -20,8 +20,8 @@ struct Voxel {
     int materialIndex;
 };
 
-float isoLevel;
-int chunkSize;
+float isoLevel, voxelScale;
+int3 chunkSize;
 RWStructuredBuffer<Voxel> DensitiesBuffer;
 AppendStructuredBuffer<TriangleVertices> TrianglesBuffer; 
 RWStructuredBuffer<float3> SurfaceNormalsBuffer;
@@ -38,7 +38,7 @@ float3 VertexInterp(float3 vPos1, float3 vPos2, float density1, float density2)
 }
 
 int IndexFromCoord(uint3 coords) {
-    return coords.x + coords.y * chunkSize + coords.z * chunkSize * chunkSize;
+    return coords.x + coords.y * chunkSize.x + coords.z * chunkSize.x * chunkSize.z;
 }
 
 float4 HUEtoRGB(in float H) {
@@ -50,10 +50,10 @@ float4 HUEtoRGB(in float H) {
 }
 
 
-[numthreads(8, 8, 8)]
+[numthreads(1, 1, 1)]
 void MarchingCubes(uint3 cellPos : SV_DispatchThreadID) 
 {
-    if (cellPos.x >= chunkSize - 1  || cellPos.y >= chunkSize - 1|| cellPos.z >= chunkSize - 1) {
+    if (cellPos.x >= chunkSize.x - 1  || cellPos.y >= chunkSize.y - 1|| cellPos.z >= chunkSize.z - 1) {
         return;
     }
 
@@ -92,9 +92,9 @@ void MarchingCubes(uint3 cellPos : SV_DispatchThreadID)
         int b2 = cornerIndexBFromEdge[triTable[cubeIndex][i + 1]];
 
         TriangleVertices tri;
-        tri.a = VertexInterp((cellPos + cubeVertOffsets[a0]), (cellPos + cubeVertOffsets[b0]), cubeDensity[a0], cubeDensity[b0]);
-        tri.b = VertexInterp((cellPos + cubeVertOffsets[a1]), (cellPos + cubeVertOffsets[b1]), cubeDensity[a1], cubeDensity[b1]);
-        tri.c = VertexInterp((cellPos + cubeVertOffsets[a2]), (cellPos + cubeVertOffsets[b2]), cubeDensity[a2], cubeDensity[b2]); 
+        tri.a = VertexInterp((cellPos + cubeVertOffsets[a0]), (cellPos + cubeVertOffsets[b0]), cubeDensity[a0], cubeDensity[b0]) * voxelScale;
+        tri.b = VertexInterp((cellPos + cubeVertOffsets[a1]), (cellPos + cubeVertOffsets[b1]), cubeDensity[a1], cubeDensity[b1]) * voxelScale;
+        tri.c = VertexInterp((cellPos + cubeVertOffsets[a2]), (cellPos + cubeVertOffsets[b2]), cubeDensity[a2], cubeDensity[b2]) * voxelScale; 
 
         // float minDensity = 999999;
         // int minDensityIndex = 0;
