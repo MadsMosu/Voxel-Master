@@ -71,16 +71,16 @@ public static class VoxelSplitter {
                         }
 
                 voxelSpaceBound = new BoundsInt (
-                    (int) (bound.min.x / chunk.voxelScale) - 1, (int) (bound.min.y / chunk.voxelScale) - 1, (int) (bound.min.z / chunk.voxelScale) - 1,
-                    (int) (bound.size.x / chunk.voxelScale) + 1, (int) (bound.size.y / chunk.voxelScale) + 1, (int) (bound.size.z / chunk.voxelScale) + 1
+                    Mathf.FloorToInt (bound.min.x / chunk.voxelScale) - 1, Mathf.FloorToInt (bound.min.y / chunk.voxelScale) - 1, Mathf.FloorToInt (bound.min.z / chunk.voxelScale) - 1,
+                    Mathf.CeilToInt (bound.size.x / chunk.voxelScale) + 2, Mathf.CeilToInt (bound.size.y / chunk.voxelScale) + 2, Mathf.CeilToInt (bound.size.z / chunk.voxelScale) + 2
                 );
 
                 Voxel[] regionVoxels = chunk.voxels.ExtractRegion (voxelSpaceBound);
                 GameObject go = new GameObject ();
                 VoxelObject voxelObject = go.AddComponent<VoxelObject> ();
-                voxelObject.chunkSize = voxelSpaceBound.size;
-                voxelObject.chunk = new VoxelChunk (Vector3Int.zero, voxelSpaceBound.size, 1f, new SimpleDataStructure ());
-                voxelObject.chunk.voxels.SetVoxels (regionVoxels, voxelSpaceBound.size);
+                voxelObject.chunkSize = voxelSpaceBound.size + Vector3Int.one;
+                voxelObject.chunk = new VoxelChunk (Vector3Int.zero, voxelSpaceBound.size + Vector3Int.one, 1f, new SimpleDataStructure ());
+                voxelObject.chunk.voxels.SetVoxels (regionVoxels);
                 voxelObject.material = material;
                 voxelObject.original = false;
             };

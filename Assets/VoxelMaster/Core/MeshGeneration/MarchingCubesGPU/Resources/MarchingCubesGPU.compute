@@ -38,7 +38,7 @@ float3 VertexInterp(float3 vPos1, float3 vPos2, float density1, float density2)
 }
 
 int IndexFromCoord(uint3 coords) {
-    return coords.x + coords.y * chunkSize.x + coords.z * chunkSize.x * chunkSize.z;
+    return (chunkSize.x * chunkSize.y * coords.z) + (chunkSize.x * coords.y) + coords.x;
 }
 
 float4 HUEtoRGB(in float H) {

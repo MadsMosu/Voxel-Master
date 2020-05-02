@@ -12,7 +12,7 @@ public abstract class VoxelDataStructure {
     public abstract Voxel GetVoxel (int index);
     public abstract void SetVoxel (Vector3Int coords, Voxel voxel);
 
-    public abstract void SetVoxels (Voxel[] voxels, Vector3Int size);
+    public abstract void SetVoxels (Voxel[] voxels);
     public abstract Voxel[] ToArray ();
 
     public abstract Voxel[] ExtractRegion (BoundsInt bound);
