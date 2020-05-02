@@ -10,7 +10,9 @@ namespace VoxelMaster.WorldGeneration {
     [Serializable]
     public class BaseHeightmapGenerator : FeatureGenerator {
 
-        FastNoise noise = new FastNoise();
+        FastNoise baseHeightNoise = new FastNoise();
+        FastNoise detailHeightNoise = new FastNoise();
+        FastNoise rigedNoise = new FastNoise();
 
         float map(float s, float a1, float a2, float b1, float b2) {
             return b1 + (s - a1) * (b2 - b1) / (a2 - a1);
@@ -18,7 +20,15 @@ namespace VoxelMaster.WorldGeneration {
 
         public override void Generate(WorldGeneratorSettings settings, VoxelChunk chunk) {
 
-            noise.SetSeed(settings.seed);
+            baseHeightNoise.SetSeed(settings.seed);
+
+            detailHeightNoise.SetSeed(settings.seed);
+            detailHeightNoise.SetFractalOctaves(3);
+
+            rigedNoise.SetSeed(settings.seed);
+            rigedNoise.SetFractalOctaves(8);
+            rigedNoise.SetFractalType(FastNoise.FractalType.RigidMulti);
+
 
             var chunkSizeMinusOne = chunk.size - 1f;
 
@@ -26,27 +36,29 @@ namespace VoxelMaster.WorldGeneration {
             var chunkY = (chunk.coords.y * settings.voxelScale) * chunkSizeMinusOne;
             var chunkZ = (chunk.coords.z * settings.voxelScale) * chunkSizeMinusOne;
 
-            float mountainScale = 2f;
-            float mountainAmplifier = 70f;
+            float baseHeightScale = 5f;
+            float baseHeightAmplifier = 200f;
 
             float caveScale = 2f;
             float caveThreshold = .0001f;
 
             bool hasChecked = false;
             bool prevVoxelSign = false;
-            noise.SetFractalType(FastNoise.FractalType.RigidMulti);
+            baseHeightNoise.SetFractalType(FastNoise.FractalType.FBM);
             chunk.voxels.Traverse((x, y, z, voxel) => {
 
-                float mountainHeight = noise.GetPerlinFractal((chunkX + x) / mountainScale, 0, (chunkZ + z) / mountainScale);
-
-                //mountainHeight = (((1f - Math.Abs(mountainHeight)) * mountainAmplifier) - mountainAmplifier / 2);
-
-                float density = -(((chunk.coords.y * settings.voxelScale) * (chunk.size - 1f) + y) - mountainHeight);
+                float baseHeight = baseHeightNoise.GetPerlinFractal((chunkX + x) / baseHeightScale, 0, (chunkZ + z) / baseHeightScale) * baseHeightAmplifier;
 
 
+                baseHeight += detailHeightNoise.GetPerlinFractal((chunkX + x) / (baseHeightScale / 20), 0, (chunkZ + z) / (baseHeightScale / 20)) * (baseHeightAmplifier / 50);
 
-                //var caveNosie = noise.GetSimplexFractal((chunkX + x) / caveScale, (chunkY + y) / caveScale, (chunkZ + z) / caveScale);
-                //density -= Mathf.Clamp(caveNosie * 100, 0, Mathf.Infinity);
+
+                float density = -(((chunk.coords.y * settings.voxelScale) * (chunk.size - 1f) + y) - baseHeight);
+
+
+
+                var erosion = baseHeightNoise.GetSimplexFractal((chunkX + x) / caveScale, (chunkY + y) / caveScale, (chunkZ + z) / caveScale);
+                density -= Mathf.Clamp(erosion * 100, 0, Mathf.Infinity);
 
 
 
