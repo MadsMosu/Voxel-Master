@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using VoxelMaster.Chunk;
 
 //http://www2.imm.dtu.dk/pubdb/views/edoc_download.php/1289/pdf/imm1289.pdf
 
@@ -16,14 +17,14 @@ public class Voxelizer2 : EditorWindow {
     private List<int> indices = new List<int> ();
     private Vector3Int resolution;
     private Editor meshPreviewEditor;
+    private VoxelChunk chunk;
+    private float voxelScale;
 
     [MenuItem ("Window/Voxelizer")]
     public static void Init () {
         var window = GetWindow<Voxelizer2> ("Voxelizer", true);
         window.Show ();
     }
-
-    public void Awake () { }
 
     public void OnGUI () {
         asset = (GameObject) EditorGUILayout.ObjectField ("GameObject:", asset, typeof (GameObject), false);
@@ -39,6 +40,13 @@ public class Voxelizer2 : EditorWindow {
             MeshFilter meshFilter = asset.GetComponentInChildren<MeshFilter> ();
             Mesh mesh = TranslatedMesh (asset, meshFilter);
             Bounds modelBoundingBox = mesh.bounds;
+            Debug.Log (modelBoundingBox);
+
+            BoundsInt voxelSpaceBound = new BoundsInt (
+                Mathf.FloorToInt (modelBoundingBox.min.x / voxelScale), Mathf.FloorToInt (modelBoundingBox.min.y / voxelScale), Mathf.FloorToInt (modelBoundingBox.min.z / voxelScale),
+                Mathf.CeilToInt (modelBoundingBox.size.x / voxelScale), Mathf.CeilToInt (modelBoundingBox.size.y / voxelScale), Mathf.CeilToInt (modelBoundingBox.size.z / voxelScale)
+            );
+            Debug.Log (voxelSpaceBound);
 
             //find average triangle area
             float averageTriangleArea = 0f;
@@ -48,11 +56,6 @@ public class Voxelizer2 : EditorWindow {
                     mesh.vertices[mesh.triangles[t + 1]],
                     mesh.vertices[mesh.triangles[t + 2]]
                 );
-                // var cross = (Vector3.Cross (
-                //     new Vector3 (Mathf.Abs (triangle.AB.direction.x), Mathf.Abs (triangle.AB.direction.y), Mathf.Abs (triangle.AB.direction.z)),
-                //     new Vector3 (Mathf.Abs (triangle.AC.direction.x), Mathf.Abs (triangle.AC.direction.y), Mathf.Abs (triangle.AC.direction.z))
-                // ));
-                // Vector3 area = 0.5f * new Vector3 (Mathf.Abs (cross.x), Mathf.Abs (cross.y), Mathf.Abs (cross.z));
 
                 Vector3 V = Vector3.Cross (triangle.a - triangle.b, triangle.a - triangle.c);
                 float area = V.magnitude * 0.5f;
@@ -60,13 +63,10 @@ public class Voxelizer2 : EditorWindow {
             }
             int triNumber = mesh.triangles.Length / 3;
             averageTriangleArea /= triNumber;
-            resolution = new Vector3Int ((int) (averageTriangleArea * triNumber), (int) (averageTriangleArea * triNumber), (int) (averageTriangleArea * triNumber));
+            resolution = new Vector3Int (Mathf.CeilToInt (averageTriangleArea), Mathf.CeilToInt (averageTriangleArea), Mathf.CeilToInt (averageTriangleArea)) + Vector3Int.one;
 
-            Vector3 voxelScale = new Vector3 (
-                modelBoundingBox.size.x / resolution.x,
-                modelBoundingBox.size.y / resolution.y,
-                modelBoundingBox.size.z / resolution.z
-            );
+            voxelScale = ((voxelSpaceBound.size.x + voxelSpaceBound.size.y + voxelSpaceBound.size.z) / 3) / ((resolution.x + resolution.y + resolution.z) / 3);
+
             Voxel[] voxels = new Voxel[resolution.x * resolution.y * resolution.z];
             float[] distances = new float[resolution.x * resolution.y * resolution.z];
             for (int i = 0; i < distances.Length; i++) {
@@ -93,62 +93,12 @@ public class Voxelizer2 : EditorWindow {
                 edgeNormals[t + 1] = edgeNormal;
                 edgeNormals[t + 2] = edgeNormal;
 
-                // Vector3[] weightedNormals = new Vector3[7];
-                // weightedNormals[0] = triangle.SurfaceNormal ();
-
-                // 
-
-                // for (int j = 0; j < mesh.triangles.Length; j += 3) {
-                //     GeoMath.Triangle incident = new GeoMath.Triangle (
-                //         mesh.vertices[mesh.triangles[j]],
-                //         mesh.vertices[mesh.triangles[j + 1]],
-                //         mesh.vertices[mesh.triangles[j + 2]]
-                //     );
-
-                //     Vector3 incidentNormal = incident.SurfaceNormal ();
-
-                //     // A B C
-                //     if ((triangle.a == incident.a || triangle.a == incident.b || triangle.a == incident.c)) weightedNormals[4] += GetVertexNormal (triangle.a, incident, incidentNormal);
-                //     if ((triangle.b == incident.a || triangle.b == incident.b || triangle.b == incident.c)) weightedNormals[5] += GetVertexNormal (triangle.b, incident, incidentNormal);
-                //     if ((triangle.c == incident.a || triangle.c == incident.b || triangle.c == incident.c)) weightedNormals[6] += GetVertexNormal (triangle.c, incident, incidentNormal);
-
-                //     // if (incident.a == triangle.a) weightedNormals[4] += Mathf.Abs (Vector3.Angle (incident.AB.direction, incident.AC.direction)) * incidentNormal;
-                //     // if (incident.b == triangle.b) weightedNormals[5] += Mathf.Abs (Vector3.Angle (incident.BA.direction, incident.BC.direction)) * incidentNormal;
-                //     // if (incident.c == triangle.c) weightedNormals[6] += Mathf.Abs (Vector3.Angle (incident.CA.direction, incident.CB.direction)) * incidentNormal;
-
-                //     // AB BC CA
-                //     if (triangle.a == incident.a && triangle.b == incident.b && triangle.c == incident.c) continue;
-                //     if (
-                //         (triangle.a == incident.a || triangle.a == incident.b || triangle.a == incident.c) &&
-                //         (triangle.b == incident.a || triangle.b == incident.b || triangle.b == incident.c)
-                //     ) { weightedNormals[1] = Mathf.PI * triNormal + Mathf.PI * incidentNormal; }
-
-                //     if (
-                //         (triangle.b == incident.a || triangle.b == incident.b || triangle.b == incident.c) &&
-                //         (triangle.c == incident.a || triangle.c == incident.b || triangle.c == incident.c)
-                //     ) { weightedNormals[2] = Mathf.PI * triNormal + Mathf.PI * incidentNormal; }
-
-                //     if (
-                //         (triangle.a == incident.a || triangle.a == incident.b || triangle.a == incident.c) &&
-                //         (triangle.c == incident.a || triangle.c == incident.b || triangle.c == incident.c)
-                //     ) { weightedNormals[3] = Mathf.PI * triNormal + Mathf.PI * incidentNormal; }
-
-                //     // if (incident.a == triangle.a && incident.b == triangle.b)
-                //     //     if (incident.b == triangle.b && incident.c == triangle.c) weightedNormals[2] = Mathf.PI * triNormal + Mathf.PI * incidentNormal;
-                //     // if (incident.a == triangle.a && incident.c == triangle.c) weightedNormals[3] = Mathf.PI * triNormal + Mathf.PI * incidentNormal;
-
-                // }
-                // weightedNormals[1].Normalize ();
-                // weightedNormals[2].Normalize ();
-                // weightedNormals[3].Normalize ();
-                // weightedNormals[4].Normalize ();
-                // weightedNormals[5].Normalize ();
-                // weightedNormals[6].Normalize ();
-                VoxelizeTriangle (voxels, distances, triangle, t, modelBoundingBox, voxelScale, vertexNormals, edgeNormals);
+                VoxelizeTriangle (voxels, distances, triangle, t, modelBoundingBox, vertexNormals, edgeNormals);
             }
 
-            var mc = new MC ();
-            var meshData = mc.GenerateMesh (voxels, isoLevel, resolution, voxelScale);
+            var mc = new MarchingCubesGPU ();
+            chunk = new VoxelChunk (Vector3Int.zero, resolution, voxelScale, new SimpleDataStructure ());
+            var meshData = mc.GenerateMesh (chunk);
             var voxelMesh = meshData.BuildMesh ();
 
             previewVoxelMesh = EditorUtility.CreateGameObjectWithHideFlags ("Preview", HideFlags.HideAndDontSave, new System.Type[] {
@@ -161,26 +111,12 @@ public class Voxelizer2 : EditorWindow {
         }
     }
 
-    private Vector3 GetVertexNormal (Vector3 triVertex, GeoMath.Triangle incident, Vector3 incidentNormal) {
-        Vector3 dir0, dir1;
-        if (triVertex == incident.a) {
-            dir0 = incident.AB.direction;
-            dir1 = incident.AC.direction;
-        } else if (triVertex == incident.b) {
-            dir0 = incident.BA.direction;
-            dir1 = incident.BC.direction;
-        } else {
-            dir0 = incident.CA.direction;
-            dir1 = incident.CB.direction;
-        }
-
-        return (Mathf.Abs (Vector3.Angle (dir0, dir1)) * incidentNormal).normalized;
-    }
-
-    private void VoxelizeTriangle (Voxel[] voxels, float[] distances, GeoMath.Triangle triangle, int triangleIndex, Bounds modelBoundingBox, Vector3 voxelScale, Vector3[] vertexNormals, Vector3[] edgeNormals) {
+    private void VoxelizeTriangle (Voxel[] voxels, float[] distances, GeoMath.Triangle triangle, int triangleIndex, Bounds voxelSpaceBound, Vector3[] vertexNormals, Vector3[] edgeNormals) {
         Bounds triangleBoundingBox = TriangleBoundingBox (triangle);
         Vector3 triangleCenter = triangle.Center ();
-        triangleBoundingBox.Expand (voxelScale.x);
+        // triangleBoundingBox.Expand (voxelScale);
+
+        Plane plane = new Plane (triangle.a, triangle.b, triangle.c);
         Vector3[] regions = new Vector3[] {
             triangleCenter,
             triangleCenter + (GetSpPoint (triangle.a, triangle.b, triangleCenter) - triangleCenter) * 2,
@@ -199,16 +135,11 @@ public class Voxelizer2 : EditorWindow {
         // var r7 = triangleCenter + (((r3 + r4) / 2 - r1).normalized * (Vector3.Distance (r1, triangle.c) * 2));
         // Vector3[] regions = new Vector3[] { r1, r2, r3, r4, r5, r6, r7 };
 
-        Plane plane = new Plane (triangle.a, triangle.b, triangle.c);
-        var lowerResCoord = MapSpaces (modelBoundingBox.min, modelBoundingBox.max, Vector3.zero, new Vector3Int (resolution.x - 1, resolution.y - 1, resolution.z - 1), triangleBoundingBox.min);
-        var upperResCoord = MapSpaces (modelBoundingBox.min, modelBoundingBox.max, Vector3.zero, new Vector3Int (resolution.x - 1, resolution.y - 1, resolution.z - 1), triangleBoundingBox.max);
-
-        for (int x = Mathf.CeilToInt (lowerResCoord.x); x <= Mathf.FloorToInt (upperResCoord.x); x++)
-            for (int y = Mathf.CeilToInt (lowerResCoord.y); y <= Mathf.FloorToInt (upperResCoord.y); y++)
-                for (int z = Mathf.CeilToInt (lowerResCoord.z); z <= Mathf.FloorToInt (upperResCoord.z); z++) {
+        for (int x = voxelSpaceBound.min.x; x <= voxelSpaceBound.max.x; x++)
+            for (int y = voxelSpaceBound.min.y; y <= voxelSpaceBound.max.y; y++)
+                for (int z = voxelSpaceBound.min.z; z <= voxelSpaceBound.max.z; z++) {
                     Vector3Int resPos = new Vector3Int (x, y, z);
-                    var modelCoords = MapSpaces (Vector3Int.zero, new Vector3Int (resolution.x - 1, resolution.y - 1, resolution.z - 1), triangleBoundingBox.min, triangleBoundingBox.max, resPos);
-                    // if (!triangleBoundingBox.Contains (modelCoords) || !modelBoundingBox.Contains (modelCoords)) continue;
+                    // if (!triangleBoundingBox.Contains (resPos) || !modelBoundingBox.Contains (resPos)) continue;
 
                     Vector3 closestPoint = plane.ClosestPointOnPlane (new Vector3 (x, y, z));
                     Vector3 directionVector = new Vector3 (x, y, z) - closestPoint;
@@ -230,49 +161,12 @@ public class Voxelizer2 : EditorWindow {
                     else if (region <= 3) regionNormal = edgeNormals[triangleIndex + (region - 1)];
                     else regionNormal = vertexNormals[triangleIndex + (region - 4)];
 
-                    float density = Vector3.Dot (regionNormal, directionVector);
+                    float density = -Vector3.Dot (regionNormal, directionVector);
                     float prevDensity = voxels[Util.Map3DTo1D (resPos, resolution)].density;
 
                     if (signDistance < prevSignDistance) voxels[Util.Map3DTo1D (resPos, resolution)] = new Voxel { density = density };
                     else if (signDistance == prevSignDistance) voxels[Util.Map3DTo1D (resPos, resolution)] = new Voxel { density = prevDensity + density };
                 }
-
-        // for (var z = triangleBoundingBox.min.z; z <= triangleBoundingBox.max.z; z += voxelScale.z)
-        //     for (var y = triangleBoundingBox.min.y; y <= triangleBoundingBox.max.y; y += voxelScale.y)
-        //         for (var x = triangleBoundingBox.min.x; x <= triangleBoundingBox.max.x; x += voxelScale.x) {
-        //             if (!modelBoundingBox.Contains (new Vector3 (x, y, z))) continue;
-        //             Vector3 closestPoint = plane.ClosestPointOnPlane (new Vector3 (x, y, z));
-        //             // x = closest point on triangle
-        //             // p = given point p
-        //             // r = p - x
-        //             Vector3 directionVector = new Vector3 (x, y, z) - closestPoint;
-
-        //             float minDistance = float.MaxValue;
-        //             int region = 0;
-        //             for (int i = 0; i < regions.Length; i++) {
-        //                 float distance = Vector3.Distance (regions[i], new Vector3 (x, y, z));
-        //                 if (distance < minDistance) {
-        //                     minDistance = distance;
-        //                     region = i;
-        //                 }
-        //             }
-        //             float signDistance = GetSignDistance (region, closestPoint, triangle, plane);
-        //             var weightedNormal = weightedNormals[region];
-
-        //             float density = Vector3.Dot (weightedNormal, directionVector);
-        //             Vector3Int resolutionCoord = MapModelSpaceToResolution (new Vector3 (x, y, z), modelBoundingBox);
-        //             // Debug.Log (resolutionCoord);
-        //             Voxel v = voxels[Util.Map3DTo1D (resolutionCoord, resolution)];
-        //             float prevSignDistance = distances[Util.Map3DTo1D (resolutionCoord, resolution)];
-
-        //             if (signDistance < prevSignDistance) {
-        //                 density = Vector3.Dot (weightedNormal, directionVector);
-        //                 distances[Util.Map3DTo1D (resolutionCoord, resolution)] = signDistance;
-        //             } else if (signDistance == prevSignDistance) density = v.density + Vector3.Dot (weightedNormal, directionVector);
-
-        //             voxels[Util.Map3DTo1D (resolutionCoord, resolution)] = new Voxel { density = density };
-
-        //         }
     }
 
     private float GetSignDistance (int region, Vector3 closestPoint, GeoMath.Triangle triangle, Plane plane) {
@@ -302,31 +196,10 @@ public class Voxelizer2 : EditorWindow {
         return Vector3.Lerp (line.p1, line.p2, d);
     }
 
-    private Vector3Int MapModelSpaceToResolution (Vector3 pos, Bounds modelBoundingBox) {
-        return new Vector3Int (
-            (int) (pos.x / modelBoundingBox.size.x * (resolution.x - 1)),
-            (int) (pos.y / modelBoundingBox.size.y * (resolution.y - 1)),
-            (int) (pos.z / modelBoundingBox.size.z * (resolution.z - 1)));
-    }
-
-    private Vector3 MapSpaces (Vector3 a1, Vector3 a2, Vector3 b1, Vector3 b2, Vector3 s) {
-        var v1 = s - a1;
-        var v2 = b2 - b1;
-        var v3 = new Vector3 (v1.x * v2.x, v1.y * v2.y, v1.z * v2.z);
-        var v4 = a2 - a1;
-        var v5 = new Vector3 (v3.x / v4.x, v3.y / v4.y, v3.z / v4.z);
-        return new Vector3 (b1.x + v5.x, b1.y + v5.y, b1.z + v5.z);
-    }
-
     private Bounds TriangleBoundingBox (GeoMath.Triangle triangle) {
-        Bounds bounds = new Bounds ();
-        var minX = Mathf.Min (Mathf.Min (triangle.a.x, triangle.b.x), triangle.c.x);
-        var minY = Mathf.Min (Mathf.Min (triangle.a.y, triangle.b.y), triangle.c.y);
-        var minZ = Mathf.Min (Mathf.Min (triangle.a.z, triangle.b.z), triangle.c.z);
-        var maxX = Mathf.Max (Mathf.Max (triangle.a.x, triangle.b.x), triangle.c.x);
-        var maxY = Mathf.Max (Mathf.Max (triangle.a.y, triangle.b.y), triangle.c.y);
-        var maxZ = Mathf.Max (Mathf.Max (triangle.a.z, triangle.b.z), triangle.c.z);
-        bounds.SetMinMax (new Vector3 (minX, minY, minZ), new Vector3 (maxX, maxY, maxZ));
+        Bounds bounds = new Bounds (triangle.a * voxelScale, Vector3.zero);
+        bounds.Encapsulate (triangle.b * voxelScale);
+        bounds.Encapsulate (triangle.c * voxelScale);
         return bounds;
     }
 
