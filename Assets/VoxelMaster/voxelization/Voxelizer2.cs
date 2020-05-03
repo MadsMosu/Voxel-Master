@@ -135,9 +135,9 @@ public class Voxelizer2 : EditorWindow {
         // var r7 = triangleCenter + (((r3 + r4) / 2 - r1).normalized * (Vector3.Distance (r1, triangle.c) * 2));
         // Vector3[] regions = new Vector3[] { r1, r2, r3, r4, r5, r6, r7 };
 
-        for (int x = voxelSpaceBound.min.x; x <= voxelSpaceBound.max.x; x++)
-            for (int y = voxelSpaceBound.min.y; y <= voxelSpaceBound.max.y; y++)
-                for (int z = voxelSpaceBound.min.z; z <= voxelSpaceBound.max.z; z++) {
+        for (int x = (int) voxelSpaceBound.min.x; x <= voxelSpaceBound.max.x; x++)
+            for (int y = (int) voxelSpaceBound.min.y; y <= voxelSpaceBound.max.y; y++)
+                for (int z = (int) voxelSpaceBound.min.z; z <= voxelSpaceBound.max.z; z++) {
                     Vector3Int resPos = new Vector3Int (x, y, z);
                     // if (!triangleBoundingBox.Contains (resPos) || !modelBoundingBox.Contains (resPos)) continue;
 
