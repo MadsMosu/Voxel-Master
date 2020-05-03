@@ -9,24 +9,24 @@ namespace VoxelMaster.WorldGeneration {
     [Serializable]
     public class BaseHeightmapGenerator : FeatureGenerator {
 
-        FastNoise baseHeightNoise = new FastNoise ();
-        FastNoise detailHeightNoise = new FastNoise ();
-        FastNoise rigedNoise = new FastNoise ();
+        FastNoise baseHeightNoise = new FastNoise();
+        FastNoise detailHeightNoise = new FastNoise();
+        FastNoise rigedNoise = new FastNoise();
 
-        float map (float s, float a1, float a2, float b1, float b2) {
+        float map(float s, float a1, float a2, float b1, float b2) {
             return b1 + (s - a1) * (b2 - b1) / (a2 - a1);
         }
 
-        public override void Generate (WorldGeneratorSettings settings, VoxelChunk chunk) {
+        public override void Generate(WorldGeneratorSettings settings, VoxelChunk chunk) {
 
-            baseHeightNoise.SetSeed (settings.seed);
+            baseHeightNoise.SetSeed(settings.seed);
 
-            detailHeightNoise.SetSeed (settings.seed);
-            detailHeightNoise.SetFractalOctaves (3);
+            detailHeightNoise.SetSeed(settings.seed);
+            detailHeightNoise.SetFractalOctaves(3);
 
-            rigedNoise.SetSeed (settings.seed);
-            rigedNoise.SetFractalOctaves (8);
-            rigedNoise.SetFractalType (FastNoise.FractalType.RigidMulti);
+            rigedNoise.SetSeed(settings.seed);
+            rigedNoise.SetFractalOctaves(8);
+            rigedNoise.SetFractalType(FastNoise.FractalType.RigidMulti);
 
             var chunkSizeMinusOne = chunk.size.x - 1f;
 
@@ -42,25 +42,26 @@ namespace VoxelMaster.WorldGeneration {
 
             bool hasChecked = false;
             bool prevVoxelSign = false;
-            baseHeightNoise.SetFractalType (FastNoise.FractalType.FBM);
-            chunk.voxels.Traverse ((x, y, z, voxel) => {
+            baseHeightNoise.SetFractalType(FastNoise.FractalType.FBM);
+            chunk.voxels.Traverse((x, y, z, voxel) => {
 
-                float baseHeight = baseHeightNoise.GetPerlinFractal ((chunkX + x) / baseHeightScale, 0, (chunkZ + z) / baseHeightScale) * baseHeightAmplifier;
+                float baseHeight = baseHeightNoise.GetPerlinFractal((chunkX + x) / baseHeightScale, 0, (chunkZ + z) / baseHeightScale) * baseHeightAmplifier;
 
-                baseHeight += detailHeightNoise.GetPerlinFractal ((chunkX + x) / (baseHeightScale / 20), 0, (chunkZ + z) / (baseHeightScale / 20)) * (baseHeightAmplifier / 50);
+                baseHeight += detailHeightNoise.GetPerlinFractal((chunkX + x) / (baseHeightScale / 20), 0, (chunkZ + z) / (baseHeightScale / 20)) * (baseHeightAmplifier / 50);
 
-                float density = -(((chunk.coords.y * settings.voxelScale) * (chunk.size.y - 1f) + y) - baseHeight);
+                float density = 1f - (((chunk.coords.y * settings.voxelScale) * (chunk.size.y - 1f) + y) - baseHeight);
 
-                var erosion = baseHeightNoise.GetSimplexFractal ((chunkX + x) / caveScale, (chunkY + y) / caveScale, (chunkZ + z) / caveScale);
-                density -= Mathf.Clamp (erosion * 100, 0, Mathf.Infinity);
+                //var erosion = baseHeightNoise.GetSimplexFractal((chunkX + x) / caveScale, (chunkY + y) / caveScale, (chunkZ + z) / caveScale);
+                //density -= Mathf.Clamp(erosion * 10, 0, Mathf.Infinity);
 
-                chunk.voxels.SetVoxel (new Vector3Int (x, y, z), new Voxel (density));
+                chunk.voxels.SetVoxel(new Vector3Int(x, y, z), new Voxel { density = density });
 
                 if (hasChecked) {
-                    if (prevVoxelSign != density < 0) chunk.hasSolids = true;
-                } else hasChecked = true;
+                    if (prevVoxelSign != density < .5f) chunk.hasSolids = true;
+                }
+                else hasChecked = true;
 
-                prevVoxelSign = density < 0;
+                prevVoxelSign = density < .5f;
 
             });
         }

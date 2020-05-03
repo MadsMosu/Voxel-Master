@@ -46,15 +46,17 @@ namespace VoxelMaster {
         }
 
         void ExpandChunkGeneration() {
+            List<Vector3Int> toGenCoords = new List<Vector3Int>();
             for (int z = -viewerRadius / 2; z < viewerRadius / 2; z++)
                 for (int y = -viewerRadius / 6; y < viewerRadius / 3; y++)
                     for (int x = -viewerRadius / 2; x < viewerRadius / 2; x++) {
                         if (x == 0 && y == 0 && z == 0) continue;
                         var coord = viewerCoordinates + new Vector3Int(x, y, z);
                         if (!chunkDictionary.ContainsKey(coord)) {
-                            RequestChunk(coord);
+                            toGenCoords.Add(coord);
                         }
                     }
+            toGenCoords.OrderBy(c => Vector3Int.Distance(c, viewerCoordinates)).ToList().ForEach(c => RequestChunk(c));
         }
 
 
