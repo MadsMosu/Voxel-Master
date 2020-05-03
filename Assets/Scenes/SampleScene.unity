@@ -1048,7 +1048,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   viewer: {fileID: 871260437}
-  viewerRadius: 20
+  viewerRadius: 16
   material: {fileID: 2100000, guid: f4a082d0cf9dba842808c8f8020e1ecf, type: 2}
 --- !u!4 &1114245770
 Transform:
