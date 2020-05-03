@@ -13,7 +13,7 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
 
     }
 
-    public override MeshData GenerateMesh (Voxel[] voxelData, int size, int step, float scale) {
+    public override MeshData GenerateMesh (IVoxelData volume, Vector3 origin, int step, float scale) {
         List<Vector3> vertices = new List<Vector3> ();
         List<int> triangleIndices = new List<int> ();
         List<Vector3> normals = new List<Vector3> ();
@@ -22,7 +22,7 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
             for (int y = 0; y < chunkSize; y++)
                 for (int x = 0; x < chunkSize; x++) {
                     Vector3Int cellPos = new Vector3Int (x, y, z);
-                    PolygonizeCell (voxelData, cellPos, size, step, scale, ref vertices, ref triangleIndices, ref normals);
+                    PolygonizeCell (volume, origin, cellPos, step, scale, ref vertices, ref triangleIndices, ref normals);
                 }
 
         if (step > 1) {
@@ -34,25 +34,25 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
                             Tables.transFullFaceOrientation[side][0].y * (chunkSize - 1) + u * Tables.transFullFaceOrientation[side][1].y + v * Tables.transFullFaceOrientation[side][2].y,
                             Tables.transFullFaceOrientation[side][0].z * (chunkSize - 1) + u * Tables.transFullFaceOrientation[side][1].z + v * Tables.transFullFaceOrientation[side][2].z
                         );
-                        PolygonizeTransitionCell (voxelData, cellPos, size, scale, ref vertices, ref triangleIndices, ref normals, u, v, side, step);
+                        PolygonizeTransitionCell (volume, origin, cellPos, scale, ref vertices, ref triangleIndices, ref normals, u, v, side, step);
                     }
         }
 
         return new MeshData (vertices.ToArray (), triangleIndices.ToArray (), normals.ToArray ());
     }
 
-    internal void PolygonizeCell (Voxel[] voxels, Vector3Int cellPos, int size, int step, float scale, ref List<Vector3> vertices, ref List<int> triangleIndices, ref List<Vector3> normals) {
+    internal void PolygonizeCell (IVoxelData volume, Vector3 origin, Vector3Int cellPos, int step, float scale, ref List<Vector3> vertices, ref List<int> triangleIndices, ref List<Vector3> normals) {
+
         float[] cubeDensities = new float[8];
         byte caseCode = 0;
         byte addToCaseCode = 1;
         for (int i = 0; i < cubeDensities.Length; i++) {
-            cubeDensities[i] = voxels[Util.Map3DTo1D ((cellPos + (Tables.CornerIndex[i]) + Vector3Int.one) * step, size)].density;
+            cubeDensities[i] = volume[origin + ((cellPos + Tables.CornerIndex[i])) * step].density;
             if (cubeDensities[i] < isoLevel) {
                 caseCode |= addToCaseCode;
             }
             addToCaseCode *= 2;
         }
-
         if (caseCode == 0 || caseCode == 255) return;
 
         byte regularCellClass = Tables.RegularCellClass[caseCode];
@@ -77,12 +77,12 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
             var p1Int = (cellPos + Tables.CornerIndex[cornerB]);
             var p1 = new Vector3 (p1Int.x, p1Int.y, p1Int.z) * step;
 
-            Vector3 cornerANormal = GetRegularCornerNormal (voxels, p0Int, size, step);
-            Vector3 cornerBNormal = GetRegularCornerNormal (voxels, p1Int, size, step);
+            Vector3 cornerANormal = GetRegularCornerNormal (volume, origin, p0Int, step);
+            Vector3 cornerBNormal = GetRegularCornerNormal (volume, origin, p1Int, step);
 
             if (step > 1) {
-                p0 = ShiftRegularCornerPos (p0Int, p0, size, step);
-                p1 = ShiftRegularCornerPos (p1Int, p1, size, step);
+                p0 = ShiftRegularCornerPos (p0Int, p0, step);
+                p1 = ShiftRegularCornerPos (p1Int, p1, step);
             }
 
             float lerpFactor;
@@ -114,13 +114,13 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
         }
     }
 
-    internal void PolygonizeTransitionCell (Voxel[] voxels, Vector3Int cellPos, int size, float scale, ref List<Vector3> vertices, ref List<int> triangleIndices, ref List<Vector3> normals, int u, int v, int side, int step) {
+    internal void PolygonizeTransitionCell (IVoxelData volume, Vector3 origin, Vector3Int cellPos, float scale, ref List<Vector3> vertices, ref List<int> triangleIndices, ref List<Vector3> normals, int u, int v, int side, int step) {
         float[] transFullFaceDensities = new float[9];
 
         int[] caseCodeCoeffs = new int[9] { 0x01, 0x02, 0x04, 0x80, 0x100, 0x08, 0x40, 0x20, 0x10 };
         int transCaseCode = 0;
         for (byte i = 0; i < 9; i++) {
-            transFullFaceDensities[i] = GetTransCornerDensity (voxels, cellPos, size, i, side, step);
+            transFullFaceDensities[i] = GetTransCornerDensity (volume, origin, cellPos, i, side, step);
             if (transFullFaceDensities[i] < isoLevel) {
                 transCaseCode |= caseCodeCoeffs[i];
             }
@@ -144,14 +144,14 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
             byte cornerA = (byte) ((edgeCode >> 4) & 0x0F);
             byte cornerB = (byte) (edgeCode & 0x0F);
 
-            Vector3 p0 = GetTransCornerPos (cellPos, cornerA, side, size, step);
-            Vector3 p1 = GetTransCornerPos (cellPos, cornerB, side, size, step);
+            Vector3 p0 = GetTransCornerPos (cellPos, cornerA, side, step);
+            Vector3 p1 = GetTransCornerPos (cellPos, cornerB, side, step);
 
-            Vector3 cornerANormal = GetTransCornerNormal (voxels, cellPos, side, cornerA, size, step);
-            Vector3 cornerBNormal = GetTransCornerNormal (voxels, cellPos, side, cornerB, size, step);
+            Vector3 cornerANormal = GetTransCornerNormal (volume, origin, cellPos, side, cornerA, step);
+            Vector3 cornerBNormal = GetTransCornerNormal (volume, origin, cellPos, side, cornerB, step);
 
-            float densityA = cornerA < 9 ? transFullFaceDensities[cornerA] : GetTransCornerDensity (voxels, cellPos, size, cornerA, side, step);
-            float densityB = cornerB < 9 ? transFullFaceDensities[cornerB] : GetTransCornerDensity (voxels, cellPos, size, cornerB, side, step);
+            float densityA = cornerA < 9 ? transFullFaceDensities[cornerA] : GetTransCornerDensity (volume, origin, cellPos, cornerA, side, step);
+            float densityB = cornerB < 9 ? transFullFaceDensities[cornerB] : GetTransCornerDensity (volume, origin, cellPos, cornerB, side, step);
 
             float lerpFactor;
             if (Mathf.Abs (densityB - densityA) > 0.000001f) {
@@ -189,43 +189,47 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
         }
     }
 
-    private float GetTransCornerDensity (Voxel[] voxels, Vector3Int cellPos, int size, byte corner, int side, int step) {
+    private float GetTransCornerDensity (IVoxelData volume, Vector3 origin, Vector3Int cellPos, byte corner, int side, int step) {
         if (corner < 9) {
-            return GetTransCellDensity (voxels, cellPos, size, side, Tables.transFullCorners[corner].x, Tables.transFullCorners[corner].y, 0, step);
+            return GetTransCellDensity (volume, origin, cellPos, side, Tables.transFullCorners[corner].x, Tables.transFullCorners[corner].y, 0, step);
         } else {
             byte cornerIndex = (byte) (corner - 9);
-            return GetRegularCellDensity (voxels, cellPos, size, side, Tables.transRegularCorners[cornerIndex].x, Tables.transRegularCorners[cornerIndex].y, step);
+            return GetRegularCellDensity (volume, origin, cellPos, side, Tables.transRegularCorners[cornerIndex].x, Tables.transRegularCorners[cornerIndex].y, step);
         }
     }
 
-    private float GetTransCellDensity (Voxel[] voxels, Vector3Int cellPos, int size, int side, int u, int v, int w, int step) {
+    private float GetTransCellDensity (IVoxelData volume, Vector3 origin, Vector3Int cellPos, int side, int u, int v, int w, int step) {
         var cellOriginU = 2 * (Tables.transReverseOrientation[side][0].x * (chunkSize - 1) + cellPos.x * Tables.transReverseOrientation[side][1].x + cellPos.y * Tables.transReverseOrientation[side][2].x + cellPos.z * Tables.transReverseOrientation[side][3].x);
         var cellOriginV = 2 * (Tables.transReverseOrientation[side][0].y * (chunkSize - 1) + cellPos.x * Tables.transReverseOrientation[side][1].y + cellPos.y * Tables.transReverseOrientation[side][2].y + cellPos.z * Tables.transReverseOrientation[side][3].y);
         var transCellPos = new Vector3 (
-            ((Tables.transFullFaceOrientation[side][0].x * chunkSize + (u + cellOriginU) * 0.5f * Tables.transFullFaceOrientation[side][1].x + (v + cellOriginV) * 0.5f * Tables.transFullFaceOrientation[side][2].x + w * 0.5f * Tables.transFullFaceOrientation[side][3].x) + 1) * step,
-            ((Tables.transFullFaceOrientation[side][0].y * chunkSize + (u + cellOriginU) * 0.5f * Tables.transFullFaceOrientation[side][1].y + (v + cellOriginV) * 0.5f * Tables.transFullFaceOrientation[side][2].y + w * 0.5f * Tables.transFullFaceOrientation[side][3].y) + 1) * step,
-            ((Tables.transFullFaceOrientation[side][0].z * chunkSize + (u + cellOriginU) * 0.5f * Tables.transFullFaceOrientation[side][1].z + (v + cellOriginV) * 0.5f * Tables.transFullFaceOrientation[side][2].z + w * 0.5f * Tables.transFullFaceOrientation[side][3].z) + 1) * step
+            (Tables.transFullFaceOrientation[side][0].x * chunkSize + (u + cellOriginU) * 0.5f * Tables.transFullFaceOrientation[side][1].x + (v + cellOriginV) * 0.5f * Tables.transFullFaceOrientation[side][2].x + w * 0.5f * Tables.transFullFaceOrientation[side][3].x) * step,
+            (Tables.transFullFaceOrientation[side][0].y * chunkSize + (u + cellOriginU) * 0.5f * Tables.transFullFaceOrientation[side][1].y + (v + cellOriginV) * 0.5f * Tables.transFullFaceOrientation[side][2].y + w * 0.5f * Tables.transFullFaceOrientation[side][3].y) * step,
+            (Tables.transFullFaceOrientation[side][0].z * chunkSize + (u + cellOriginU) * 0.5f * Tables.transFullFaceOrientation[side][1].z + (v + cellOriginV) * 0.5f * Tables.transFullFaceOrientation[side][2].z + w * 0.5f * Tables.transFullFaceOrientation[side][3].z) * step
         );
-        float density = voxels[Util.Map3DTo1D (new Vector3Int ((int) transCellPos.x, (int) transCellPos.y, (int) transCellPos.z), size)].density;
+        // if (step > 1) {
+
+        //     Debug.Log (transCellPos);
+        // }
+        float density = volume[origin + new Vector3Int ((int) transCellPos.x, (int) transCellPos.y, (int) transCellPos.z)].density;
         return density;
     }
 
-    private float GetRegularCellDensity (Voxel[] voxels, Vector3Int cellPos, int size, int side, int u, int v, int step) {
+    private float GetRegularCellDensity (IVoxelData volume, Vector3 origin, Vector3Int cellPos, int side, int u, int v, int step) {
         var coords = new Vector3Int (
             cellPos.x + Tables.transFullFaceOrientation[side][0].x + u * Tables.transFullFaceOrientation[side][1].x + v * Tables.transFullFaceOrientation[side][2].x,
             cellPos.y + Tables.transFullFaceOrientation[side][0].y + u * Tables.transFullFaceOrientation[side][1].y + v * Tables.transFullFaceOrientation[side][2].y,
             cellPos.z + Tables.transFullFaceOrientation[side][0].z + u * Tables.transFullFaceOrientation[side][1].z + v * Tables.transFullFaceOrientation[side][2].z
         );
-        var density = voxels[Util.Map3DTo1D ((coords + Vector3Int.one) * step, size)].density;
+        float density = volume[origin + (coords * step)].density;
         return density;
     }
 
-    private Vector3 GetTransCornerPos (Vector3Int cellPos, byte corner, int side, int size, int step) {
+    private Vector3 GetTransCornerPos (Vector3Int cellPos, byte corner, int side, int step) {
         if (corner < 9) {
             return GetTransFullFaceCornerPos (cellPos, side, Tables.transFullCorners[corner].x, Tables.transFullCorners[corner].y, step);
         } else {
             byte cornerIndex = (byte) (corner - 9);
-            return GetRegularCornerPos (cellPos, side, Tables.transRegularCorners[cornerIndex].x, Tables.transRegularCorners[cornerIndex].y, size, step);
+            return GetRegularCornerPos (cellPos, side, Tables.transRegularCorners[cornerIndex].x, Tables.transRegularCorners[cornerIndex].y, step);
         }
     }
 
@@ -234,22 +238,22 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
             cellPos.x + (float) (Tables.transFullFaceOrientation[side][0].x) + (u * 0.5f) * Tables.transFullFaceOrientation[side][1].x + (v * 0.5f) * Tables.transFullFaceOrientation[side][2].x,
             cellPos.y + (float) (Tables.transFullFaceOrientation[side][0].y) + (u * 0.5f) * Tables.transFullFaceOrientation[side][1].y + (v * 0.5f) * Tables.transFullFaceOrientation[side][2].y,
             cellPos.z + (float) (Tables.transFullFaceOrientation[side][0].z) + (u * 0.5f) * Tables.transFullFaceOrientation[side][1].z + (v * 0.5f) * Tables.transFullFaceOrientation[side][2].z
-        ) * step;
-        return cornerPos;
+        );
+        return cornerPos * step;
 
     }
 
-    private Vector3 GetRegularCornerPos (Vector3Int cellPos, int side, int u, int v, int size, int step) {
+    private Vector3 GetRegularCornerPos (Vector3Int cellPos, int side, int u, int v, int step) {
         var cornerPos = new Vector3Int (
             cellPos.x + Tables.transFullFaceOrientation[side][0].x + u * Tables.transFullFaceOrientation[side][1].x + v * Tables.transFullFaceOrientation[side][2].x,
             cellPos.y + Tables.transFullFaceOrientation[side][0].y + u * Tables.transFullFaceOrientation[side][1].y + v * Tables.transFullFaceOrientation[side][2].y,
             cellPos.z + Tables.transFullFaceOrientation[side][0].z + u * Tables.transFullFaceOrientation[side][1].z + v * Tables.transFullFaceOrientation[side][2].z
         );
-        Vector3 pos = ShiftRegularCornerPos (cornerPos, new Vector3 (cornerPos.x, cornerPos.y, cornerPos.z) * step, size, step);
+        Vector3 pos = ShiftRegularCornerPos (cornerPos, new Vector3 (cornerPos.x, cornerPos.y, cornerPos.z) * step, step);
         return pos;
     }
 
-    private Vector3 ShiftRegularCornerPos (Vector3Int cornerOffset, Vector3 cornerPos, int size, int step) {
+    private Vector3 ShiftRegularCornerPos (Vector3Int cornerOffset, Vector3 cornerPos, int step) {
         if (cornerOffset.x == 0) {
             cornerPos.x += shiftFactor * step;
         } else if (cornerOffset.x == chunkSize) {
@@ -269,28 +273,27 @@ public class MarchingCubesEnhanced : VoxelMeshGenerator {
         }
         return cornerPos;
     }
-
-    private Vector3 GetTransCornerNormal (Voxel[] voxels, Vector3Int cellPos, int side, byte corner, int size, int step) {
+    private Vector3 GetTransCornerNormal (IVoxelData volume, Vector3 origin, Vector3Int cellPos, int side, byte corner, int step) {
         if (corner < 9) {
             return new Vector3 (
-                GetTransCellDensity (voxels, cellPos, size, side, Tables.transFullCorners[corner].x + Tables.transReverseOrientation[side][1].x, Tables.transFullCorners[corner].y + Tables.transReverseOrientation[side][1].y, Tables.transReverseOrientation[side][1].z, step) - GetTransCellDensity (voxels, cellPos, size, side, Tables.transFullCorners[corner].x - Tables.transReverseOrientation[side][1].x, Tables.transFullCorners[corner].y - Tables.transReverseOrientation[side][1].y, -Tables.transReverseOrientation[side][1].z, step),
-                GetTransCellDensity (voxels, cellPos, size, side, Tables.transFullCorners[corner].x + Tables.transReverseOrientation[side][2].x, Tables.transFullCorners[corner].y + Tables.transReverseOrientation[side][2].y, Tables.transReverseOrientation[side][2].z, step) - GetTransCellDensity (voxels, cellPos, size, side, Tables.transFullCorners[corner].x - Tables.transReverseOrientation[side][2].x, Tables.transFullCorners[corner].y - Tables.transReverseOrientation[side][2].y, -Tables.transReverseOrientation[side][2].z, step),
-                GetTransCellDensity (voxels, cellPos, size, side, Tables.transFullCorners[corner].x + Tables.transReverseOrientation[side][3].x, Tables.transFullCorners[corner].y + Tables.transReverseOrientation[side][3].y, Tables.transReverseOrientation[side][3].z, step) - GetTransCellDensity (voxels, cellPos, size, side, Tables.transFullCorners[corner].x - Tables.transReverseOrientation[side][3].x, Tables.transFullCorners[corner].y - Tables.transReverseOrientation[side][3].y, -Tables.transReverseOrientation[side][3].z, step)
+                GetTransCellDensity (volume, origin, cellPos, side, Tables.transFullCorners[corner].x + Tables.transReverseOrientation[side][1].x, Tables.transFullCorners[corner].y + Tables.transReverseOrientation[side][1].y, Tables.transReverseOrientation[side][1].z, step) - GetTransCellDensity (volume, origin, cellPos, side, Tables.transFullCorners[corner].x - Tables.transReverseOrientation[side][1].x, Tables.transFullCorners[corner].y - Tables.transReverseOrientation[side][1].y, -Tables.transReverseOrientation[side][1].z, step),
+                GetTransCellDensity (volume, origin, cellPos, side, Tables.transFullCorners[corner].x + Tables.transReverseOrientation[side][2].x, Tables.transFullCorners[corner].y + Tables.transReverseOrientation[side][2].y, Tables.transReverseOrientation[side][2].z, step) - GetTransCellDensity (volume, origin, cellPos, side, Tables.transFullCorners[corner].x - Tables.transReverseOrientation[side][2].x, Tables.transFullCorners[corner].y - Tables.transReverseOrientation[side][2].y, -Tables.transReverseOrientation[side][2].z, step),
+                GetTransCellDensity (volume, origin, cellPos, side, Tables.transFullCorners[corner].x + Tables.transReverseOrientation[side][3].x, Tables.transFullCorners[corner].y + Tables.transReverseOrientation[side][3].y, Tables.transReverseOrientation[side][3].z, step) - GetTransCellDensity (volume, origin, cellPos, side, Tables.transFullCorners[corner].x - Tables.transReverseOrientation[side][3].x, Tables.transFullCorners[corner].y - Tables.transReverseOrientation[side][3].y, -Tables.transReverseOrientation[side][3].z, step)
             );
         } else {
             byte cornerIndex = (byte) (corner - 9);
-            return GetRegularCornerNormal (voxels, new Vector3Int (
+            return GetRegularCornerNormal (volume, origin, new Vector3Int (
                 cellPos.x + (Tables.transFullFaceOrientation[side][0].x + Tables.transRegularCorners[cornerIndex].x * Tables.transFullFaceOrientation[side][1].x + Tables.transRegularCorners[cornerIndex].y * Tables.transFullFaceOrientation[side][2].x),
                 cellPos.y + (Tables.transFullFaceOrientation[side][0].y + Tables.transRegularCorners[cornerIndex].x * Tables.transFullFaceOrientation[side][1].y + Tables.transRegularCorners[cornerIndex].y * Tables.transFullFaceOrientation[side][2].y),
                 cellPos.z + (Tables.transFullFaceOrientation[side][0].z + Tables.transRegularCorners[cornerIndex].x * Tables.transFullFaceOrientation[side][1].z + Tables.transRegularCorners[cornerIndex].y * Tables.transFullFaceOrientation[side][2].z)
-            ), size, step);
+            ), step);
         }
     }
 
-    private Vector3 GetRegularCornerNormal (Voxel[] voxels, Vector3Int cornerPos, int size, int step) {
-        float dx = voxels[Util.Map3DTo1D ((new Vector3Int (cornerPos.x + 1, cornerPos.y, cornerPos.z) + Vector3Int.one) * step, size)].density - voxels[Util.Map3DTo1D ((new Vector3Int (cornerPos.x - 1, cornerPos.y, cornerPos.z) + Vector3Int.one) * step, size)].density;
-        float dy = voxels[Util.Map3DTo1D ((new Vector3Int (cornerPos.x, cornerPos.y + 1, cornerPos.z) + Vector3Int.one) * step, size)].density - voxels[Util.Map3DTo1D ((new Vector3Int (cornerPos.x, cornerPos.y - 1, cornerPos.z) + Vector3Int.one) * step, size)].density;
-        float dz = voxels[Util.Map3DTo1D ((new Vector3Int (cornerPos.x, cornerPos.y, cornerPos.z + 1) + Vector3Int.one) * step, size)].density - voxels[Util.Map3DTo1D ((new Vector3Int (cornerPos.x, cornerPos.y, cornerPos.z - 1) + Vector3Int.one) * step, size)].density;
+    private Vector3 GetRegularCornerNormal (IVoxelData volume, Vector3 origin, Vector3Int cornerPos, int step) {
+        float dx = volume[origin + ((new Vector3Int (cornerPos.x + 1, cornerPos.y, cornerPos.z)) * step)].density - volume[origin + ((new Vector3Int (cornerPos.x - 1, cornerPos.y, cornerPos.z)) * step)].density;
+        float dy = volume[origin + ((new Vector3Int (cornerPos.x, cornerPos.y + 1, cornerPos.z)) * step)].density - volume[origin + ((new Vector3Int (cornerPos.x, cornerPos.y - 1, cornerPos.z)) * step)].density;
+        float dz = volume[origin + ((new Vector3Int (cornerPos.x, cornerPos.y, cornerPos.z + 1)) * step)].density - volume[origin + ((new Vector3Int (cornerPos.x, cornerPos.y, cornerPos.z - 1)) * step)].density;
         return new Vector3 (dx, dy, dz);
 
     }

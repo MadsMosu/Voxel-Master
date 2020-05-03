@@ -24,17 +24,24 @@ public static class Util {
     }
 
     public static int Map3DTo1D (Vector3Int coords, int size) {
-        return coords.x + coords.y * size + coords.z * size * size;
+        return (size * size * coords.z) + (size * coords.y) + coords.x;
     }
 
     public static int Map3DTo1D (Vector3Int coords, Vector3Int size) {
-        return coords.x + coords.y * size.x + coords.z * size.x * size.z;
+        return (size.x * size.y * coords.z) + (size.x * coords.y) + coords.x;
     }
 
     public static Vector3Int Map1DTo3D (int i, int size) {
         var x = i % size;
         var y = (i / size) % size;
         var z = i / (size * size);
+        return new Vector3Int (x, y, z);
+    }
+
+    public static Vector3Int Map1DTo3D (int i, Vector3Int size) {
+        var x = i % size.x;
+        var y = (i / size.x) % size.y;
+        var z = i / (size.x * size.y);
         return new Vector3Int (x, y, z);
     }
 
@@ -48,10 +55,8 @@ public static class Util {
         return new Vector2Int (x, y);
     }
 
-    public static int Int_floor_division (int value, int divider) {
-        int q = value / divider;
-        if (value % divider < 0) return q - 1;
-        else return q;
+    public static Vector3Int FloorVector3 (Vector3 v) {
+        return new Vector3Int ((int) v.x, (int) v.y, (int) v.z);
     }
 
     public static T CreateInstance<T> (String type) {
@@ -61,6 +66,12 @@ public static class Util {
     public static string FormatClassName (string className) {
         var regex = new Regex (@"(?<!^)[A-Z]+");
         return regex.Replace (className, " $&");
+    }
+
+    public static int Int_floor_division (int value, int divider) {
+        int q = value / divider;
+        if (value % divider < 0) return q - 1;
+        else return q;
     }
 
 }
