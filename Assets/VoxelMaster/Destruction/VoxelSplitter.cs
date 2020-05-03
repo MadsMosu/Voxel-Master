@@ -33,10 +33,10 @@ public static class VoxelSplitter {
         voxelObject.UpdateMesh();
 
 
-        VoxelSplitter.SeparateIslands(voxelObject.chunk, voxelObject.transform, voxelObject.material);
+        SeparateIslands(voxelObject.chunk, voxelObject.transform, voxelObject.material, voxelObject.prevVelocity);
     }
 
-    public static void SeparateIslands(VoxelChunk chunk, Transform transform, Material material) {
+    public static void SeparateIslands(VoxelChunk chunk, Transform transform, Material material, Vector3 rbVel) {
         int voxelCount = chunk.size.x * chunk.size.y * chunk.size.z;
         DisjointSet linked = new DisjointSet(voxelCount);
         int[] labels = new int[voxelCount];
@@ -114,7 +114,7 @@ public static class VoxelSplitter {
                 voxelObject.original = false;
 
                 var rb = go.AddComponent<Rigidbody>();
-                rb.velocity = voxelObject.GetComponent<Rigidbody>().velocity * 99;
+                rb.velocity = rbVel/2;
             };
             GameObject.Destroy(transform.gameObject);
         }
