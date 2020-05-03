@@ -18,6 +18,11 @@ namespace VoxelMaster.Destruction {
 
             if (GUILayout.Button("Generate")) noiseVisualizer.GenerateNoise();
 
+
+            if (GUI.changed) {
+                EditorUtility.SetDirty(target);
+                noiseVisualizer.GenerateNoise();
+            }
         }
 
     }

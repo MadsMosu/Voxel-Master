@@ -63,16 +63,18 @@ public class SimpleDataStructure : VoxelDataStructure {
         this.voxels = voxels;
     }
 
-    public override Voxel[] ExtractRegion(BoundsInt bound) {
+    public override Voxel[] ExtractRegion(BoundsInt bound, int[] labels, int labelFilter) {
         Voxel[] region = new Voxel[(bound.size.x + 1) * (bound.size.y + 1) * (bound.size.z + 1)];
         for (int x = bound.min.x; x <= bound.max.x; x++)
             for (int y = bound.min.y; y <= bound.max.y; y++)
                 for (int z = bound.min.z; z <= bound.max.z; z++) {
                     Vector3Int coords = new Vector3Int(x, y, z);
+
                     Voxel voxel;
                     if (((x <= bound.min.x || y <= bound.min.y || z <= bound.min.z) || (x >= bound.max.x || y >= bound.max.y || z >= bound.max.z)) ||
-                        ((x <= 0 || y <= 0 || z <= 0) || (x >= size.x || y >= size.y || z >= size.z))) {
-                        voxel = new Voxel { density = -1, materialIndex = 0 };
+                        ((x <= 0 || y <= 0 || z <= 0) || (x >= size.x || y >= size.y || z >= size.z))
+                        || (voxels[Util.Map3DTo1D(coords, size)].density > .5f && labels[Util.Map3DTo1D(new Vector3Int(x, y, z), size)] != labelFilter)) {
+                        voxel = new Voxel(-1);
                     }
                     else {
                         voxel = voxels[Util.Map3DTo1D(coords, size)];

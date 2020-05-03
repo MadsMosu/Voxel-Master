@@ -30,7 +30,7 @@ public class VoxelObject : MonoBehaviour {
             chunk.voxels.Init(chunkSize);
             float radius = (chunkSize.x / 3f);
 
-            Vector3 sphere1Center = transform.position + chunkSize / 2;
+            Vector3 sphere1Center =  chunkSize / 2;
             GenerateSDF(sphere1Center, radius);
 
         }
@@ -50,9 +50,15 @@ public class VoxelObject : MonoBehaviour {
             Vector3 voxelPos = (new Vector3(x, y, z));
             float density = Vector3.Distance(voxelPos, center) - radius;
 
-            chunk.voxels.SetVoxel(new Vector3Int(x, y, z), new Voxel { density = -density, materialIndex = 0 });
+            chunk.voxels.SetVoxel(new Vector3Int(x, y, z), new Voxel(-density));
         });
 
+    }
+
+    private void OnCollisionEnter(Collision collision) {
+        if(collision.impulse.magnitude > 25) {
+            VoxelSplitter.Split(this);
+        }
     }
 
     public void UpdateMesh() {
@@ -87,8 +93,9 @@ public class VoxelObject : MonoBehaviour {
         // Vector3 size = chunk.size;
         // size /= 2;
         // BoundsInt bounds = new BoundsInt (new Vector3Int ((int) transform.position.x, (int) transform.position.y, (int) transform.position.z), new Vector3Int ((int) size.x, (int) size.y, (int) size.z));
+        Gizmos.matrix = transform.localToWorldMatrix;
         Gizmos.color = Color.magenta;
-        Gizmos.DrawWireCube(transform.position + (new Vector3(chunkSize.x, chunkSize.y, chunkSize.z) * voxelScale) / 2, new Vector3(chunkSize.x, chunkSize.y, chunkSize.z) * voxelScale);
+        Gizmos.DrawWireCube((new Vector3(chunkSize.x, chunkSize.y, chunkSize.z) * voxelScale) / 2, new Vector3(chunkSize.x, chunkSize.y, chunkSize.z) * voxelScale);
         //Gizmos.color = Color.cyan;
         //Gizmos.DrawWireCube(transform.position + VoxelSplitter.voxelSpaceBound.center, VoxelSplitter.voxelSpaceBound.size);
 
