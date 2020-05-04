@@ -1,25 +1,27 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
+using VoxelMaster.Chunk;
 
 public class SmoothTool : VoxelTool {
     public override string name => "Smooth Terrain";
 
-    public override void OnToolGUI() {
-        throw new System.NotImplementedException();
+    public override void OnToolGUI () {
+        throw new System.NotImplementedException ();
     }
-    public override void ToolStart(IVoxelData voxels, Vector3 position, Vector3 surfaceNormal) {
-        SmoothTerrain(voxels, position, surfaceNormal);
-    }
-
-    public override void ToolDrag(IVoxelData voxels, Vector3 position, Vector3 surfaceNormal) {
-        SmoothTerrain(voxels, position, surfaceNormal);
+    public override void ToolStart (IVoxelData volume, VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius) {
+        // SmoothTerrain (voxels, position, surfaceNormal);
     }
 
-    public override void ToolEnd(IVoxelData voxels, Vector3 position, Vector3 surfaceNormal) {
+    public override void ToolDrag (IVoxelData volume, VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius) {
+        // SmoothTerrain (voxels, position, surfaceNormal);
+    }
+
+    public override void ToolEnd (IVoxelData volume, VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius) {
         // Do nothing
     }
     private int radius = 4;
-    private void SmoothTerrain(IVoxelData voxels, Vector3 position, Vector3 surfaceNormal) {
+    private void SmoothTerrain (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal) {
         for (int z = -radius; z < radius; z++)
             for (int y = -radius; y < radius; y++)
                 for (int x = -radius; x < radius; x++) {
@@ -27,16 +29,16 @@ public class SmoothTool : VoxelTool {
                 }
     }
 
-    private float GetAvgDensity(IVoxelData voxels, Vector3 position) {
-        var sumDensity = voxels[position].density;
-        int i = 0;
-        for (int z = -1; z < 1; z++)
-            for (int y = -1; y < 1; y++)
-                for (int x = -1; x < 1; x++) {
-                    sumDensity += voxels[(int)position.x + x, (int)position.y + y, (int)position.z + z].density;
-                    i++;
-                }
+    // private float GetAvgDensity (List<VoxelChunk> chunks, Vector3 position) {
+    //     var sumDensity = voxels[position].density;
+    //     int i = 0;
+    //     for (int z = -1; z < 1; z++)
+    //         for (int y = -1; y < 1; y++)
+    //             for (int x = -1; x < 1; x++) {
+    //                 sumDensity += voxels[(int) position.x + x, (int) position.y + y, (int) position.z + z].density;
+    //                 i++;
+    //             }
 
-        return sumDensity / i;
-    }
+    //     return sumDensity / i;
+    // }
 }
