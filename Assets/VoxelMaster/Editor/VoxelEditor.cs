@@ -14,9 +14,9 @@ public class VoxelEditor : Editor {
     VoxelTool currentTool;
     List<VoxelTool> tools = new List<VoxelTool> ();
 
-    float toolIntensity = 0.1f;
-    float toolRadius = 3f;
-    float toolFalloff = 0;
+    float toolIntensity = 0.5f;
+    float toolRadius = 5f;
+    float toolFalloff = 0.5f;
     int controlId;
 
     private void Awake () {
@@ -51,8 +51,12 @@ public class VoxelEditor : Editor {
         GUILayout.BeginVertical ("Tool Settings");
         EditorGUILayout.LabelField ("Tool Intensity");
         toolIntensity = GUILayout.HorizontalSlider (toolIntensity, 0, 1);
+        GUILayout.Space (10);
+
         EditorGUILayout.LabelField ("Tool Radius");
         toolRadius = GUILayout.HorizontalSlider (toolRadius, 0, 10);
+        GUILayout.Space (10);
+
         EditorGUILayout.LabelField ("Tool Falloff");
         toolFalloff = GUILayout.HorizontalSlider (toolFalloff, 0, 1);
         GUILayout.EndVertical ();
@@ -104,24 +108,24 @@ public class VoxelEditor : Editor {
                 }
                 HandleUtility.AddDefaultControl (GUIUtility.GetControlID (FocusType.Passive));
                 if (Event.current.type == EventType.MouseDrag && Event.current.button == 0) {
-                    List<VoxelChunk> affectedChunks = GetAffectedChunks ((VoxelWorld) target, voxelWorld, hit.point);
+                    var affectedChunks = GetAffectedChunks ((VoxelWorld) target, voxelWorld, hit.point);
+                    int ceiledRadius = Mathf.CeilToInt (toolRadius);
+                    int ceiledFallOff = Mathf.CeilToInt (toolFalloff);
                     foreach (var chunk in affectedChunks) {
-                        currentTool.ToolDrag (voxelWorld, chunk, hit.point, Vector3.zero, toolIntensity, Mathf.CeilToInt (toolRadius));
+                        currentTool.ToolDrag (voxelWorld, chunk, hit.point, Vector3.zero, toolIntensity, ceiledRadius, ceiledFallOff);
                     }
                 }
             }
         }
     }
 
-    private List<VoxelChunk> GetAffectedChunks (VoxelWorld target, IVoxelData volume, Vector3 center) {
-        int ceiledRadius = Mathf.CeilToInt (toolRadius);
-        //calculate sphere volume
-        // int size = Mathf.CeilToInt (4 / 3 * Mathf.PI * Mathf.Pow (ceiledRadius, 3));
+    private List<VoxelChunk> GetAffectedChunks (VoxelWorld target, IVoxelData volume, Vector3 position) {
+        Debug.Log (position);
         List<VoxelChunk> affectedChunks = new List<VoxelChunk> ();
         var chunkCoord = new Vector3Int (
-            Util.Int_floor_division ((int) center.x, (target.chunkSize - 1)),
-            Util.Int_floor_division ((int) center.y, (target.chunkSize - 1)),
-            Util.Int_floor_division ((int) center.z, (target.chunkSize - 1))
+            Util.Int_floor_division ((int) position.x, (target.chunkSize - 1)),
+            Util.Int_floor_division ((int) position.y, (target.chunkSize - 1)),
+            Util.Int_floor_division ((int) position.z, (target.chunkSize - 1))
         );
         int temp = Mathf.CeilToInt (toolRadius / target.chunkSize);
 
@@ -132,5 +136,15 @@ public class VoxelEditor : Editor {
                     affectedChunks.Add (target.chunkDictionary[coords]);
                 }
         return affectedChunks;
+    }
+
+    private Vector3 GetChunksAvgNormal (VoxelWorld target) {
+        //return avg normal of all mesh vertices in affected region
+        return Vector3.zero;
+    }
+
+    private Vector3 GetChunksAvgVertPos () {
+        //return avg vertex position of all mesh vertices in affected region
+        return Vector3.zero;
     }
 }

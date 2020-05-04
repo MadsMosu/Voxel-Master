@@ -917,6 +917,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb70396b3ad3cbd4b929abd099dab9e8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  chunkSize: 16
   viewer: {fileID: 871260437}
   viewerRadius: 20
   material: {fileID: 2100000, guid: f4a082d0cf9dba842808c8f8020e1ecf, type: 2}

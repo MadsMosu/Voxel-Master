@@ -20,6 +20,7 @@ namespace VoxelMaster.Chunk {
         public bool hasData { get; private set; } = false;
 
         public bool hasSolids = false;
+        public bool needsUpdate = false;
 
         public Voxel this [Vector3 v] {
             get => this [new Vector3Int ((int) v.x, (int) v.y, (int) v.z)];

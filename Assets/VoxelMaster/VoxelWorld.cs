@@ -144,10 +144,12 @@ namespace VoxelMaster {
                 if (await provider.HasChunk (coord) == false) continue;
                 var chunk = await provider.RequestChunk (coord);
                 AddChunk (coord, chunk);
-                if (chunk.hasSolids)
+                if (chunk.hasSolids || chunk.needsUpdate) {
                     lock (chunksNeedMesh) {
                         chunksNeedMesh.Enqueue (chunk.coords);
                     }
+                    chunk.needsUpdate = false;
+                }
 
                 //if (provider is GeneratorChunkDataProvider)
                 //    chunkSerializer.SaveChunk(chunk);
