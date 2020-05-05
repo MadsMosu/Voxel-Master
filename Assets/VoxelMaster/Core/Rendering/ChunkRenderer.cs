@@ -111,16 +111,7 @@ namespace VoxelMaster.Core.Rendering {
             new Vector3Int[] { new Vector3Int (1, 0, 1), new Vector3Int (-1, 0, 0), new Vector3Int (0, 1, 0), new Vector3Int (0, 0, -1) } //Z+
         };
 
-        private static readonly Vector3Int[][] reverseOrientation = new Vector3Int[][] {
-            new Vector3Int[] { new Vector3Int (0, 0, 1), new Vector3Int (0, 0, -1), new Vector3Int (0, 1, 0), new Vector3Int (1, 0, 0) }, //X-
-            new Vector3Int[] { new Vector3Int (0, 0, 1), new Vector3Int (1, 0, 0), new Vector3Int (0, 0, -1), new Vector3Int (0, 1, 0) }, //Y-
-            new Vector3Int[] { new Vector3Int (1, 0, 1), new Vector3Int (-1, 0, 0), new Vector3Int (0, 1, 0), new Vector3Int (0, 0, -1) }, //Z-
-        };
-
         private static readonly Vector3Int[][] negativeOrientation = new Vector3Int[][] {
-            // new Vector3Int[] { new Vector3Int (0, 0, 1), new Vector3Int (0, 0, -1), new Vector3Int (0, 1, 0), new Vector3Int (1, 0, 0) }, //X-
-            // new Vector3Int[] { new Vector3Int (0, 0, 1), new Vector3Int (1, 0, 0), new Vector3Int (0, 0, -1), new Vector3Int (0, 1, 0) }, //Y-
-            // new Vector3Int[] { new Vector3Int (0, 0, 0), new Vector3Int (1, 0, 0), new Vector3Int (0, 1, 0), new Vector3Int (0, 0, 1) }, //Z-
             new Vector3Int[] { new Vector3Int (0, 0, 0), new Vector3Int (0, 0, 1), new Vector3Int (0, 1, 0), new Vector3Int (-1, 0, 0) }, //X-
             new Vector3Int[] { new Vector3Int (0, 0, 0), new Vector3Int (1, 0, 0), new Vector3Int (0, 0, 1), new Vector3Int (0, -1, 0) }, //Y-
             new Vector3Int[] { new Vector3Int (1, 0, 0), new Vector3Int (-1, 0, 0), new Vector3Int (0, 1, 0), new Vector3Int (0, 0, -1) } //Z-
