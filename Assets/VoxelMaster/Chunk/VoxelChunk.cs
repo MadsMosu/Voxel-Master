@@ -2,12 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using VoxelMaster.Core.Rendering;
 
 namespace VoxelMaster.Chunk {
 
     public class VoxelChunk : IVoxelData {
 
         public VoxelWorld voxelWorld;
+        MarchingCubesGPU meshGenerator;
 
         public VoxelDataStructure voxels { get; private set; }
         private List<VoxelMaterial> _materials = new List<VoxelMaterial> ();
@@ -20,7 +22,6 @@ namespace VoxelMaster.Chunk {
         public bool hasData { get; private set; } = false;
 
         public bool hasSolids = false;
-        public bool needsUpdate = false;
 
         public Voxel this [Vector3 v] {
             get => this [new Vector3Int ((int) v.x, (int) v.y, (int) v.z)];

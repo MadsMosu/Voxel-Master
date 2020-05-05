@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using VoxelMaster;
 using VoxelMaster.Chunk;
 
 public class SmoothTool : VoxelTool {
@@ -9,15 +10,15 @@ public class SmoothTool : VoxelTool {
     public override void OnToolGUI () {
         throw new System.NotImplementedException ();
     }
-    public override void ToolStart (IVoxelData volume, VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, int falloff) {
+    public override void ToolStart (VoxelWorld voxelWorld, VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff) {
         // SmoothTerrain (voxels, position, surfaceNormal);
     }
 
-    public override void ToolDrag (IVoxelData volume, VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, int falloff) {
+    public override void ToolDrag (VoxelWorld voxelWorld, VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff) {
         // SmoothTerrain (voxels, position, surfaceNormal);
     }
 
-    public override void ToolEnd (IVoxelData volume, VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, int falloff) {
+    public override void ToolEnd (VoxelWorld voxelWorld, VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff) {
         // Do nothing
     }
     private int radius = 4;

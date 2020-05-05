@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using VoxelMaster.Chunk;
@@ -8,8 +9,6 @@ public class MarchingCubesGPU {
     // private ComputeBuffer colorBuffer;
     private int kernelMC, indicesAndNormalKernel;
 
-    private int maxTriangles, numCells, numVoxels;
-
     public MarchingCubesGPU () {
         marchingCubesCompute = (ComputeShader) Resources.Load ("MarchingCubesGPU");
         kernelMC = marchingCubesCompute.FindKernel ("MarchingCubes");
@@ -18,9 +17,9 @@ public class MarchingCubesGPU {
 
     float isoLevel = .5f;
     public MeshData GenerateMesh (VoxelChunk chunk) {
-        numCells = chunk.size.x * chunk.size.y * chunk.size.z;
-        numVoxels = (chunk.size.x - 1) * (chunk.size.y - 1) * (chunk.size.z - 1);
-        maxTriangles = numVoxels * 5;
+        int numCells = chunk.size.x * chunk.size.y * chunk.size.z;
+        int numVoxels = (chunk.size.x - 1) * (chunk.size.y - 1) * (chunk.size.z - 1);
+        int maxTriangles = numVoxels * 5;
 
         trianglesBuffer = new ComputeBuffer (maxTriangles, sizeof (float) * 3 * 3, ComputeBufferType.Append);
         triangleCountBuffer = new ComputeBuffer (1, sizeof (int), ComputeBufferType.Raw);
@@ -35,6 +34,8 @@ public class MarchingCubesGPU {
         marchingCubesCompute.SetFloat ("isoLevel", isoLevel);
         marchingCubesCompute.SetInts ("chunkSize", chunk.size.x, chunk.size.y, chunk.size.z);
         marchingCubesCompute.SetFloat ("voxelScale", chunk.voxelScale);
+
+        GetPositiveNeighborEdges (chunk);
 
         densitiesBuffer.SetData (chunk.voxels.ToArray ());
 
@@ -81,6 +82,10 @@ public class MarchingCubesGPU {
         return new MeshData (vertices, triangleIndices, surfaceNormals);
     }
 
+    private void GetPositiveNeighborEdges (VoxelChunk chunk) {
+
+    }
+
     private Vector3[] CalculateVertexNormals (Vector3[] vertices, Vector3[] surfaceNormals) {
         Vector3[] vertexNormals = new Vector3[surfaceNormals.Length];
         Dictionary<int, Vector3> sums = new Dictionary<int, Vector3> ();
@@ -116,4 +121,5 @@ public class MarchingCubesGPU {
         triangleIndicesBuffer?.Release ();
         // colorBuffer?.Release ();
     }
+
 }

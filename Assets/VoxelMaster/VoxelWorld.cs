@@ -134,6 +134,7 @@ namespace VoxelMaster {
             if (chunksNeedMesh.Count > 0) {
                 var coord = chunksNeedMesh.Dequeue ();
                 chunkRenderer.RequestMesh (coord);
+                CreateCollisionObject (coord, chunkRenderer.GetChunkMesh (coord));
             }
 
             chunkRenderer.Render ();
@@ -144,11 +145,10 @@ namespace VoxelMaster {
                 if (await provider.HasChunk (coord) == false) continue;
                 var chunk = await provider.RequestChunk (coord);
                 AddChunk (coord, chunk);
-                if (chunk.hasSolids || chunk.needsUpdate) {
+                if (chunk.hasSolids) {
                     lock (chunksNeedMesh) {
                         chunksNeedMesh.Enqueue (chunk.coords);
                     }
-                    chunk.needsUpdate = false;
                 }
 
                 //if (provider is GeneratorChunkDataProvider)
@@ -160,6 +160,17 @@ namespace VoxelMaster {
 
         private void AddChunk (Vector3Int coord, VoxelChunk chunk) {
             chunkDictionary.Add (coord, chunk);
+        }
+
+        public Dictionary<Vector3Int, GameObject> gameObjects = new Dictionary<Vector3Int, GameObject> ();
+
+        public void CreateCollisionObject (Vector3Int coord, Mesh mesh) {
+            GameObject go = new GameObject ($"Chunk {coord}", typeof (MeshCollider));
+            go.transform.position = coord * chunkSize;
+            if (mesh != null) {
+                go.GetComponent<MeshCollider> ().sharedMesh = mesh;
+            }
+            gameObjects.Add (coord, go);
         }
 
         private void OnDrawGizmosSelected () {

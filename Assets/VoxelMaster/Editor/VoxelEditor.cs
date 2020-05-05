@@ -14,7 +14,7 @@ public class VoxelEditor : Editor {
     VoxelTool currentTool;
     List<VoxelTool> tools = new List<VoxelTool> ();
 
-    float toolIntensity = 0.5f;
+    float toolIntensity = 0.05f;
     float toolRadius = 5f;
     float toolFalloff = 0.5f;
     int controlId;
@@ -50,7 +50,7 @@ public class VoxelEditor : Editor {
         GUI.backgroundColor = Color.gray;
         GUILayout.BeginVertical ("Tool Settings");
         EditorGUILayout.LabelField ("Tool Intensity");
-        toolIntensity = GUILayout.HorizontalSlider (toolIntensity, 0, 1);
+        toolIntensity = GUILayout.HorizontalSlider (toolIntensity, 0, 0.1f);
         GUILayout.Space (10);
 
         EditorGUILayout.LabelField ("Tool Radius");
@@ -80,6 +80,7 @@ public class VoxelEditor : Editor {
             Handles.Label (voxelWorld.transform.position, "LABEL TEXT");
             Handles.SphereHandleCap (3, voxelWorld.transform.position, Quaternion.identity, 1, EventType.Repaint);
             RaycastHit hit = new RaycastHit ();
+
             Handles.DrawLine (ray.origin, ray.origin + ray.direction * 1000);
             if (Physics.Raycast (ray, out hit, 1000.0f)) {
                 Handles.color = Color.red;
@@ -88,16 +89,16 @@ public class VoxelEditor : Editor {
                 int resolution = 30;
                 float rayDistance = 3;
                 float currentAngle = 0;
-                float radius = 3;
+                float radius = toolRadius;
+                Vector3 dir = -hit.normal;
                 Vector3[] circlePoints = new Vector3[resolution];
                 for (int i = 0; i < resolution; i++) {
                     float x = Mathf.Sin (currentAngle);
                     float y = Mathf.Cos (currentAngle);
                     currentAngle += 2 * Mathf.PI / resolution;
 
-                    Vector3 dir = -hit.normal;
                     RaycastHit hitCircle;
-                    Debug.DrawLine (hit.point, dir, Color.red);
+                    // Debug.DrawLine (hit.point, dir, Color.red);
                     if (Physics.Raycast (hit.point + (new Vector3 (x, 0, y) * radius) + hit.normal * rayDistance, dir, out hitCircle)) {
                         circlePoints[i] = hitCircle.point;
                     }
@@ -110,9 +111,8 @@ public class VoxelEditor : Editor {
                 if (Event.current.type == EventType.MouseDrag && Event.current.button == 0) {
                     var affectedChunks = GetAffectedChunks ((VoxelWorld) target, voxelWorld, hit.point);
                     int ceiledRadius = Mathf.CeilToInt (toolRadius);
-                    int ceiledFallOff = Mathf.CeilToInt (toolFalloff);
                     foreach (var chunk in affectedChunks) {
-                        currentTool.ToolDrag (voxelWorld, chunk, hit.point, Vector3.zero, toolIntensity, ceiledRadius, ceiledFallOff);
+                        currentTool.ToolDrag (voxelWorld, chunk, hit.point, dir, toolIntensity, ceiledRadius, toolFalloff);
                     }
                 }
             }
@@ -120,31 +120,24 @@ public class VoxelEditor : Editor {
     }
 
     private List<VoxelChunk> GetAffectedChunks (VoxelWorld target, IVoxelData volume, Vector3 position) {
-        Debug.Log (position);
         List<VoxelChunk> affectedChunks = new List<VoxelChunk> ();
         var chunkCoord = new Vector3Int (
             Util.Int_floor_division ((int) position.x, (target.chunkSize - 1)),
             Util.Int_floor_division ((int) position.y, (target.chunkSize - 1)),
             Util.Int_floor_division ((int) position.z, (target.chunkSize - 1))
         );
-        int temp = Mathf.CeilToInt (toolRadius / target.chunkSize);
+        int temp = Mathf.CeilToInt ((toolRadius * 2) / target.chunkSize);
+        // Debug.Log (temp);
 
         for (int x = chunkCoord.x - temp; x < chunkCoord.x + temp; x++)
             for (int y = chunkCoord.y - temp; y < chunkCoord.y + temp; y++)
                 for (int z = chunkCoord.z - temp; z < chunkCoord.z + temp; z++) {
                     Vector3Int coords = new Vector3Int (x, y, z);
+                    if (!target.gameObjects.ContainsKey (coords)) {
+                        target.CreateCollisionObject (coords, null);
+                    }
                     affectedChunks.Add (target.chunkDictionary[coords]);
                 }
         return affectedChunks;
-    }
-
-    private Vector3 GetChunksAvgNormal (VoxelWorld target) {
-        //return avg normal of all mesh vertices in affected region
-        return Vector3.zero;
-    }
-
-    private Vector3 GetChunksAvgVertPos () {
-        //return avg vertex position of all mesh vertices in affected region
-        return Vector3.zero;
     }
 }
