@@ -1,8 +1,5 @@
-using System.Collections.Generic;
 using UnityEngine;
-using VoxelMaster;
 using VoxelMaster.Chunk;
-using VoxelMaster.Core.Rendering;
 
 public class FlattenTool : VoxelTool {
     public override string name => "Flatten Terrain";
@@ -11,7 +8,7 @@ public class FlattenTool : VoxelTool {
 
     public override void OnToolGUI () { }
 
-    public override void ToolDrag (VoxelWorld voxelWorld, VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff) {
+    public override void ToolDrag (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff) {
         Vector3Int chunkWorldPosition = chunk.coords * (chunk.size - Vector3Int.one);
 
         chunk.voxels.Traverse ((x, y, z, v) => {
@@ -33,16 +30,13 @@ public class FlattenTool : VoxelTool {
                 chunk.voxels.SetVoxel (voxelCoord, v);
             }
         });
-        ChunkRenderer.instance.RequestMesh (chunk.coords);
-        GameObject go = voxelWorld.gameObjects[chunk.coords];
-        go.GetComponent<MeshCollider> ().sharedMesh = ChunkRenderer.instance.GetChunkMesh (chunk.coords);
     }
 
-    public override void ToolEnd (VoxelWorld voxelWorld, VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff) {
+    public override void ToolEnd (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff) {
         planeLocked = false;
     }
 
-    public override void ToolStart (VoxelWorld voxelWorld, VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff) {
+    public override void ToolStart (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff) {
         if (planeLocked == false)
             plane = new Plane (surfaceNormal, position);
         planeLocked = true;

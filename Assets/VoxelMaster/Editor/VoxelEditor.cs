@@ -7,6 +7,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using VoxelMaster;
 using VoxelMaster.Chunk;
+using VoxelMaster.Core.Rendering;
 
 [CustomEditor (typeof (VoxelWorld))]
 public class VoxelEditor : Editor {
@@ -114,7 +115,7 @@ public class VoxelEditor : Editor {
                     var ceiledRadius = Mathf.CeilToInt (toolRadius);
                     var affectedChunks = GetAffectedChunks ((VoxelWorld) target, voxelWorld, hit.point);
                     foreach (var chunk in affectedChunks) {
-                        currentTool.ToolStart (voxelWorld, chunk, hit.point, dir, toolIntensity, ceiledRadius, toolFalloff);
+                        currentTool.ToolStart (chunk, hit.point, dir, toolIntensity, ceiledRadius, toolFalloff);
                     }
                 }
 
@@ -122,7 +123,8 @@ public class VoxelEditor : Editor {
                     var ceiledRadius = Mathf.CeilToInt (radius);
                     var affectedChunks = GetAffectedChunks ((VoxelWorld) target, voxelWorld, hit.point);
                     foreach (var chunk in affectedChunks) {
-                        currentTool.ToolDrag (voxelWorld, chunk, hit.point, dir, toolIntensity, ceiledRadius, toolFalloff);
+                        currentTool.ToolDrag (chunk, hit.point, dir, toolIntensity, ceiledRadius, toolFalloff);
+                        RequestNewMesh (voxelWorld, chunk);
                     }
                 }
 
@@ -130,7 +132,7 @@ public class VoxelEditor : Editor {
                     var ceiledRadius = Mathf.CeilToInt (toolRadius);
                     var affectedChunks = GetAffectedChunks ((VoxelWorld) target, voxelWorld, hit.point);
                     foreach (var chunk in affectedChunks) {
-                        currentTool.ToolEnd (voxelWorld, chunk, hit.point, dir, toolIntensity, ceiledRadius, toolFalloff);
+                        currentTool.ToolEnd (chunk, hit.point, dir, toolIntensity, ceiledRadius, toolFalloff);
                     }
                 }
             }
@@ -156,5 +158,11 @@ public class VoxelEditor : Editor {
                     affectedChunks.Add (target.chunkDictionary[coords]);
                 }
         return affectedChunks;
+    }
+
+    private void RequestNewMesh (VoxelWorld voxelWorld, VoxelChunk chunk) {
+        ChunkRenderer.instance.RequestMesh (chunk.coords);
+        GameObject go = voxelWorld.gameObjects[chunk.coords];
+        go.GetComponent<MeshCollider> ().sharedMesh = ChunkRenderer.instance.GetChunkMesh (chunk.coords);
     }
 }
