@@ -66,8 +66,9 @@ namespace VoxelMaster.Core.Rendering {
         }
         private void AddPositiveNeighborEdges (VoxelChunk chunk) {
             for (int side = 0; side < 3; side++) {
-                if (!chunks.ContainsKey (chunk.coords + GetNeighborCoordOffset (side))) continue;
-                VoxelChunk neighborChunk = chunks[chunk.coords + GetNeighborCoordOffset (side)];
+                Vector3Int neighborCoords = chunk.coords + GetNeighborCoordOffset (side);
+                if (!chunks.ContainsKey (neighborCoords)) continue;
+                VoxelChunk neighborChunk = chunks[neighborCoords];
 
                 for (int u = 0; u < chunk.size.x; u++)
                     for (int v = 0; v < chunk.size.y; v++) {

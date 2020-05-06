@@ -107,12 +107,30 @@ public class VoxelEditor : Editor {
                 for (int i = 0; i < resolution - 1; i++) {
                     Handles.DrawLine (circlePoints[i], circlePoints[i + 1]);
                 }
+
                 HandleUtility.AddDefaultControl (GUIUtility.GetControlID (FocusType.Passive));
-                if (Event.current.type == EventType.MouseDrag && Event.current.button == 0) {
+
+                if (Event.current.type == EventType.MouseDown && Event.current.button == 0) {
+                    var ceiledRadius = Mathf.CeilToInt (toolRadius);
                     var affectedChunks = GetAffectedChunks ((VoxelWorld) target, voxelWorld, hit.point);
-                    int ceiledRadius = Mathf.CeilToInt (toolRadius);
+                    foreach (var chunk in affectedChunks) {
+                        currentTool.ToolStart (voxelWorld, chunk, hit.point, dir, toolIntensity, ceiledRadius, toolFalloff);
+                    }
+                }
+
+                if (Event.current.type == EventType.MouseDrag && Event.current.button == 0) {
+                    var ceiledRadius = Mathf.CeilToInt (radius);
+                    var affectedChunks = GetAffectedChunks ((VoxelWorld) target, voxelWorld, hit.point);
                     foreach (var chunk in affectedChunks) {
                         currentTool.ToolDrag (voxelWorld, chunk, hit.point, dir, toolIntensity, ceiledRadius, toolFalloff);
+                    }
+                }
+
+                if (Event.current.type == EventType.MouseUp && Event.current.button == 0) {
+                    var ceiledRadius = Mathf.CeilToInt (toolRadius);
+                    var affectedChunks = GetAffectedChunks ((VoxelWorld) target, voxelWorld, hit.point);
+                    foreach (var chunk in affectedChunks) {
+                        currentTool.ToolEnd (voxelWorld, chunk, hit.point, dir, toolIntensity, ceiledRadius, toolFalloff);
                     }
                 }
             }
@@ -127,7 +145,6 @@ public class VoxelEditor : Editor {
             Util.Int_floor_division ((int) position.z, (target.chunkSize - 1))
         );
         int temp = Mathf.CeilToInt ((toolRadius * 2) / target.chunkSize);
-        // Debug.Log (temp);
 
         for (int x = chunkCoord.x - temp; x < chunkCoord.x + temp; x++)
             for (int y = chunkCoord.y - temp; y < chunkCoord.y + temp; y++)

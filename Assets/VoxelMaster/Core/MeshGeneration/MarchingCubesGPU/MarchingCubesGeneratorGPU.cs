@@ -113,12 +113,12 @@ public class MarchingCubesGPU {
     }
 
     private void ReleaseBuffers () {
-        trianglesBuffer?.Release ();
-        triangleCountBuffer?.Release ();
-        densitiesBuffer?.Release ();
+        trianglesBuffer.Release ();
+        triangleCountBuffer.Release ();
+        densitiesBuffer.Release ();
         verticesBuffer.Release ();
-        surfaceNormalsBuffer?.Release ();
-        triangleIndicesBuffer?.Release ();
+        surfaceNormalsBuffer.Release ();
+        triangleIndicesBuffer.Release ();
         // colorBuffer?.Release ();
     }
 
