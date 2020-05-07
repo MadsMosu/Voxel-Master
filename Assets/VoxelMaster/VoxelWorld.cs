@@ -84,12 +84,6 @@ namespace VoxelMaster {
                     }
                     x += dx; z += dz;
                 }
-
-                //for (int x = -viewerRadius / 2; x < viewerRadius / 2; x++)
-                //    for (int z = -viewerRadius / 2; z < viewerRadius / 2; z++) {
-                //        if (x == 0 && y == 0 && z == 0) continue;
-
-                //    }
             }
 
         }
