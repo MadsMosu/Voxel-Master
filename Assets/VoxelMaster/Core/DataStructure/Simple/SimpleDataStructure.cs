@@ -28,6 +28,10 @@ public class SimpleDataStructure : VoxelDataStructure {
         voxels[Util.Map3DTo1D (coords, size)] = voxel;
     }
 
+    public override void SetVoxel (int index, Voxel voxel) {
+        voxels[index] = voxel;
+    }
+
     public override void Traverse (Action<int, int, int, Voxel> function) {
 
         for (int i = 0; i < voxels.Length; i++) {
