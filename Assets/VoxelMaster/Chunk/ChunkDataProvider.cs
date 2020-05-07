@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace VoxelMaster.Chunk {
     public abstract class ChunkDataProvider {
-        public abstract Task<VoxelChunk> RequestChunk(Vector3Int coord);
+        public abstract void RequestChunk(Vector3Int coord, Action<VoxelChunk> onChunk);
         public abstract Task<bool> HasChunk(Vector3Int coord);
     }
 }
