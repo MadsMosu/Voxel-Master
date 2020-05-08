@@ -73,14 +73,15 @@ public class SimpleDataStructure : VoxelDataStructure {
             for (int y = bound.min.y; y <= bound.max.y; y++)
                 for (int z = bound.min.z; z <= bound.max.z; z++) {
                     Vector3Int coords = new Vector3Int (x, y, z);
+                    int index = Util.Map3DTo1D (coords, size);
 
                     Voxel voxel;
                     if (((x <= bound.min.x || y <= bound.min.y || z <= bound.min.z) || (x >= bound.max.x || y >= bound.max.y || z >= bound.max.z)) ||
                         ((x <= 0 || y <= 0 || z <= 0) || (x >= size.x || y >= size.y || z >= size.z)) ||
-                        (voxels[Util.Map3DTo1D (coords, size)].density >.5f && labels[Util.Map3DTo1D (new Vector3Int (x, y, z), size)] != labelFilter)) {
+                        (voxels[index].density >.0f && labels[index] != labelFilter)) {
                         voxel = new Voxel { density = -1 };
                     } else {
-                        voxel = voxels[Util.Map3DTo1D (coords, size)];
+                        voxel = voxels[index];
                     }
                     region[Util.Map3DTo1D (coords - bound.min, bound.size + Vector3Int.one)] = voxel;
                     staticVoxels.Add (coords);

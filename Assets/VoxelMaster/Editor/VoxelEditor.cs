@@ -15,7 +15,7 @@ public class VoxelEditor : Editor {
     VoxelTool currentTool;
     List<VoxelTool> tools = new List<VoxelTool> ();
 
-    float toolIntensity = 0.03f;
+    float toolIntensity = 0.04f;
     float toolRadius = 5f;
     float toolFalloff = 0.5f;
     int controlId;
@@ -51,7 +51,7 @@ public class VoxelEditor : Editor {
         GUI.backgroundColor = Color.gray;
         GUILayout.BeginVertical ("Tool Settings");
         EditorGUILayout.LabelField ("Tool Intensity");
-        toolIntensity = GUILayout.HorizontalSlider (toolIntensity, 0, 0.06f);
+        toolIntensity = GUILayout.HorizontalSlider (toolIntensity, 0, 0.1f);
         GUILayout.Space (10);
 
         EditorGUILayout.LabelField ("Tool Radius");

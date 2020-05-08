@@ -27,7 +27,7 @@ public class SmoothTool : VoxelTool {
                     tempIntensity /= scaleFactor;
                 }
                 float avgDensity = getAvgDensity (chunk, voxelCoord, voxelWorld, chunkWorldPosition);
-                if (Mathf.Abs (avgDensity - v.density) > 0.25f) {
+                if (Mathf.Abs (avgDensity - v.density) > 0.20f) {
                     v.density = Mathf.MoveTowards (v.density, avgDensity, tempIntensity / 2 + 0.02f * Mathf.Abs (avgDensity - v.density));
                     chunk.voxels.SetVoxel (voxelCoord, v);
                 }
