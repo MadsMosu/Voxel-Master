@@ -78,7 +78,7 @@ public class SimpleDataStructure : VoxelDataStructure {
                     if (((x <= bound.min.x || y <= bound.min.y || z <= bound.min.z) || (x >= bound.max.x || y >= bound.max.y || z >= bound.max.z)) ||
                         ((x <= 0 || y <= 0 || z <= 0) || (x >= size.x || y >= size.y || z >= size.z)) ||
                         (voxels[Util.Map3DTo1D (coords, size)].density >.5f && labels[Util.Map3DTo1D (new Vector3Int (x, y, z), size)] != labelFilter)) {
-                        voxel = new Voxel (-1);
+                        voxel = new Voxel { density = -1 };
                     } else {
                         voxel = voxels[Util.Map3DTo1D (coords, size)];
                     }

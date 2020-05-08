@@ -8,15 +8,12 @@ public static class VoxelSplitter {
 
     public static BoundsInt voxelSpaceBound;
     static FastNoise noise = new FastNoise ();
-    public static void Split (VoxelObject voxelObject) {
-        PoissonSampler poissonSampler = new PoissonSampler (voxelObject.chunk.size.x, voxelObject.chunk.size.y, voxelObject.chunk.size.z, 5);
+    public static void Split (VoxelObject voxelObject, Vector3 impactPoint) {
         Vector3Int pointOfImpact = Vector3Int.zero;
         Dictionary<Vector3Int, Voxel> fractureVoxels = new Dictionary<Vector3Int, Voxel> ();
 
-        // noise.SetCellularDistanceFunction (FastNoise.CellularDistanceFunction.Natural);
-        // noise.SetCellularReturnType (FastNoise.CellularReturnType.Distance2Sub);
-        // float noiseScale = (voxelObject.chunkSize.magnitude) / 600f;
-        List<Vector3Int> samples = poissonSampler.Samples ().Select (sample => new Vector3Int ((int) sample.x, (int) sample.y, (int) sample.z)).ToList ();
+        Debug.Log (voxelObject.chunk.voxelScale);
+        List<Vector3Int> samples = PoissonSampler.GeneratePoints (0.1f / voxelObject.chunk.voxelScale, voxelObject.chunk, impactPoint).Select (sample => new Vector3Int ((int) sample.x, (int) sample.y, (int) sample.z)).ToList ();
         int[] labels = new int[voxelObject.chunk.size.x * voxelObject.chunk.size.y * voxelObject.chunk.size.z];
 
         voxelObject.chunk.voxels.Traverse ((x, y, z, v) => {
@@ -34,18 +31,19 @@ public static class VoxelSplitter {
             labels[Util.Map3DTo1D (coords, voxelObject.chunk.size)] = sampleIndex;
         });
 
-        ExtractLabelSegments (labels, voxelObject.chunk, voxelObject.transform, voxelObject.material);
+        ExtractLabelSegments (labels, voxelObject.chunk, voxelObject.transform, voxelObject.material, voxelObject.prevVelocity);
 
         voxelObject.UpdateMesh ();
 
         // SeparateIslands (voxelObject.chunk, voxelObject.transform, voxelObject.material, voxelObject.prevVelocity, fractureVoxels);
     }
 
-    private static void ExtractLabelSegments (int[] labels, VoxelChunk chunk, Transform transform, Material material) {
+    private static void ExtractLabelSegments (int[] labels, VoxelChunk chunk, Transform transform, Material material, Vector3 rbVel) {
         int highestLabel = labels.Max ();
+        // Debug.Log (highestLabel);
         //EXTRACT VOXELS BASED ON LABELS AND ASSIGN TO NEW CHUNKS
-        if (highestLabel > 1) {
-            for (int i = 1; i <= highestLabel; i++) {
+        if (highestLabel >= 1) {
+            for (int i = 0; i <= highestLabel; i++) {
 
                 if (labels.Count (x => x == i) < 4) continue;
 
@@ -77,7 +75,7 @@ public static class VoxelSplitter {
                 voxelObject.original = false;
 
                 var rb = go.AddComponent<Rigidbody> ();
-                // rb.velocity = rbVel / 2;
+                rb.velocity = rbVel / 2;
             };
             GameObject.Destroy (transform.gameObject);
         }

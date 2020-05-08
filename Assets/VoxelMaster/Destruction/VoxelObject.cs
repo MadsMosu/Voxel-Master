@@ -43,16 +43,16 @@ public class VoxelObject : MonoBehaviour {
         rigidbody = GetComponent<Rigidbody> ();
 
         UpdateMesh ();
+        if (mesh.triangles.Length == 0) GameObject.Destroy (gameObject);
 
     }
 
     private void GenerateSDF (Vector3 center, float radius) {
         chunk.voxels.Traverse ((x, y, z, voxel) => {
-            if (chunk.voxels.GetVoxel (new Vector3Int (x, y, z)).density > isoLevel) return;
+            // if (chunk.voxels.GetVoxel (new Vector3Int (x, y, z)).density > isoLevel) return;
             Vector3 voxelPos = (new Vector3 (x, y, z));
             float density = Vector3.Distance (voxelPos, center) - radius;
-
-            chunk.voxels.SetVoxel (new Vector3Int (x, y, z), new Voxel (-density));
+            chunk.voxels.SetVoxel (new Vector3Int (x, y, z), new Voxel { density = -density });
         });
 
     }
@@ -64,9 +64,9 @@ public class VoxelObject : MonoBehaviour {
 
     private void OnCollisionEnter (Collision collision) {
         if (collision.impulse.magnitude > 25) {
-            Debug.Log (rigidbody.velocity);
-            Debug.Log (prevVelocity);
-            VoxelSplitter.Split (this);
+            // Debug.Log (rigidbody.velocity);
+            // Debug.Log (prevVelocity);
+            // VoxelSplitter.Split (this);
         }
     }
 

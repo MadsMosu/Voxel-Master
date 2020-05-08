@@ -1,141 +1,79 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using VoxelMaster.Chunk;
 
-//https://gist.github.com/hiroakioishi/382a6ecbf741c5e0d463
-public class PoissonSampler {
-    private const int k = 30; // Maximum number of attempts before marking a sample as inactive.
+//https://github.com/SebLague/Poisson-Disc-Sampling/blob/master/Poisson%20Disc%20Sampling%20E01/PoissonDiscSampling.cs
+public static class PoissonSampler {
+    public static List<Vector3> GeneratePoints (float radius, VoxelChunk chunk, Vector3 impactPoint, int numSamplesBeforeRejection = 30) {
+        float cellSize = radius / Mathf.Sqrt (2);
+        Vector3 sampleRegionSize = new Vector3 (chunk.size.x, chunk.size.y, chunk.size.z);
+        Vector3Int chunkWorldPos = chunk.coords * (chunk.size - Vector3Int.one);
 
-    private readonly Vector3 cube;
-    private readonly float radius2; // radius squared
-    private readonly float cellSize;
-    private Vector3[, , ] grid;
-    private List<Vector3> activeSamples = new List<Vector3> ();
+        int[, , ] grid = new int[Mathf.CeilToInt (sampleRegionSize.x / cellSize), Mathf.CeilToInt (sampleRegionSize.y / cellSize), Mathf.CeilToInt (sampleRegionSize.z / cellSize)];
+        List<Vector3> points = new List<Vector3> ();
+        List<Vector3> spawnPoints = new List<Vector3> ();
 
-    /// Create a sampler with the following parameters:
-    ///
-    /// width:  each sample's x coordinate will be between [0, width]
-    /// height: each sample's y coordinate will be between [0, height]
-    /// depth:  each sample's z coordinate will be between [0. depth]
-    /// radius: each sample will be at least `radius` units away from any other sample, and at most 2 * `radius`.
-    public PoissonSampler (float width, float height, float depth, float radius) {
-        cube = new Vector3 (width, height, depth);
-        radius2 = radius * radius;
-        cellSize = radius / Mathf.Sqrt (3);
-        grid = new Vector3[Mathf.CeilToInt (width / cellSize),
-            Mathf.CeilToInt (height / cellSize),
-            Mathf.CeilToInt (depth / cellSize)];
-        Debug.Log (grid.GetLength (0));
-        Debug.Log (grid.GetLength (1));
-        Debug.Log (grid.GetLength (2));
-    }
+        spawnPoints.Add (sampleRegionSize / 2);
+        while (spawnPoints.Count > 0) {
+            int spawnIndex = Random.Range (0, spawnPoints.Count);
+            Vector3 spawnCentre = spawnPoints[spawnIndex];
+            bool candidateAccepted = false;
 
-    /// Return a lazy sequence of samples. You typically want to call this in a foreach loop, like so:
-    ///   foreach (Vector3 sample in sampler.Samples()) { ... }
-    public IEnumerable<Vector3> Samples () {
-        // First sample is choosen randomly
-        yield return AddSample (new Vector3 (Random.value * cube.x, Random.value * cube.y, Random.value * cube.z));
-
-        while (activeSamples.Count > 0) {
-
-            // Pick a random active sample
-            int i = (int) Random.value * activeSamples.Count;
-            Vector3 sample = activeSamples[i];
-
-            // Try `k` random candidates between [radius, 2 * radius] from that sample.
-            bool found = false;
-            for (int j = 0; j < k; ++j) {
-
-                // Generate random point around sample.
-                Vector3 candidate = GenerateRandomPointAround (sample, Random.value * 3 * radius2 + radius2);
-
-                // Accept candidates if it's inside the rect and farther than 2 * radius to any existing sample.
-                if (IsContains (candidate, cube) &&
-                    IsFarEnough (candidate)) {
-                    found = true;
-                    yield return AddSample (candidate);
+            for (int i = 0; i < numSamplesBeforeRejection; i++) {
+                float angle = Random.value * Mathf.PI * 2;
+                float angle2 = Random.value * Mathf.PI * 2;
+                Vector3 dir = new Vector3 (Mathf.Cos (angle) * Mathf.Sin (angle2), Mathf.Sin (angle) * Mathf.Sin (angle2), Mathf.Cos (angle2));
+                Vector3 candidate = spawnCentre + dir * Random.Range (radius, 2 * radius);
+                if (IsValid (candidate, sampleRegionSize, cellSize, radius, points, grid, impactPoint, chunk, chunkWorldPos)) {
+                    points.Add (candidate);
+                    spawnPoints.Add (candidate);
+                    grid[(int) (candidate.x / cellSize), (int) (candidate.y / cellSize), (int) (candidate.z / cellSize)] = points.Count;
+                    candidateAccepted = true;
                     break;
                 }
             }
-
-            // If we couldn't find a valid candidate after k attempts, remove this sample from the active samples queue
-            if (!found) {
-                activeSamples[i] = activeSamples[activeSamples.Count - 1];
-                activeSamples.RemoveAt (activeSamples.Count - 1);
+            if (!candidateAccepted) {
+                spawnPoints.RemoveAt (spawnIndex);
             }
+
         }
+
+        return points;
     }
 
-    private bool IsContains (Vector3 v, Vector3 area) {
-        if (v.x >= 0 && v.x < area.x &&
-            v.y >= 0 && v.y < area.y &&
-            v.z >= 0 && v.z < area.z) {
-            return true;
-        } else {
-            return false;
-        }
-    }
+    static bool IsValid (Vector3 candidate, Vector3 sampleRegionSize, float cellSize, float radius, List<Vector3> points, int[, , ] grid, Vector3 impactPoint, VoxelChunk chunk, Vector3Int chunkWorldPos) {
+        if (candidate.x >= 0 && candidate.x < sampleRegionSize.x && candidate.y >= 0 && candidate.y < sampleRegionSize.y && candidate.z >= 0 && candidate.z < sampleRegionSize.z) {
+            int cellX = (int) (candidate.x / cellSize);
+            int cellY = (int) (candidate.y / cellSize);
+            int cellZ = (int) (candidate.z / cellSize);
+            int searchStartX = Mathf.Max (0, cellX - 2);
+            int searchEndX = Mathf.Min (cellX + 2, grid.GetLength (0) - 1);
+            int searchStartY = Mathf.Max (0, cellY - 2);
+            int searchEndY = Mathf.Min (cellY + 2, grid.GetLength (1) - 1);
+            int searchStartZ = Mathf.Max (0, cellZ - 2);
+            int searchEndZ = Mathf.Min (cellZ + 2, grid.GetLength (1) - 1);
 
-    private Vector3 GenerateRandomPointAround (Vector3 point, float minDist) { //non-uniform, leads to denser packing.
-        float r1 = Random.value; //random point between 0 and 1
-        float r2 = Random.value;
-        float r3 = Random.value;
-        //random radius between mindist and 2* mindist
-        float radius = minDist * (r1 + 1);
-        //random angle
-        float angle1 = 2.0f * Mathf.PI * r2;
-        float angle2 = 2.0f * Mathf.PI * r3;
-        //the new point is generated around the point (x, y, z)
-        float newX = point.x + radius * Mathf.Cos (angle1) * Mathf.Sin (angle2);
-        float newY = point.y + radius * Mathf.Sin (angle1) * Mathf.Sin (angle2);
-        float newZ = point.z + radius * Mathf.Cos (angle2);
+            var candidateWorldPos = candidate + chunkWorldPos;
 
-        return new Vector3 (newX, newY, newZ);
-    }
-
-    private bool IsFarEnough (Vector3 sample) {
-        GridPos pos = new GridPos (sample, cellSize);
-
-        int xmin = Mathf.Max (pos.x - 2, 0);
-        int ymin = Mathf.Max (pos.y - 2, 0);
-        int zmin = Mathf.Max (pos.z - 2, 0);
-        int xmax = Mathf.Min (pos.x + 2, grid.GetLength (0) - 1);
-        int ymax = Mathf.Min (pos.y + 2, grid.GetLength (1) - 1);
-        int zmax = Mathf.Min (pos.z + 2, grid.GetLength (2) - 1);
-
-        for (int z = zmin; z <= zmax; z++) {
-            for (int y = ymin; y <= ymax; y++) {
-                for (int x = xmin; x <= xmax; x++) {
-                    Vector3 s = grid[x, y, z];
-                    if (s != Vector3.zero) {
-                        Vector3 d = s - sample;
-                        if (d.x * d.x + d.y * d.y + d.z * d.z < radius2) return false;
+            for (int x = searchStartX; x <= searchEndX; x++) {
+                for (int y = searchStartY; y <= searchEndY; y++) {
+                    for (int z = searchStartZ; z <= searchEndZ; z++) {
+                        int pointIndex = grid[x, y, z] - 1;
+                        if (pointIndex != -1) {
+                            float sqrDst = (candidate - points[pointIndex]).sqrMagnitude;
+                            // float impactDist = Mathf.Abs (Vector3.Distance (impactPoint, candidate)) * chunk.voxelScale;
+                            float impactDist = (candidate - impactPoint).sqrMagnitude * chunk.voxelScale;
+                            float scaleFactor = 0.2f * impactDist;
+                            if (sqrDst < Mathf.Pow (radius * scaleFactor, 2)) {
+                                return false;
+                            }
+                        }
                     }
                 }
             }
+            return true;
         }
-
-        return true;
-
-    }
-
-    /// Adds the sample to the active samples queue and the grid before returning it
-    private Vector3 AddSample (Vector3 sample) {
-        activeSamples.Add (sample);
-        GridPos pos = new GridPos (sample, cellSize);
-        grid[pos.x, pos.y, pos.z] = sample;
-        return sample;
-    }
-
-    /// Helper struct to calculate the x and y indices of a sample in the grid
-    private struct GridPos {
-        public int x;
-        public int y;
-        public int z;
-
-        public GridPos (Vector3 sample, float cellSize) {
-            x = (int) (sample.x / cellSize);
-            y = (int) (sample.y / cellSize);
-            z = (int) (sample.z / cellSize);
-        }
+        return false;
     }
 }
