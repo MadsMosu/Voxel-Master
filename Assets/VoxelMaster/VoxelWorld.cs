@@ -112,21 +112,21 @@ namespace VoxelMaster {
 
         private Voxel GetVoxel (Vector3Int coord) {
             var chunkCoord = new Vector3Int (
-                Util.Int_floor_division (coord.x, (chunkSize - 1)),
-                Util.Int_floor_division (coord.y, (chunkSize - 1)),
-                Util.Int_floor_division (coord.z, (chunkSize - 1))
+                Util.Int_floor_division (coord.x, (chunkSize)),
+                Util.Int_floor_division (coord.y, (chunkSize)),
+                Util.Int_floor_division (coord.z, (chunkSize))
             );
             var voxelCoordInChunk = new Vector3Int (
-                coord.x % (chunkSize - 1),
-                coord.y % (chunkSize - 1),
-                coord.z % (chunkSize - 1)
+                coord.x % (chunkSize),
+                coord.y % (chunkSize),
+                coord.z % (chunkSize)
             );
 
-            if (voxelCoordInChunk.x < 0) voxelCoordInChunk.x += chunkSize - 1;
-            if (voxelCoordInChunk.y < 0) voxelCoordInChunk.y += chunkSize - 1;
-            if (voxelCoordInChunk.z < 0) voxelCoordInChunk.z += chunkSize - 1;
+            if (voxelCoordInChunk.x < 0) voxelCoordInChunk.x += chunkSize;
+            if (voxelCoordInChunk.y < 0) voxelCoordInChunk.y += chunkSize;
+            if (voxelCoordInChunk.z < 0) voxelCoordInChunk.z += chunkSize;
 
-            if (!chunkDictionary.ContainsKey (chunkCoord)) return new Voxel { density = 0 };
+            // if (!chunkDictionary.ContainsKey (chunkCoord)) return new Voxel { density = 0 };
 
             return chunkDictionary[chunkCoord][voxelCoordInChunk];
         }
@@ -159,7 +159,7 @@ namespace VoxelMaster {
             if (generatedChunkQueue.Count > 0) {
                 var coord = generatedChunkQueue.Dequeue ();
                 chunkRenderer.RequestMesh (coord);
-                //CreateCollisionObject(coord, chunkRenderer.GetChunkMesh(coord));
+                CreateCollisionObject (coord, chunkRenderer.GetChunkMesh (coord));
             }
 
             chunkRenderer.Render ();
@@ -199,13 +199,13 @@ namespace VoxelMaster {
         }
 
         private void OnDrawGizmosSelected () {
-            //lock (chunkDictionary) {
-            //    foreach (KeyValuePair<Vector3Int, VoxelChunk> entry in chunkDictionary) {
-            //        var pos = entry.Key * chunkSize;
-            //        Gizmos.color = entry.Value.hasSolids ? Color.blue : Color.white;
-            //        Gizmos.DrawWireCube(pos - (Vector3.one * (-chunkSize / 2)), chunkSize * Vector3.one);
-            //    }
-            //}
+            // lock (chunkDictionary) {
+            //     foreach (KeyValuePair<Vector3Int, VoxelChunk> entry in chunkDictionary) {
+            //         var pos = entry.Key * chunkSize;
+            //         Gizmos.color = entry.Value.hasSolids ? Color.blue : Color.white;
+            //         Gizmos.DrawWireCube (pos - (Vector3.one * (-chunkSize / 2)), chunkSize * Vector3.one);
+            //     }
+            // }
         }
 
     }
