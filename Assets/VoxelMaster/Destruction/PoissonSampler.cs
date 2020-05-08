@@ -3,75 +3,80 @@ using System.Collections.Generic;
 using UnityEngine;
 using VoxelMaster.Chunk;
 
-//https://github.com/SebLague/Poisson-Disc-Sampling/blob/master/Poisson%20Disc%20Sampling%20E01/PoissonDiscSampling.cs
+
+
 public static class PoissonSampler {
-    public static List<Vector3> GeneratePoints (float radius, VoxelChunk chunk, Vector3 impactPoint, int numSamplesBeforeRejection = 30) {
-        float cellSize = radius / Mathf.Sqrt (2);
-        Vector3 sampleRegionSize = new Vector3 (chunk.size.x, chunk.size.y, chunk.size.z);
-        Vector3Int chunkWorldPos = chunk.coords * (chunk.size - Vector3Int.one);
 
-        int[, , ] grid = new int[Mathf.CeilToInt (sampleRegionSize.x / cellSize), Mathf.CeilToInt (sampleRegionSize.y / cellSize), Mathf.CeilToInt (sampleRegionSize.z / cellSize)];
-        List<Vector3> points = new List<Vector3> ();
-        List<Vector3> spawnPoints = new List<Vector3> ();
 
-        spawnPoints.Add (sampleRegionSize / 2);
+    public static List<Vector3> GeneratePoints(Vector3 regionSize, float radius, Vector3 impactPoint, int numSamplesBeforeRejection = 2) {
+
+        var cellSize = radius / Mathf.Sqrt(2);
+
+        int[,,] grid = new int[Mathf.CeilToInt(regionSize.x / cellSize), Mathf.CeilToInt(regionSize.y / cellSize), Mathf.CeilToInt(regionSize.z / cellSize)];
+        List<Vector3> points = new List<Vector3>();
+        List<Vector3> spawnPoints = new List<Vector3>();
+
+        points.Add(regionSize / 2);
+        spawnPoints.Add(regionSize / 2);
+
         while (spawnPoints.Count > 0) {
-            int spawnIndex = Random.Range (0, spawnPoints.Count);
-            Vector3 spawnCentre = spawnPoints[spawnIndex];
+            int spawnIndex = Random.Range(0, spawnPoints.Count);
+            Vector3 spawnCenter = spawnPoints[spawnIndex];
+
             bool candidateAccepted = false;
 
             for (int i = 0; i < numSamplesBeforeRejection; i++) {
-                float angle = Random.value * Mathf.PI * 2;
-                float angle2 = Random.value * Mathf.PI * 2;
-                Vector3 dir = new Vector3 (Mathf.Cos (angle) * Mathf.Sin (angle2), Mathf.Sin (angle) * Mathf.Sin (angle2), Mathf.Cos (angle2));
-                Vector3 candidate = spawnCentre + dir * Random.Range (radius, 2 * radius);
-                if (IsValid (candidate, sampleRegionSize, cellSize, radius, points, grid, impactPoint, chunk, chunkWorldPos)) {
-                    points.Add (candidate);
-                    spawnPoints.Add (candidate);
-                    grid[(int) (candidate.x / cellSize), (int) (candidate.y / cellSize), (int) (candidate.z / cellSize)] = points.Count;
+                var angle1 = 2 * Mathf.PI * Random.value;
+                var angle2 = 2 * Mathf.PI * Random.value;
+
+                Vector3 dir = new Vector3(Mathf.Cos(angle1) * Mathf.Sin(angle2), Mathf.Sin(angle1) * Mathf.Sin(angle2), Mathf.Cos(angle2));
+                Vector3 candidate = spawnCenter + dir * Random.Range(radius, 2 * radius);
+
+                float distanceFromImpact = Mathf.Max(.5f, (candidate - impactPoint).sqrMagnitude);
+
+                if (IsValid(candidate, regionSize, cellSize, distanceFromImpact, points, grid)) {
+                    points.Add(candidate);
+                    spawnPoints.Add(candidate);
+                    grid[(int)(candidate.x / cellSize), (int)(candidate.y / cellSize), (int)(candidate.z / cellSize)] = points.Count;
                     candidateAccepted = true;
                     break;
                 }
+
             }
             if (!candidateAccepted) {
-                spawnPoints.RemoveAt (spawnIndex);
+                spawnPoints.RemoveAt(spawnIndex);
             }
-
         }
-
         return points;
+
     }
 
-    static bool IsValid (Vector3 candidate, Vector3 sampleRegionSize, float cellSize, float radius, List<Vector3> points, int[, , ] grid, Vector3 impactPoint, VoxelChunk chunk, Vector3Int chunkWorldPos) {
-        if (candidate.x >= 0 && candidate.x < sampleRegionSize.x && candidate.y >= 0 && candidate.y < sampleRegionSize.y && candidate.z >= 0 && candidate.z < sampleRegionSize.z) {
-            int cellX = (int) (candidate.x / cellSize);
-            int cellY = (int) (candidate.y / cellSize);
-            int cellZ = (int) (candidate.z / cellSize);
-            int searchStartX = Mathf.Max (0, cellX - 2);
-            int searchEndX = Mathf.Min (cellX + 2, grid.GetLength (0) - 1);
-            int searchStartY = Mathf.Max (0, cellY - 2);
-            int searchEndY = Mathf.Min (cellY + 2, grid.GetLength (1) - 1);
-            int searchStartZ = Mathf.Max (0, cellZ - 2);
-            int searchEndZ = Mathf.Min (cellZ + 2, grid.GetLength (1) - 1);
+    static bool IsValid(Vector3 candidate, Vector3 regionSize, float cellSize, float radius, List<Vector3> points, int[,,] grid) {
+        if (candidate.x >= 0 && candidate.x < regionSize.x && candidate.y >= 0 && candidate.y < regionSize.y && candidate.z >= 0 && candidate.z < regionSize.z) {
 
-            var candidateWorldPos = candidate + chunkWorldPos;
+            int cellX = (int)(candidate.x / cellSize);
+            int cellY = (int)(candidate.y / cellSize);
+            int cellZ = (int)(candidate.z / cellSize);
 
-            for (int x = searchStartX; x <= searchEndX; x++) {
-                for (int y = searchStartY; y <= searchEndY; y++) {
+            int searchStartX = Mathf.Max(0, cellX - 2);
+            int searchEndX = Mathf.Min(cellX + 2, grid.GetLength(0) - 1);
+            int searchStartY = Mathf.Max(0, cellY - 2);
+            int searchEndY = Mathf.Min(cellY + 2, grid.GetLength(1) - 1);
+            int searchStartZ = Mathf.Max(0, cellZ - 2);
+            int searchEndZ = Mathf.Min(cellZ + 2, grid.GetLength(2) - 1);
+
+
+            for (int x = searchStartX; x <= searchEndX; x++)
+                for (int y = searchStartY; y <= searchEndY; y++)
                     for (int z = searchStartZ; z <= searchEndZ; z++) {
-                        int pointIndex = grid[x, y, z] - 1;
-                        if (pointIndex != -1) {
-                            float sqrDst = (candidate - points[pointIndex]).sqrMagnitude;
-                            // float impactDist = Mathf.Abs (Vector3.Distance (impactPoint, candidate)) * chunk.voxelScale;
-                            float impactDist = (candidate - impactPoint).sqrMagnitude * chunk.voxelScale;
-                            float scaleFactor = 0.2f * impactDist;
-                            if (sqrDst < Mathf.Pow (radius * scaleFactor, 2)) {
+                        int pointsIndex = grid[x, y, z] - 1;
+                        if (pointsIndex != -1) {
+                            float dist = (candidate - points[pointsIndex]).sqrMagnitude;
+                            if (dist < radius * radius) {
                                 return false;
                             }
                         }
                     }
-                }
-            }
             return true;
         }
         return false;
