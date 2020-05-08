@@ -233,7 +233,7 @@ Material:
     - _IntensityNm: 1
     - _IntensityRef: 0.15
     - _InvTilingScale: 0.002
-    - _Ior: 1
+    - _Ior: 1.454
     - _IridescenceMask: 1
     - _IridescenceThickness: 1
     - _LinkDetailsWithBase: 1
@@ -243,7 +243,7 @@ Material:
     - _Metallic: 0
     - _MicrowaveScale: 1
     - _NormalMapSpace: 0
-    - _NormalScale: 1
+    - _NormalScale: 0.06
     - _NormalmapDetailScale: 0.5
     - _NormalmapDetailSpeed: 0.5
     - _OcclusionStrength: 1
@@ -261,7 +261,7 @@ Material:
     - _ReverseFlow: 1
     - _SSRefractionProjectionModel: 0
     - _Shininess: 0.15
-    - _Smoothness: 0
+    - _Smoothness: 0.92
     - _SmoothnessRemapMax: 1
     - _SmoothnessRemapMin: 0
     - _SmoothnessTextureChannel: 0
@@ -294,7 +294,7 @@ Material:
     - _TessellationShapeFactor: 0.75
     - _TexWorldScale: 1
     - _TexWorldScaleEmissive: 1
-    - _Thickness: 1
+    - _Thickness: 0.252
     - _ThicknessMultiplier: 1
     - _TransmissionEnable: 1
     - _TransparentBackfaceEnable: 0
@@ -330,7 +330,7 @@ Material:
     - _SpecColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecularColor: {r: 1, g: 1, b: 1, a: 1}
     - _ThicknessRemap: {r: 0, g: 1, b: 0, a: 0}
-    - _TransmittanceColor: {r: 1, g: 1, b: 1, a: 1}
+    - _TransmittanceColor: {r: 0, g: 0.31783962, b: 1, a: 1}
     - _UVDetailsMappingMask: {r: 1, g: 0, b: 0, a: 0}
     - _UVMappingMask: {r: 1, g: 0, b: 0, a: 0}
     - _UVMappingMaskEmissive: {r: 1, g: 0, b: 0, a: 0}

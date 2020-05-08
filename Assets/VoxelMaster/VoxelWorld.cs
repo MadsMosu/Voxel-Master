@@ -60,7 +60,7 @@ namespace VoxelMaster {
 
         void ExpandChunkGeneration() {
             chunkGenerationQueue.Clear();
-            for (int y = -viewerRadius / 6; y < viewerRadius / 3; y++) {
+            for (int y = -2; y < viewerRadius / 3; y++) {
 
 
                 // The following is a spiral algorithm inspired by a StackOverflow post
@@ -164,7 +164,7 @@ namespace VoxelMaster {
             if (generatedChunkQueue.Count > 0) {
                 var coord = generatedChunkQueue.Dequeue();
                 chunkRenderer.RequestMesh(coord);
-                //CreateCollisionObject(coord, chunkRenderer.GetChunkMesh(coord));
+                CreateCollisionObject(coord, chunkRenderer.GetChunkMesh(coord));
             }
 
             chunkRenderer.Render();
