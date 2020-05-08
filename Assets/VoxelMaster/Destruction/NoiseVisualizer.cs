@@ -12,41 +12,33 @@ namespace VoxelMaster.Destruction {
 
         MeshRenderer meshRenderer;
 
-        private void Start() {
-            meshRenderer = GetComponent<MeshRenderer>();
+        List<Vector3> samples;
+
+        private void Start () {
+            meshRenderer = GetComponent<MeshRenderer> ();
         }
 
+        FastNoise noise = new FastNoise ();
+        [Range (2f, 10f)]
+        public float noiseScale = 4f;
 
-
-        FastNoise noise = new FastNoise();
-        [Range(0.001f, 0.25f)]
-        public float noiseScale = 0.02f;
-
-        [Range(1f, 8f)]
+        [Range (1f, 8f)]
         public float a = 1f;
         public float b = 1f;
         public float c = 1f;
-        public void GenerateNoise() {
-            noise.SetCellularDistanceFunction(FastNoise.CellularDistanceFunction.Euclidean);
-            noise.SetCellularReturnType(FastNoise.CellularReturnType.Distance2Div);
+        public void GenerateNoise () {
+            samples = PoissonSampler.GeneratePoints (noiseScale, new Chunk.VoxelChunk (new Vector3Int ((int) transform.position.x, (int) transform.position.y, (int) transform.position.z), new Vector3Int (17, 17, 17), 1f, new SimpleDataStructure ()), Vector3.zero);
+            // Debug.Log (samples.Count ())
 
+        }
 
-            Texture2D tex = new Texture2D(32, 32);
-            for (int y = 0; y < 32; y++)
-                for (int x = 0; x < 32; x++) {
-                    var n = 1f - noise.GetCellular(x / noiseScale, y / noiseScale);
-
-                    var dist = a - n;
-                    n *= dist;
-
-                    n = 1 - n;
-
-                    var c = new Color(1 * n, 1 * n, 1 * n);
-                    tex.SetPixel(x, y, c);
+        void OnDrawGizmos () {
+            Gizmos.color = Color.magenta;
+            if (samples != null) {
+                foreach (var sample in samples) {
+                    Gizmos.DrawSphere (sample, 0.20f);
                 }
-            tex.Apply();
-
-            meshRenderer.sharedMaterial.SetTexture("_BaseColorMap", tex);
+            }
 
         }
 

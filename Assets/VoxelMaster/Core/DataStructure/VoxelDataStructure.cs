@@ -11,6 +11,7 @@ public abstract class VoxelDataStructure {
     public abstract Voxel GetVoxel (Vector3Int coords);
     public abstract Voxel GetVoxel (int index);
     public abstract void SetVoxel (Vector3Int coords, Voxel voxel);
+    public abstract void SetVoxel (int index, Voxel voxel);
 
     public abstract void SetVoxels (Voxel[] voxels);
     public abstract Voxel[] ToArray ();

@@ -17,7 +17,7 @@ public class CameraRaycast : MonoBehaviour {
                 // Debug.DrawLine (ray.origin, hit.point, Color.green);
                 if (hit.transform.GetComponent<VoxelObject> () != null) {
                     VoxelObject voxelObject = hit.transform.GetComponent<VoxelObject> ();
-                    VoxelSplitter.Split (voxelObject);
+                    VoxelSplitter.Split (voxelObject, hit.point);
                 }
             }
         }
