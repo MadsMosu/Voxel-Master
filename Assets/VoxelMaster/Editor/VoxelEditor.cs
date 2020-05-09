@@ -15,7 +15,7 @@ public class VoxelEditor : Editor {
     VoxelTool currentTool;
     List<VoxelTool> tools = new List<VoxelTool> ();
 
-    float toolIntensity = 0.03f;
+    float toolIntensity = 0.04f;
     float toolRadius = 5f;
     float toolFalloff = 0.5f;
     int controlId;
@@ -51,7 +51,7 @@ public class VoxelEditor : Editor {
         GUI.backgroundColor = Color.gray;
         GUILayout.BeginVertical ("Tool Settings");
         EditorGUILayout.LabelField ("Tool Intensity");
-        toolIntensity = GUILayout.HorizontalSlider (toolIntensity, 0, 0.06f);
+        toolIntensity = GUILayout.HorizontalSlider (toolIntensity, 0, 0.1f);
         GUILayout.Space (10);
 
         EditorGUILayout.LabelField ("Tool Radius");
@@ -148,12 +148,13 @@ public class VoxelEditor : Editor {
         );
         int temp = Mathf.CeilToInt ((toolRadius * 2) / target.chunkSize);
 
-        for (int x = chunkCoord.x - temp; x < chunkCoord.x + temp; x++)
-            for (int y = chunkCoord.y - temp; y < chunkCoord.y + temp; y++)
-                for (int z = chunkCoord.z - temp; z < chunkCoord.z + temp; z++) {
+        for (int x = chunkCoord.x - temp; x <= chunkCoord.x + temp; x++)
+            for (int y = chunkCoord.y - temp; y <= chunkCoord.y + temp; y++)
+                for (int z = chunkCoord.z - temp; z <= chunkCoord.z + temp; z++) {
                     Vector3Int coords = new Vector3Int (x, y, z);
                     if (!target.gameObjects.ContainsKey (coords)) {
-                        target.CreateCollisionObject (coords, null);
+                        ChunkRenderer.instance.RequestMesh (coords, target.isoLevel);
+                        target.CreateCollisionObject (coords, ChunkRenderer.instance.GetChunkMesh (coords));
                     }
                     affectedChunks.Add (target.chunkDictionary[coords]);
                 }
@@ -161,7 +162,7 @@ public class VoxelEditor : Editor {
     }
 
     private void RequestNewMesh (VoxelWorld voxelWorld, VoxelChunk chunk) {
-        ChunkRenderer.instance.RequestMesh (chunk.coords);
+        ChunkRenderer.instance.RequestMesh (chunk.coords, voxelWorld.isoLevel);
         GameObject go = voxelWorld.gameObjects[chunk.coords];
         go.GetComponent<MeshCollider> ().sharedMesh = ChunkRenderer.instance.GetChunkMesh (chunk.coords);
     }

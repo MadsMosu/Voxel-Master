@@ -9,90 +9,88 @@ public class MarchingCubesGPU {
     // private ComputeBuffer colorBuffer;
     private int kernelMC, indicesAndNormalKernel;
 
-    public MarchingCubesGPU() {
-        marchingCubesCompute = (ComputeShader)Resources.Load("MarchingCubesGPU");
-        kernelMC = marchingCubesCompute.FindKernel("MarchingCubes");
-        indicesAndNormalKernel = marchingCubesCompute.FindKernel("GenerateTriangleIndicesAndNormals");
+    public MarchingCubesGPU () {
+        marchingCubesCompute = (ComputeShader) Resources.Load ("MarchingCubesGPU");
+        kernelMC = marchingCubesCompute.FindKernel ("MarchingCubes");
+        indicesAndNormalKernel = marchingCubesCompute.FindKernel ("GenerateTriangleIndicesAndNormals");
     }
 
     float isoLevel = .5f;
 
-    public MeshData GenerateMesh(VoxelChunk chunk) => GenerateMesh(chunk.voxels.ToArray(), chunk.size, chunk.voxelScale, 1 << 0);
+    public MeshData GenerateMesh (VoxelChunk chunk) => GenerateMesh (chunk.voxels.ToArray (), chunk.size, chunk.voxelScale, 1 << 0);
 
-
-    public MeshData GenerateMesh(Voxel[] voxels, Vector3Int size, float voxelScale, int step) {
+    public MeshData GenerateMesh (Voxel[] voxels, Vector3Int size, float voxelScale, int step) {
         int numCells = size.x * size.y * size.z;
         int numVoxels = (size.x - 1) * (size.y - 1) * (size.z - 1);
         int maxTriangles = numVoxels * 5;
 
-        trianglesBuffer = new ComputeBuffer(maxTriangles, sizeof(float) * 3 * 3, ComputeBufferType.Append);
-        triangleCountBuffer = new ComputeBuffer(1, sizeof(int), ComputeBufferType.Raw);
-        densitiesBuffer = new ComputeBuffer(numCells, sizeof(float) + sizeof(int), ComputeBufferType.Structured);
-        verticesBuffer = new ComputeBuffer(maxTriangles * 3, sizeof(float) * 3, ComputeBufferType.Structured);
-        surfaceNormalsBuffer = new ComputeBuffer(maxTriangles * 3, sizeof(float) * 3, ComputeBufferType.Structured);
-        triangleIndicesBuffer = new ComputeBuffer(maxTriangles * 3, sizeof(int), ComputeBufferType.Structured);
+        trianglesBuffer = new ComputeBuffer (maxTriangles, sizeof (float) * 3 * 3, ComputeBufferType.Append);
+        triangleCountBuffer = new ComputeBuffer (1, sizeof (int), ComputeBufferType.Raw);
+        densitiesBuffer = new ComputeBuffer (numCells, sizeof (float) + sizeof (int), ComputeBufferType.Structured);
+        verticesBuffer = new ComputeBuffer (maxTriangles * 3, sizeof (float) * 3, ComputeBufferType.Structured);
+        surfaceNormalsBuffer = new ComputeBuffer (maxTriangles * 3, sizeof (float) * 3, ComputeBufferType.Structured);
+        triangleIndicesBuffer = new ComputeBuffer (maxTriangles * 3, sizeof (int), ComputeBufferType.Structured);
 
         // colorBuffer = new ComputeBuffer (maxTriangles, sizeof (float) * 4 * 3, ComputeBufferType.Structured);
 
-        trianglesBuffer.SetCounterValue(0);
-        marchingCubesCompute.SetFloat("isoLevel", isoLevel);
-        marchingCubesCompute.SetInts("chunkSize", size.x, size.y, size.z);
-        marchingCubesCompute.SetFloat("voxelScale", voxelScale);
-        marchingCubesCompute.SetInt("step", step);
+        trianglesBuffer.SetCounterValue (0);
+        marchingCubesCompute.SetFloat ("isoLevel", isoLevel);
+        marchingCubesCompute.SetInts ("chunkSize", size.x, size.y, size.z);
+        marchingCubesCompute.SetFloat ("voxelScale", voxelScale);
+        marchingCubesCompute.SetInt ("step", step);
 
+        densitiesBuffer.SetData (voxels);
 
-        densitiesBuffer.SetData(voxels);
-
-        marchingCubesCompute.SetBuffer(kernelMC, "DensitiesBuffer", densitiesBuffer);
-        marchingCubesCompute.SetBuffer(kernelMC, "TrianglesBuffer", trianglesBuffer);
+        marchingCubesCompute.SetBuffer (kernelMC, "DensitiesBuffer", densitiesBuffer);
+        marchingCubesCompute.SetBuffer (kernelMC, "TrianglesBuffer", trianglesBuffer);
         // marchingCubesCompute.SetBuffer (kernelMC, "ColorBuffer", colorBuffer);
 
-        marchingCubesCompute.Dispatch(kernelMC, size.x, size.y, size.z);
+        marchingCubesCompute.Dispatch (kernelMC, size.x, size.y, size.z);
 
-        ComputeBuffer.CopyCount(trianglesBuffer, triangleCountBuffer, 0);
+        ComputeBuffer.CopyCount (trianglesBuffer, triangleCountBuffer, 0);
         int[] triCount = { 0 };
-        triangleCountBuffer.GetData(triCount);
+        triangleCountBuffer.GetData (triCount);
         int numTriangles = triCount[0];
 
         if (numTriangles == 0) {
-            ReleaseBuffers();
-            return new MeshData(new Vector3[0], new int[0], new Vector3[0]);
+            ReleaseBuffers ();
+            return new MeshData (new Vector3[0], new int[0], new Vector3[0]);
         }
 
         Vector3[] vertices = new Vector3[numTriangles * 3];
-        trianglesBuffer.GetData(vertices);
-        verticesBuffer.SetData(vertices);
+        trianglesBuffer.GetData (vertices);
+        verticesBuffer.SetData (vertices);
 
         //Calculate indices and surface normals for all triangles
-        marchingCubesCompute.SetBuffer(indicesAndNormalKernel, "TriangleIndicesBuffer", triangleIndicesBuffer);
-        marchingCubesCompute.SetBuffer(indicesAndNormalKernel, "VerticesBuffer", verticesBuffer);
-        marchingCubesCompute.SetBuffer(indicesAndNormalKernel, "SurfaceNormalsBuffer", surfaceNormalsBuffer);
+        marchingCubesCompute.SetBuffer (indicesAndNormalKernel, "TriangleIndicesBuffer", triangleIndicesBuffer);
+        marchingCubesCompute.SetBuffer (indicesAndNormalKernel, "VerticesBuffer", verticesBuffer);
+        marchingCubesCompute.SetBuffer (indicesAndNormalKernel, "SurfaceNormalsBuffer", surfaceNormalsBuffer);
 
-        marchingCubesCompute.Dispatch(indicesAndNormalKernel, numTriangles, 1, 1);
+        marchingCubesCompute.Dispatch (indicesAndNormalKernel, numTriangles, 1, 1);
 
         int[] triangleIndices = new int[vertices.Length];
-        triangleIndicesBuffer.GetData(triangleIndices);
+        triangleIndicesBuffer.GetData (triangleIndices);
 
         Vector3[] surfaceNormals = new Vector3[vertices.Length];
-        surfaceNormalsBuffer.GetData(surfaceNormals);
+        surfaceNormalsBuffer.GetData (surfaceNormals);
 
         //Vector3[] normals = CalculateVertexNormals(vertices, surfaceNormals);
 
         // Color[] vertexColors = new Color[vertices.Length];
         // colorBuffer.GetData (vertexColors);
 
-        ReleaseBuffers();
+        ReleaseBuffers ();
 
-        return new MeshData(vertices, triangleIndices, surfaceNormals);
+        return new MeshData (vertices, triangleIndices, surfaceNormals);
     }
 
-    private Vector3[] CalculateVertexNormals(Vector3[] vertices, Vector3[] surfaceNormals) {
+    private Vector3[] CalculateVertexNormals (Vector3[] vertices, Vector3[] surfaceNormals) {
         Vector3[] vertexNormals = new Vector3[surfaceNormals.Length];
-        Dictionary<int, Vector3> sums = new Dictionary<int, Vector3>();
-        Dictionary<int, int> sharedVertices = new Dictionary<int, int>();
+        Dictionary<int, Vector3> sums = new Dictionary<int, Vector3> ();
+        Dictionary<int, int> sharedVertices = new Dictionary<int, int> ();
 
         for (int i = 0; i < vertices.Length; i++) {
-            if (sharedVertices.ContainsKey(i)) continue;
+            if (sharedVertices.ContainsKey (i)) continue;
 
             Vector3 pos = vertices[i];
             Vector3 sum = surfaceNormals[i];
@@ -112,13 +110,13 @@ public class MarchingCubesGPU {
         return vertexNormals;
     }
 
-    private void ReleaseBuffers() {
-        trianglesBuffer.Release();
-        triangleCountBuffer.Release();
-        densitiesBuffer.Release();
-        verticesBuffer.Release();
-        surfaceNormalsBuffer.Release();
-        triangleIndicesBuffer.Release();
+    private void ReleaseBuffers () {
+        trianglesBuffer.Release ();
+        triangleCountBuffer.Release ();
+        densitiesBuffer.Release ();
+        verticesBuffer.Release ();
+        surfaceNormalsBuffer.Release ();
+        triangleIndicesBuffer.Release ();
         // colorBuffer?.Release ();
     }
 
