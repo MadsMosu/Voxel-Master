@@ -21,6 +21,7 @@ struct Voxel {
 };
 
 float isoLevel, voxelScale;
+int step;
 int3 chunkSize;
 RWStructuredBuffer<Voxel> DensitiesBuffer;
 AppendStructuredBuffer<TriangleVertices> TrianglesBuffer; 
@@ -92,9 +93,9 @@ void MarchingCubes(uint3 cellPos : SV_DispatchThreadID)
         int b2 = cornerIndexBFromEdge[triTable[cubeIndex][i + 1]];
 
         TriangleVertices tri;
-        tri.a = VertexInterp((cellPos + cubeVertOffsets[a0]), (cellPos + cubeVertOffsets[b0]), cubeDensity[a0], cubeDensity[b0]) * voxelScale;
-        tri.b = VertexInterp((cellPos + cubeVertOffsets[a1]), (cellPos + cubeVertOffsets[b1]), cubeDensity[a1], cubeDensity[b1]) * voxelScale;
-        tri.c = VertexInterp((cellPos + cubeVertOffsets[a2]), (cellPos + cubeVertOffsets[b2]), cubeDensity[a2], cubeDensity[b2]) * voxelScale; 
+        tri.a = VertexInterp((cellPos + cubeVertOffsets[a0]), (cellPos + cubeVertOffsets[b0]), cubeDensity[a0], cubeDensity[b0]) * voxelScale * step;
+        tri.b = VertexInterp((cellPos + cubeVertOffsets[a1]), (cellPos + cubeVertOffsets[b1]), cubeDensity[a1], cubeDensity[b1]) * voxelScale * step;
+        tri.c = VertexInterp((cellPos + cubeVertOffsets[a2]), (cellPos + cubeVertOffsets[b2]), cubeDensity[a2], cubeDensity[b2]) * voxelScale * step; 
 
         // float minDensity = 999999;
         // int minDensityIndex = 0;

@@ -4,19 +4,22 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using VoxelMaster.Chunk;
 using VoxelMaster.Core.MeshProviders;
 
 namespace VoxelMaster.Core.Rendering {
-    class OctreeRenderer  {
+    class OctreeRenderer {
 
-        Octree octree;
-        ThreadedMeshProvider meshProvider;
+        Octree<Vector3> octree;
+        VoxelWorld world;
+        MarchingCubesGPU meshGenerator = new MarchingCubesGPU();
         Material material;
 
         Vector3Int[] neighbourOffsets = new Vector3Int[26];
 
-        public OctreeRenderer(Octree octree, IVoxelData volume, Material material) {
+        public OctreeRenderer(Octree<Vector3> octree, VoxelWorld world, Material material) {
             this.octree = octree;
+            this.world = world;
             var meshGeneratorSettings = new MeshGeneratorSettings {
                 chunkSize = 16,
                 voxelScale = 1,
@@ -25,96 +28,118 @@ namespace VoxelMaster.Core.Rendering {
 
             this.material = material;
 
-            meshProvider = new ThreadedMeshProvider(volume, new MarchingCubesEnhanced(), meshGeneratorSettings);
-            GenerateOffsets();
 
         }
 
-        private void GenerateOffsets() {
-            int cornerIndex = 0;
-            for (int x = -1; x <= 1; x++)
-                for (int y = -1; y <= 1; y++)
-                    for (int z = -1; z <= 1; z++) {
-                        if (x == 0 && y == 0 && z == 0) continue;
-                        neighbourOffsets[cornerIndex++] = new Vector3Int(x, y, z);
+        public void Update() {
+            renderMeshes.Clear();
+            octree.GetLeafChildren(0b1).ForEach(n => {
+                if (renderMeshes.ContainsKey(n.locationCode)) return;
+                var nodeDepth = Octree<Vector3>.GetDepth(n.locationCode);
+                Debug.Log(nodeDepth);
+
+                if (false || octree.IsLeafNode(n.locationCode)) {
+                    var chunkCoords = new Vector3Int(
+                        Util.Int_floor_division((int)n.bounds.min.x, world.chunkSize),
+                        Util.Int_floor_division((int)n.bounds.min.y, world.chunkSize),
+                        Util.Int_floor_division((int)n.bounds.min.z, world.chunkSize)
+                        );
+                    if (!world.chunkDictionary.ContainsKey(chunkCoords)) return;
+
+                    var chunk = world.chunkDictionary[chunkCoords];
+                    renderMeshes[n.locationCode] = meshGenerator.GenerateMesh(chunk).BuildMesh();
+                }
+                else {
+
+                    renderMeshes[n.locationCode] = meshGenerator.GenerateMesh(GetNodeVoxels(n.locationCode), Vector3Int.one * world.chunkSize, 1, 1 << (octree.GetMaxDepth() - nodeDepth)).BuildMesh();
+                }
+
+
+
+
+            });
+        }
+
+        private Voxel[] GetNodeVoxels(uint nodeLocation) {
+            var node = octree.GetNode(nodeLocation);
+            var nodeDepth = Octree<Vector3>.GetDepth(nodeLocation);
+
+            var result = new Voxel[world.chunkSize * world.chunkSize * world.chunkSize];
+            var chunkExtents = (1 << (octree.GetMaxDepth() - nodeDepth)) / 2;
+
+            var startingChunkCoord = new Vector3Int(
+                Util.Int_floor_division((int)node.bounds.min.x, world.chunkSize),
+                Util.Int_floor_division((int)node.bounds.min.y, world.chunkSize),
+                Util.Int_floor_division((int)node.bounds.min.z, world.chunkSize)
+            );
+
+            var chunkIncrementer = (1 << (octree.GetMaxDepth() - nodeDepth - 2)) - 1;
+            if (chunkIncrementer <= 0 || (octree.GetMaxDepth() - nodeDepth - 2) <= 0) chunkIncrementer = 1;
+            var voxelIncrementer = 1 << (octree.GetMaxDepth() - nodeDepth);
+
+
+            for (int chunkX = 0; chunkX < chunkExtents; chunkX += chunkIncrementer) {
+                for (int chunkY = 0; chunkY < chunkExtents; chunkY += chunkIncrementer) {
+                    for (int chunkZ = 0; chunkZ < chunkExtents; chunkZ += chunkIncrementer) {
+
+                        if (world.chunkDictionary.ContainsKey(startingChunkCoord + new Vector3Int(chunkX, chunkY, chunkZ))) {
+
+                            var chunk = world.chunkDictionary[startingChunkCoord + new Vector3Int(chunkX, chunkY, chunkZ)];
+
+                            for (int vx = 0; vx < world.chunkSize - 1; vx += voxelIncrementer)
+                                for (int vy = 0; vy < world.chunkSize - 1; vy += voxelIncrementer)
+                                    for (int vz = 0; vz < world.chunkSize - 1; vz += voxelIncrementer) {
+
+                                        int voxelIndex = Util.Map3DTo1D(new Vector3Int(vx, vy, vz), world.chunkSize);
+                                        result[Util.Map3DTo1D(new Vector3Int(
+                                            (chunkX / chunkIncrementer) + vx,
+                                            (chunkY / chunkIncrementer) + vy,
+                                            (chunkZ / chunkIncrementer) + vz
+                                        ), world.chunkSize)] = chunk.voxels.GetVoxel(voxelIndex);
+
+                                    }
+                        }
+                        else {
+                            for (int vx = 0; vx < world.chunkSize - 1; vx += voxelIncrementer)
+                                for (int vy = 0; vy < world.chunkSize - 1; vy += voxelIncrementer)
+                                    for (int vz = 0; vz < world.chunkSize - 1; vz += voxelIncrementer) {
+                                        result[Util.Map3DTo1D(new Vector3Int(
+                                        (chunkX / chunkIncrementer) + vx,
+                                        (chunkY / chunkIncrementer) + vy,
+                                        (chunkZ / chunkIncrementer) + vz
+                                    ), world.chunkSize)] = new Voxel(-1);
+
+                                    }
+                        }
                     }
+                }
+            }
+            return result;
         }
 
         public void Render() {
-            meshProvider.MainThreadUpdate();
-
-            foreach (KeyValuePair<uint, Mesh> entry in previewMeshes) {
+            foreach (KeyValuePair<uint, Mesh> entry in renderMeshes) {
                 var meshNode = octree.GetNode(entry.Key);
                 Graphics.DrawMesh(entry.Value, meshNode.bounds.min, Quaternion.identity, material, 0);
             }
         }
 
-        public void GenerateMeshes(Vector3Int viewerCoordinates) {
-            HashSet<uint> lod0Nodes = new HashSet<uint>();
-            HashSet<uint> lod1Nodes = new HashSet<uint>();
-            HashSet<uint> lod2Nodes = new HashSet<uint>();
-
-
-            var currentNodeLocation = octree.GetNodeIndexAtCoord(viewerCoordinates);
-            lod0Nodes.Add(currentNodeLocation);
-            lod2Nodes.Add(currentNodeLocation >> 9);
-
-            for (int i = 0; i < neighbourOffsets.Length; i++) {
-                lod0Nodes.Add(Octree.RelativeLeafNodeLocation(currentNodeLocation, neighbourOffsets[i]));
-                lod1Nodes.Add(Octree.RelativeLeafNodeLocation(currentNodeLocation >> 3, neighbourOffsets[i]));
-                lod2Nodes.Add(Octree.RelativeLeafNodeLocation(currentNodeLocation >> 6, neighbourOffsets[i]));
-            }
-
-            lod0Nodes.ToList().ForEach(code => {
-                var node = octree.GetNode(code);
-                if (node == null) return;
-                var request = new MeshGenerationRequest {
-                    origin = Util.FloorVector3(node.bounds.min),
-                    locationCode = code,
-                    voxelScale = 1f,
-                    callback = OnChunkMesh,
-                    step = 1 << 0
-                };
-                meshProvider.RequestChunkMesh(request);
-            });
-            lod1Nodes.ToList().ForEach(code => {
-                var node = octree.GetNode(code);
-                if (node == null) return;
-                meshProvider.RequestChunkMesh(new MeshGenerationRequest {
-                    origin = Util.FloorVector3(node.bounds.min),
-                    locationCode = code,
-                    voxelScale = 1f,
-                    callback = OnChunkMesh,
-                    step = 1 << 1
-                });
-            });
-            lod2Nodes.ToList().ForEach(code => {
-                var node = octree.GetNode(code);
-                if (node == null) return;
-                meshProvider.RequestChunkMesh(new MeshGenerationRequest {
-                    origin = Util.FloorVector3(node.bounds.min),
-                    locationCode = code,
-                    voxelScale = 1f,
-                    callback = OnChunkMesh,
-                    step = 1 << 2
-                });
-            });
-        }
-        private Dictionary<uint, Mesh> previewMeshes = new Dictionary<uint, Mesh>();
+        private Dictionary<uint, Mesh> renderMeshes = new Dictionary<uint, Mesh>();
         private Dictionary<uint, MeshCollider> colliders = new Dictionary<uint, MeshCollider>();
         private void OnChunkMesh(MeshGenerationResult res) {
+            Debug.Log($"Got mesh: {res.locationCode}");
             var mesh = res.meshData.BuildMesh();
-            previewMeshes[res.locationCode] = mesh;
+            renderMeshes[res.locationCode] = mesh;
 
 
-            MeshCollider collider;
-            if (colliders.ContainsKey(res.locationCode))
-                collider = colliders[res.locationCode];
-            else
-                colliders[res.locationCode] = new GameObject().AddComponent<MeshCollider>();
+            //MeshCollider collider;
+            //if (colliders.ContainsKey(res.locationCode))
+            //    collider = colliders[res.locationCode];
+            //else
+            //    colliders[res.locationCode] = new GameObject().AddComponent<MeshCollider>();
 
-            colliders[res.locationCode].sharedMesh = mesh;
-            colliders[res.locationCode].transform.position = octree.GetNode(res.locationCode).bounds.min;
+            //colliders[res.locationCode].sharedMesh = mesh;
+            //colliders[res.locationCode].transform.position = octree.GetNode(res.locationCode).bounds.min;
 
         }
 

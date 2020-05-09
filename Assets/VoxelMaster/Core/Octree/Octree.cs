@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 using VoxelMaster.Chunk;
 
 namespace VoxelMaster.Core {
-    public class Octree {
+    public class Octree<T> {
 
         private static readonly Vector3Int[][] diagonalNeighborLocations = new Vector3Int[][] {
         new Vector3Int[4] { new Vector3Int (-1, 1, -1), new Vector3Int (-1, 1, 1), new Vector3Int (1, 1, 1), new Vector3Int (1, 1, -1) },
@@ -14,66 +15,82 @@ namespace VoxelMaster.Core {
         int leafSize;
         byte maxDepth;
 
-        Dictionary<uint, OctreeNode> nodes = new Dictionary<uint, OctreeNode>();
+        Dictionary<uint, OctreeNode<T>> nodes = new Dictionary<uint, OctreeNode<T>>();
 
         public Octree(int leafSize, byte depth) {
             this.leafSize = leafSize;
             maxDepth = depth;
 
-            var rootNode = new OctreeNode {
+            var rootNode = new OctreeNode<T> {
                 locationCode = 0b1,
                 childrenFlags = 0x0,
-                bounds = new Bounds(Vector3.zero, Vector3.one * (leafSize << depth + 1)),
+                bounds = new Bounds(Vector3.zero, Vector3.one * (leafSize << depth)),
             };
 
             nodes.Add(0b1, rootNode);
         }
 
-        private void AddNode(OctreeNode node) {
+        private void AddNode(OctreeNode<T> node) {
             if (nodes.ContainsKey(node.locationCode)) throw new Exception("LocationCode already occupied");
             nodes.Add(node.locationCode, node);
 
         }
 
-        public void AddChunk(Vector3Int coords, VoxelChunk chunk) {
-            OctreeNode node = nodes[0b1];
+        private uint[] SplitNode(uint location) {
+            var node = nodes[location];
+            if (node == null) throw new Exception("Tried to split null node");
 
-            var chunkPosition = coords * leafSize + (Vector3.one * leafSize / 2);
-            if (!node.bounds.Contains(chunkPosition)) return;
 
-            var currentDepth = GetNodeDepth(node);
-            while (currentDepth < maxDepth) {
-                currentDepth = GetNodeDepth(node);
+            uint[] childLocations = new uint[8];
+            for (int i = 0; i < 8; i++) {
+                uint childLocationCode = (node.locationCode << 3) | (uint)i;
+                childLocations[i] = childLocationCode;
 
-                byte childLocationCode = GetChildLocationCode(chunkPosition, node);
 
-                bool hasChild = isBitSet(node.childrenFlags, childLocationCode);
+                var oneFourth = node.bounds.size.x / 4;
+                var childOffset = new Vector3(
+                    (i & 0b001) > 0 ? oneFourth : -oneFourth,
+                    (i & 0b100) > 0 ? oneFourth : -oneFourth,
+                    (i & 0b010) > 0 ? oneFourth : -oneFourth
+                );
 
-                if (!hasChild) {
-                    var oneFourth = node.bounds.size.x / 4;
-                    var childOffset = new Vector3(
-                        (childLocationCode & 0b001) > 0 ? oneFourth : -oneFourth,
-                        (childLocationCode & 0b100) > 0 ? oneFourth : -oneFourth,
-                        (childLocationCode & 0b010) > 0 ? oneFourth : -oneFourth
-                    );
-                    var child = new OctreeNode {
-                        locationCode = (node.locationCode << 3) | childLocationCode,
-                        childrenFlags = 0b0,
-                        bounds = new Bounds(node.bounds.center + childOffset, node.bounds.size / 2),
-                        chunk = currentDepth == maxDepth ? chunk : null
-                    };
-                    AddNode(child);
-                    node.childrenFlags ^= (byte)(1 << childLocationCode);
-                    node = child;
-                }
-                else {
-                    node = nodes[(node.locationCode << 3) | childLocationCode];
-                }
+                var child = new OctreeNode<T> {
+                    locationCode = (node.locationCode << 3) | childLocationCode,
+                    childrenFlags = 0b0,
+                    bounds = new Bounds(node.bounds.center + childOffset, node.bounds.size / 2),
+                };
+                AddNode(child);
+                node.childrenFlags ^= (byte)(1 << i);
             }
+            return childLocations;
+        }
+
+        private void SplitRecursive(uint nodeLocation, Vector3 pos, float distance) {
+            if (!nodes.ContainsKey(nodeLocation)) return;
+
+            var node = nodes[nodeLocation];
+            if (node.bounds.size.x <= leafSize || node.bounds.SqrDistance(pos) > distance * distance) return;
+
+
+            var children = SplitNode(node.locationCode);
+            foreach (var child in children) {
+                SplitRecursive(child, pos, distance);
+            }
+
 
         }
 
-        private byte GetChildLocationCode(Vector3 pos, OctreeNode node) {
+        public void SplitFromDistance(Vector3 pos, float distance) {
+
+            OctreeNode<T> node = nodes[0b1];
+
+            if (!node.bounds.Contains(pos)) return;
+
+            SplitRecursive(node.locationCode, pos, distance);
+
+        }
+
+        private byte GetChildLocationCode(Vector3 pos, OctreeNode<T> node) {
             byte locationCode = 0b000;
             if (pos.x > node.bounds.center.x) locationCode |= 0b001;
             if (pos.y > node.bounds.center.y) locationCode |= 0b100;
@@ -83,7 +100,7 @@ namespace VoxelMaster.Core {
 
         public uint GetNodeIndexAtCoord(Vector3Int coord) {
             // Debug.Log ($"Input coord: {coord}");
-            OctreeNode currentNode = nodes[0b1];
+            OctreeNode<T> currentNode = nodes[0b1];
 
             byte currentDepth = 0;
 
@@ -102,7 +119,7 @@ namespace VoxelMaster.Core {
             return currentNode.locationCode;
         }
 
-        public OctreeNode GetNode(uint locationCode) {
+        public OctreeNode<T> GetNode(uint locationCode) {
             if (!nodes.ContainsKey(locationCode)) return null;
             return nodes[locationCode];
 
@@ -110,34 +127,32 @@ namespace VoxelMaster.Core {
 
         public void DrawLeafNodes() {
             DrawLeafNodes(nodes[0b1]);
-            // DrawAll (nodes[0b1]);
 
         }
 
-        private void DrawLeafNodes(OctreeNode node) {
+        private void DrawLeafNodes(OctreeNode<T> node) {
             var depth = GetNodeDepth(node);
-            if (GetNodeDepth(node) == maxDepth + 1) {
+            if (depth >= maxDepth + 1) {
                 return;
             }
-            Gizmos.color = Color.HSVToRGB((maxDepth * 1.0f) / (depth * 1.0f), 1, 1);
             Gizmos.DrawWireCube(node.bounds.center, node.bounds.size);
-            //UnityEditor.Handles.Label(node.bounds.center + Vector3.up * node.bounds.extents.y, depth.ToString());
+            Handles.Label(node.bounds.center, depth.ToString());
 
             for (int i = 0; i < 8; i++) {
                 if (isBitSet(node.childrenFlags, i)) {
                     uint locCodeChild = (node.locationCode << 3) | (uint)i;
-                    OctreeNode child = nodes[locCodeChild];
+                    OctreeNode<T> child = nodes[locCodeChild];
                     DrawLeafNodes(child);
                 }
             }
         }
 
-        internal List<OctreeNode> GetLeafChildren(uint locationCode) {
+        internal List<OctreeNode<T>> GetLeafChildren(uint locationCode) {
             var node = nodes[locationCode];
 
-            var chunks = new List<OctreeNode>();
+            var chunks = new List<OctreeNode<T>>();
 
-            if (GetNodeDepth(node) >= maxDepth + 1) {
+            if (node.childrenFlags <= 0) {
                 chunks.Add(node);
                 return chunks;
             }
@@ -151,10 +166,10 @@ namespace VoxelMaster.Core {
             return chunks;
         }
 
-        public List<OctreeNode> GetChildren(uint locationCode) {
+        public List<OctreeNode<T>> GetChildren(uint locationCode) {
             var node = nodes[locationCode];
 
-            var chunks = new List<OctreeNode>();
+            var chunks = new List<OctreeNode<T>>();
 
             if (GetNodeDepth(node) >= maxDepth + 1) {
                 return chunks;
@@ -169,10 +184,22 @@ namespace VoxelMaster.Core {
             return chunks;
         }
 
+        public void Reset() {
+            nodes.Clear();
+
+            var rootNode = new OctreeNode<T> {
+                locationCode = 0b1,
+                childrenFlags = 0x0,
+                bounds = new Bounds(Vector3.zero, Vector3.one * (leafSize << maxDepth)),
+            };
+
+            nodes.Add(0b1, rootNode);
+        }
+
         public List<uint> GetChildLocations(uint locationCode) {
             var node = this.nodes[locationCode];
             var nodes = new List<uint>();
-            if (GetNodeDepth(node) >= maxDepth + 1)
+            if (GetNodeDepth(node) >= maxDepth)
                 return nodes;
 
             for (int i = 0; i < 8; i++) {
@@ -184,28 +211,28 @@ namespace VoxelMaster.Core {
             return nodes;
         }
 
-        public List<uint> GetDiagonalNeighbours(uint currentNodeLocation, byte distance) {
-            var diagonalNeighbors = new List<uint>();
-            var currentNode = GetNode(currentNodeLocation);
-            for (int i = 0; i < diagonalNeighborLocations.Length; i++) {
-                for (int j = 0; j < diagonalNeighborLocations[i].Length; j++) {
-                    var nodeLocation = GetNodeIndexAtCoord(currentNode.chunk.coords + diagonalNeighborLocations[i][j] * distance);
-                    diagonalNeighbors.Add(nodeLocation);
-                }
-            }
-            return diagonalNeighbors;
-        }
+        //public List<uint> GetDiagonalNeighbours(uint currentNodeLocation, byte distance) {
+        //    var diagonalNeighbors = new List<uint>();
+        //    var currentNode = GetNode(currentNodeLocation);
+        //    for (int i = 0; i < diagonalNeighborLocations.Length; i++) {
+        //        for (int j = 0; j < diagonalNeighborLocations[i].Length; j++) {
+        //            var nodeLocation = GetNodeIndexAtCoord(currentNode.item.coords + diagonalNeighborLocations[i][j] * distance);
+        //            diagonalNeighbors.Add(nodeLocation);
+        //        }
+        //    }
+        //    return diagonalNeighbors;
+        //}
 
-        OctreeNode GetParentNode(OctreeNode node) {
+        OctreeNode<T> GetParentNode(OctreeNode<T> node) {
             uint locCodeParent = node.locationCode >> 3;
             return nodes[locCodeParent];
         }
 
-        public VoxelChunk GetChunkAtCoord(Vector3Int coord) {
+        public T GetChunkAtCoord(Vector3Int coord) {
             var nodeLocation = GetNodeIndexAtCoord(coord);
-            if (nodeLocation <= 0) return null;
+            if (nodeLocation <= 0) return default(T);
 
-            return nodes[nodeLocation].chunk;
+            return nodes[nodeLocation].item;
         }
 
         public static uint RelativeLocation(uint location, byte axis, bool direction) {
@@ -248,7 +275,7 @@ namespace VoxelMaster.Core {
             return result;
         }
 
-        byte GetNodeDepth(OctreeNode node) {
+        byte GetNodeDepth(OctreeNode<T> node) {
             return GetDepth(node.locationCode);
         }
 
@@ -256,16 +283,14 @@ namespace VoxelMaster.Core {
             byte depth = 0;
             while (locationCode > 1) {
                 depth++;
-                locationCode = locationCode >> 3;
+                locationCode >>= 3;
             }
             return depth;
         }
 
-        void DrawAll(OctreeNode node) {
-            foreach (KeyValuePair<uint, OctreeNode> entry in nodes) {
-                Gizmos.color = new Color(1, 1, 1, .2f);
+        public void DrawAll() {
+            foreach (KeyValuePair<uint, OctreeNode<T>> entry in nodes) {
                 Gizmos.DrawWireCube(entry.Value.bounds.center, entry.Value.bounds.size);
-                // UnityEditor.Handles.Label (entry.Value.bounds.center, "NODE");
             }
 
         }
@@ -295,7 +320,7 @@ namespace VoxelMaster.Core {
     };
 
         public bool IsLeafNode(uint locationCode) {
-            return GetDepth(locationCode) >= (maxDepth + 1);
+            return GetDepth(locationCode) >= (maxDepth);
         }
 
 
