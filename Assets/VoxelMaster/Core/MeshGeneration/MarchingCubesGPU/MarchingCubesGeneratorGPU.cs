@@ -15,8 +15,8 @@ public class MarchingCubesGPU {
         indicesAndNormalKernel = marchingCubesCompute.FindKernel ("GenerateTriangleIndicesAndNormals");
     }
 
-    float isoLevel = .0f;
-    public MeshData GenerateMesh (VoxelChunk chunk) {
+    float isoLevel = .5f;
+    public MeshData GenerateMesh (VoxelChunk chunk, float isoLevel) {
         int numCells = chunk.size.x * chunk.size.y * chunk.size.z;
         int numVoxels = (chunk.size.x - 1) * (chunk.size.y - 1) * (chunk.size.z - 1);
         int maxTriangles = numVoxels * 5;

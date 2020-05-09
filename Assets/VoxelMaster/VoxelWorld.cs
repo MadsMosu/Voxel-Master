@@ -16,6 +16,8 @@ namespace VoxelMaster {
     public class VoxelWorld : MonoBehaviour, IVoxelData {
 
         public int chunkSize = 16;
+        [HideInInspector]
+        public float isoLevel = .5f;
 
         List<ChunkDataProvider> chunkProviders = new List<ChunkDataProvider> ();
         ChunkSerializer chunkSerializer;
@@ -158,7 +160,7 @@ namespace VoxelMaster {
 
             if (generatedChunkQueue.Count > 0) {
                 var coord = generatedChunkQueue.Dequeue ();
-                chunkRenderer.RequestMesh (coord);
+                chunkRenderer.RequestMesh (coord, isoLevel);
                 CreateCollisionObject (coord, chunkRenderer.GetChunkMesh (coord));
             }
 

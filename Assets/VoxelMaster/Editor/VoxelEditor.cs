@@ -153,6 +153,7 @@ public class VoxelEditor : Editor {
                 for (int z = chunkCoord.z - temp; z <= chunkCoord.z + temp; z++) {
                     Vector3Int coords = new Vector3Int (x, y, z);
                     if (!target.gameObjects.ContainsKey (coords)) {
+                        ChunkRenderer.instance.RequestMesh (coords, target.isoLevel);
                         target.CreateCollisionObject (coords, ChunkRenderer.instance.GetChunkMesh (coords));
                     }
                     affectedChunks.Add (target.chunkDictionary[coords]);
@@ -161,7 +162,7 @@ public class VoxelEditor : Editor {
     }
 
     private void RequestNewMesh (VoxelWorld voxelWorld, VoxelChunk chunk) {
-        ChunkRenderer.instance.RequestMesh (chunk.coords);
+        ChunkRenderer.instance.RequestMesh (chunk.coords, voxelWorld.isoLevel);
         GameObject go = voxelWorld.gameObjects[chunk.coords];
         go.GetComponent<MeshCollider> ().sharedMesh = ChunkRenderer.instance.GetChunkMesh (chunk.coords);
     }
