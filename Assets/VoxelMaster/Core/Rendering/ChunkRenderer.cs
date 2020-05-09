@@ -53,14 +53,13 @@ namespace VoxelMaster.Core.Rendering {
         }
 
         public Mesh GetChunkMesh (Vector3Int coord) {
+            if (!previewMeshes.ContainsKey (coord)) RequestMesh (coord);
             return previewMeshes[coord];
         }
 
         public void RequestMesh (Vector3Int coord) {
             var chunk = chunks[coord];
-            if (previewMeshes.ContainsKey (coord)) {
-                AddPositiveNeighborEdges (chunk);
-            }
+            AddPositiveNeighborEdges (chunk);
             var mesh = meshGenerator.GenerateMesh (chunk);
             previewMeshes[coord] = mesh.BuildMesh ();
         }

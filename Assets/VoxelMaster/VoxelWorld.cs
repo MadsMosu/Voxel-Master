@@ -132,19 +132,19 @@ namespace VoxelMaster {
         }
         private void SetVoxel (Vector3Int coord, Voxel voxel) {
             var chunkCoord = new Vector3Int (
-                Util.Int_floor_division (coord.x, (chunkSize - 1)),
-                Util.Int_floor_division (coord.y, (chunkSize - 1)),
-                Util.Int_floor_division (coord.z, (chunkSize - 1))
+                Util.Int_floor_division (coord.x, (chunkSize)),
+                Util.Int_floor_division (coord.y, (chunkSize)),
+                Util.Int_floor_division (coord.z, (chunkSize))
             );
             var voxelCoordInChunk = new Vector3Int (
-                coord.x % (chunkSize - 1),
-                coord.y % (chunkSize - 1),
-                coord.z % (chunkSize - 1)
+                coord.x % (chunkSize),
+                coord.y % (chunkSize),
+                coord.z % (chunkSize)
             );
 
-            if (voxelCoordInChunk.x < 0) voxelCoordInChunk.x += chunkSize - 1;
-            if (voxelCoordInChunk.y < 0) voxelCoordInChunk.y += chunkSize - 1;
-            if (voxelCoordInChunk.z < 0) voxelCoordInChunk.z += chunkSize - 1;
+            if (voxelCoordInChunk.x < 0) voxelCoordInChunk.x += chunkSize;
+            if (voxelCoordInChunk.y < 0) voxelCoordInChunk.y += chunkSize;
+            if (voxelCoordInChunk.z < 0) voxelCoordInChunk.z += chunkSize;
 
             if (!chunkDictionary.ContainsKey (chunkCoord)) throw new IndexOutOfRangeException ();
             chunkDictionary[chunkCoord][voxelCoordInChunk] = voxel;
@@ -192,9 +192,8 @@ namespace VoxelMaster {
         public void CreateCollisionObject (Vector3Int coord, Mesh mesh) {
             GameObject go = new GameObject ($"Chunk {coord}", typeof (MeshCollider));
             go.transform.position = coord * chunkSize;
-            if (mesh != null) {
-                go.GetComponent<MeshCollider> ().sharedMesh = mesh;
-            }
+            go.GetComponent<MeshCollider> ().sharedMesh = mesh;
+
             gameObjects.Add (coord, go);
         }
 

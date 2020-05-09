@@ -148,12 +148,12 @@ public class VoxelEditor : Editor {
         );
         int temp = Mathf.CeilToInt ((toolRadius * 2) / target.chunkSize);
 
-        for (int x = chunkCoord.x - temp; x < chunkCoord.x + temp; x++)
-            for (int y = chunkCoord.y - temp; y < chunkCoord.y + temp; y++)
-                for (int z = chunkCoord.z - temp; z < chunkCoord.z + temp; z++) {
+        for (int x = chunkCoord.x - temp; x <= chunkCoord.x + temp; x++)
+            for (int y = chunkCoord.y - temp; y <= chunkCoord.y + temp; y++)
+                for (int z = chunkCoord.z - temp; z <= chunkCoord.z + temp; z++) {
                     Vector3Int coords = new Vector3Int (x, y, z);
                     if (!target.gameObjects.ContainsKey (coords)) {
-                        target.CreateCollisionObject (coords, null);
+                        target.CreateCollisionObject (coords, ChunkRenderer.instance.GetChunkMesh (coords));
                     }
                     affectedChunks.Add (target.chunkDictionary[coords]);
                 }
