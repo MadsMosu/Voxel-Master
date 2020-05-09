@@ -23,36 +23,24 @@ public static class VoxelSplitter {
             //new Vector3Int(chunkSize.x,chunkSize.y,chunkSize.z)/2 + Vector3Int.left*5,
         };
         lastSplitSamples = samples;
-        int[] labels = new int[voxelObject.chunk.size.x * voxelObject.chunk.size.y * voxelObject.chunk.size.z];
+        // int[] labels = new int[voxelObject.chunk.size.x * voxelObject.chunk.size.y * voxelObject.chunk.size.z];
+        Dictionary<Vector3Int, List<int>> labels = new Dictionary<Vector3Int, List<int>> ();
 
         voxelObject.chunk.voxels.Traverse ((x, y, z, v) => {
             Vector3Int coords = new Vector3Int (x, y, z);
+            labels.Add (coords, new List<int> ());
 
-            float minDistance = Mathf.Infinity;
-            float minSecondDistance = Mathf.Infinity;
-            int sampleIndex = 0;
+            float[] distances = new float[samples.Count];
+            float minDist = Mathf.Infinity;
             for (int i = 0; i < samples.Count; i++) {
                 var dist = Vector3.Distance (coords, samples[i]);
-
-                if (dist < minDistance) {
-                    minSecondDistance = minDistance;
-                    minDistance = dist;
-                    sampleIndex = i;
-                } else if (dist < minSecondDistance) {
-                    minSecondDistance = dist;
-                }
-            }
-            if (Mathf.Abs (minDistance - minSecondDistance) == voxelObject.chunk.voxelScale * 2) {
-                Debug.Log (v.density);
-                v.density = 0f;
-                voxelObject.chunk.voxels.SetVoxel (coords, v);
+                distances[i] = dist;
+                if (dist < minDist) minDist = dist;
             }
 
-            if (Mathf.Abs (minDistance - minSecondDistance) == 0) {
-                v.density = -1;
-                voxelObject.chunk.voxels.SetVoxel (coords, v);
-            };
-            labels[Util.Map3DTo1D (coords, voxelObject.chunk.size)] = sampleIndex;
+            for (int i = 0; i < distances.Length; i++) {
+                if (distances[i] == minDist) labels[coords].Add (i);
+            }
         });
 
         ExtractLabelSegments (labels, voxelObject.chunk, voxelObject.transform, voxelObject.material, voxelObject.prevVelocity);
@@ -62,24 +50,22 @@ public static class VoxelSplitter {
         // SeparateIslands (voxelObject.chunk, voxelObject.transform, voxelObject.material, voxelObject.prevVelocity, fractureVoxels);
     }
 
-    private static void ExtractLabelSegments (int[] labels, VoxelChunk chunk, Transform transform, Material material, Vector3 rbVel) {
-        int highestLabel = labels.Max ();
-        // Debug.Log (highestLabel);
+    private static void ExtractLabelSegments (Dictionary<Vector3Int, List<int>> labels, VoxelChunk chunk, Transform transform, Material material, Vector3 rbVel) {
         //EXTRACT VOXELS BASED ON LABELS AND ASSIGN TO NEW CHUNKS
+        int highestLabel = labels.Max (entry => entry.Value.Max ());
         if (highestLabel >= 1) {
             for (int i = 0; i <= highestLabel; i++) {
 
-                if (labels.Count (x => x == i) < 4) continue;
-
-                Vector3 startingVoxelPos = Util.Map1DTo3D (Array.IndexOf (labels, i), chunk.size);
+                Vector3Int startingVoxelPos = labels.First (entry => entry.Value.Any (label => label == i)).Key;
                 Bounds bound = new Bounds (new Vector3 (startingVoxelPos.x * chunk.voxelScale, startingVoxelPos.y * chunk.voxelScale, startingVoxelPos.z * chunk.voxelScale), Vector3.zero);
 
                 for (int x = 0; x < chunk.size.x; x++)
                     for (int y = 0; y < chunk.size.y; y++)
                         for (int z = 0; z < chunk.size.z; z++) {
-                            Vector3Int cellPos = new Vector3Int (x, y, z);
-                            if (labels[Util.Map3DTo1D (cellPos, chunk.size)] != i) continue;
-                            bound.Encapsulate (new Vector3 (cellPos.x * chunk.voxelScale, cellPos.y * chunk.voxelScale, cellPos.z * chunk.voxelScale));
+                            Vector3Int coords = new Vector3Int (x, y, z);
+                            if (labels[coords].Any (label => label == i)) {
+                                bound.Encapsulate (new Vector3 (coords.x * chunk.voxelScale, coords.y * chunk.voxelScale, coords.z * chunk.voxelScale));
+                            }
                         }
 
                 voxelSpaceBound = new BoundsInt (

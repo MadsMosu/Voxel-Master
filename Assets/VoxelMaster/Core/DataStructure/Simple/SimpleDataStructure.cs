@@ -67,7 +67,7 @@ public class SimpleDataStructure : VoxelDataStructure {
         this.voxels = voxels;
     }
 
-    public override Voxel[] ExtractRegion (BoundsInt bound, int[] labels, int labelFilter) {
+    public override Voxel[] ExtractRegion (BoundsInt bound, Dictionary<Vector3Int, List<int>> labels, int labelFilter) {
         Voxel[] region = new Voxel[(bound.size.x + 1) * (bound.size.y + 1) * (bound.size.z + 1)];
         for (int x = bound.min.x; x <= bound.max.x; x++)
             for (int y = bound.min.y; y <= bound.max.y; y++)
@@ -78,7 +78,7 @@ public class SimpleDataStructure : VoxelDataStructure {
                     Voxel voxel;
                     if (((x <= bound.min.x || y <= bound.min.y || z <= bound.min.z) || (x >= bound.max.x || y >= bound.max.y || z >= bound.max.z)) ||
                         ((x <= 0 || y <= 0 || z <= 0) || (x >= size.x || y >= size.y || z >= size.z)) ||
-                        (voxels[index].density >.0f && labels[index] != labelFilter)) {
+                        (voxels[index].density >.0f && labels[coords].All (label => label != labelFilter))) {
                         voxel = new Voxel { density = -1 };
                     } else {
                         voxel = voxels[index];
