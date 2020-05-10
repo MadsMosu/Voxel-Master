@@ -40,7 +40,7 @@ namespace VoxelMaster {
         void Start() {
             chunkRenderer = new ChunkRenderer(chunkDictionary, material);
 
-            renderOctree = new Octree<Vector3>(chunkSize, 4);
+            renderOctree = new Octree<Vector3>(chunkSize, 5);
             renderOctree.Reset();
             octreeRenderer = new OctreeRenderer(renderOctree, this, material);
 
@@ -166,8 +166,14 @@ namespace VoxelMaster {
                 ExpandChunkGeneration();
 
                 renderOctree.Reset();
-                renderOctree.SplitFromDistance(viewer.position, chunkSize * 1);
+                renderOctree.SplitFromDistance(viewer.position, chunkSize * 2);
                 octreeRenderer.Update();
+
+                //renderOctree.GetLeafChildren(0b1).ForEach(n => {
+                //    if (Octree<Vector3>.GetDepth(n.locationCode) == renderOctree.GetMaxDepth()) {
+
+                //    }
+                //});
             }
 
             //if (generatedChunkQueue.Count > 0) {

@@ -30,9 +30,9 @@ namespace VoxelMaster.WorldGeneration {
 
             var chunkSizeMinusOne = chunk.size.x - 1f;
 
-            var chunkX = (chunk.coords.x * settings.voxelScale) * chunkSizeMinusOne;
-            var chunkY = (chunk.coords.y * settings.voxelScale) * chunkSizeMinusOne;
-            var chunkZ = (chunk.coords.z * settings.voxelScale) * chunkSizeMinusOne;
+            var chunkX = (chunk.coords.x * settings.voxelScale) * chunk.size.x;
+            var chunkY = (chunk.coords.y * settings.voxelScale) * chunk.size.y;
+            var chunkZ = (chunk.coords.z * settings.voxelScale) * chunk.size.z;
 
             float baseHeightScale = 5f;
             float baseHeightAmplifier = 200f;
@@ -49,7 +49,7 @@ namespace VoxelMaster.WorldGeneration {
 
                 baseHeight += detailHeightNoise.GetPerlinFractal((chunkX + x) / (baseHeightScale / 20), 0, (chunkZ + z) / (baseHeightScale / 20)) * (baseHeightAmplifier / 50);
 
-                float density = 1f - (((chunk.coords.y * settings.voxelScale) * (chunk.size.y - 1f) + y) - baseHeight);
+                float density = 1f - (((chunk.coords.y * settings.voxelScale) * (chunk.size.y) + y) - baseHeight);
 
                 //var erosion = baseHeightNoise.GetSimplexFractal((chunkX + x) / caveScale, (chunkY + y) / caveScale, (chunkZ + z) / caveScale);
                 //density -= Mathf.Clamp(erosion * 10, 0, Mathf.Infinity);
