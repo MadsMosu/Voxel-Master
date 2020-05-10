@@ -19,7 +19,7 @@ namespace VoxelMaster.Chunk.ChunkProviders {
         BaseHeightmapGenerator generator = new BaseHeightmapGenerator();
         public override void RequestChunk(Vector3Int coord, Action<VoxelChunk> onChunk) {
             Task.Run(() => {
-                var chunk = new VoxelChunk(coord, new Vector3Int(17, 17, 17), 1, new SimpleDataStructure());
+                var chunk = new VoxelChunk(coord, new Vector3Int(16, 16, 16), 1, new SimpleDataStructure());
                 generator.Generate(settings, chunk);
                 onChunk(chunk);
             });

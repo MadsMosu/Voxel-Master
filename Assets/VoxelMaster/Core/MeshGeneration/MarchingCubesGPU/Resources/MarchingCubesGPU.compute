@@ -2,29 +2,29 @@
 #pragma kernel GenerateTriangleIndicesAndNormals
 #include "Lookup.compute"
 
-struct TriangleVertices 
+struct TriangleVertices
 {
-    float3 a, b, c;
+	float3 a, b, c;
 };
 
 struct TriangleColors {
-    float4 a, b, c;
+	float4 a, b, c;
 };
 
 struct TriangleIndices {
-    dword index1, index2, index3;
+	dword index1, index2, index3;
 };
 
 struct Voxel {
-    float density;
-    int materialIndex;
+	float density;
+	int materialIndex;
 };
 
 float isoLevel, voxelScale;
 int step;
 int3 chunkSize;
 RWStructuredBuffer<Voxel> DensitiesBuffer;
-AppendStructuredBuffer<TriangleVertices> TrianglesBuffer; 
+AppendStructuredBuffer<TriangleVertices> TrianglesBuffer;
 RWStructuredBuffer<float3> SurfaceNormalsBuffer;
 RWStructuredBuffer<TriangleIndices> TriangleIndicesBuffer;
 RWStructuredBuffer<float3> VerticesBuffer;
@@ -39,38 +39,38 @@ float3 VertexInterp(float3 vPos1, float3 vPos2, float density1, float density2)
 }
 
 int IndexFromCoord(uint3 coords) {
-    return (chunkSize.x * chunkSize.y * coords.z) + (chunkSize.x * coords.y) + coords.x;
+	return (chunkSize.x * chunkSize.y * coords.z) + (chunkSize.x * coords.y) + coords.x;
 }
 
 float4 HUEtoRGB(in float H) {
-    float R = abs(H * 6 - 3) - 1;
-    float G = 2 - abs(H * 6 - 2);
-    float B = 2 - abs(H * 6 - 4);
-    float A = 1;
-    return saturate(float4(R,G,B, A));
+	float R = abs(H * 6 - 3) - 1;
+	float G = 2 - abs(H * 6 - 2);
+	float B = 2 - abs(H * 6 - 4);
+	float A = 1;
+	return saturate(float4(R, G, B, A));
 }
 
 
 [numthreads(1, 1, 1)]
-void MarchingCubes(uint3 cellPos : SV_DispatchThreadID) 
+void MarchingCubes(uint3 cellPos : SV_DispatchThreadID)
 {
-    if (cellPos.x >= chunkSize.x - 1  || cellPos.y >= chunkSize.y - 1|| cellPos.z >= chunkSize.z - 1) {
-        return;
-    }
+	if (cellPos.x >= chunkSize.x - 1 || cellPos.y >= chunkSize.y - 1 || cellPos.z >= chunkSize.z - 1) {
+		return;
+	}
 
-    float cubeDensity[8] = {
-        DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[0])].density,
-        DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[1])].density,
-        DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[2])].density,
-        DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[3])].density,
-        DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[4])].density,
-        DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[5])].density,
-        DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[6])].density,
-        DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[7])].density
-    };
+	float cubeDensity[8] = {
+		DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[0])].density,
+		DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[1])].density,
+		DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[2])].density,
+		DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[3])].density,
+		DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[4])].density,
+		DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[5])].density,
+		DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[6])].density,
+		DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[7])].density
+	};
 
 
-    int cubeIndex = 0;
+	int cubeIndex = 0;
 	if (cubeDensity[0] < isoLevel) cubeIndex |= 1;
 	if (cubeDensity[1] < isoLevel) cubeIndex |= 2;
 	if (cubeDensity[2] < isoLevel) cubeIndex |= 4;
@@ -80,68 +80,68 @@ void MarchingCubes(uint3 cellPos : SV_DispatchThreadID)
 	if (cubeDensity[6] < isoLevel) cubeIndex |= 64;
 	if (cubeDensity[7] < isoLevel) cubeIndex |= 128;
 
-    for (int i = 0; triTable[cubeIndex][i] != -1; i +=3) 
-    {
+	for (int i = 0; triTable[cubeIndex][i] != -1; i += 3)
+	{
 
-        int a0 = cornerIndexAFromEdge[triTable[cubeIndex][i]];
-        int b0 = cornerIndexBFromEdge[triTable[cubeIndex][i]];
+		int a0 = cornerIndexAFromEdge[triTable[cubeIndex][i]];
+		int b0 = cornerIndexBFromEdge[triTable[cubeIndex][i]];
 
-        int a1 = cornerIndexAFromEdge[triTable[cubeIndex][i + 2]];
-        int b1 = cornerIndexBFromEdge[triTable[cubeIndex][i + 2]];
+		int a1 = cornerIndexAFromEdge[triTable[cubeIndex][i + 2]];
+		int b1 = cornerIndexBFromEdge[triTable[cubeIndex][i + 2]];
 
-        int a2 = cornerIndexAFromEdge[triTable[cubeIndex][i + 1]];
-        int b2 = cornerIndexBFromEdge[triTable[cubeIndex][i + 1]];
+		int a2 = cornerIndexAFromEdge[triTable[cubeIndex][i + 1]];
+		int b2 = cornerIndexBFromEdge[triTable[cubeIndex][i + 1]];
 
-        TriangleVertices tri;
-        tri.a = VertexInterp((cellPos + cubeVertOffsets[a0]), (cellPos + cubeVertOffsets[b0]), cubeDensity[a0], cubeDensity[b0]) * voxelScale * step;
-        tri.b = VertexInterp((cellPos + cubeVertOffsets[a1]), (cellPos + cubeVertOffsets[b1]), cubeDensity[a1], cubeDensity[b1]) * voxelScale * step;
-        tri.c = VertexInterp((cellPos + cubeVertOffsets[a2]), (cellPos + cubeVertOffsets[b2]), cubeDensity[a2], cubeDensity[b2]) * voxelScale * step; 
+		TriangleVertices tri;
+		tri.a = VertexInterp((cellPos + cubeVertOffsets[a0]) * step, (cellPos + cubeVertOffsets[b0]) * step, cubeDensity[a0], cubeDensity[b0]) * voxelScale;
+		tri.b = VertexInterp((cellPos + cubeVertOffsets[a1]) * step, (cellPos + cubeVertOffsets[b1]) * step, cubeDensity[a1], cubeDensity[b1]) * voxelScale;
+		tri.c = VertexInterp((cellPos + cubeVertOffsets[a2]) * step, (cellPos + cubeVertOffsets[b2]) * step, cubeDensity[a2], cubeDensity[b2]) * voxelScale;
 
-        // float minDensity = 999999;
-        // int minDensityIndex = 0;
-        // for (int d = 0; d < 8; d++) {
-        //     if (cubeDensity[d] < minDensity)  {
-        //         minDensity = cubeDensity[d];
-        //         minDensityIndex = d;
-        //     }
-        // }
-        // int materialIndex = DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[minDensityIndex])].materialIndex;
+		// float minDensity = 999999;
+		// int minDensityIndex = 0;
+		// for (int d = 0; d < 8; d++) {
+		//     if (cubeDensity[d] < minDensity)  {
+		//         minDensity = cubeDensity[d];
+		//         minDensityIndex = d;
+		//     }
+		// }
+		// int materialIndex = DensitiesBuffer[IndexFromCoord(cellPos + cubeVertOffsets[minDensityIndex])].materialIndex;
 
-        // float4 color = HUEtoRGB(materialIndex * 30);
+		// float4 color = HUEtoRGB(materialIndex * 30);
 
-        // TriangleColors colors = {
-        //     color,
-        //     color,
-        //     color
-        // };
-        // ColorBuffer.Append(colors);
+		// TriangleColors colors = {
+		//     color,
+		//     color,
+		//     color
+		// };
+		// ColorBuffer.Append(colors);
 
-        TrianglesBuffer.Append(tri); 
-    }
+		TrianglesBuffer.Append(tri);
+	}
 }
 
 
 
 [numthreads(1, 1, 1)]
 void GenerateTriangleIndicesAndNormals(uint3 vertexPosition : SV_DispatchThreadID) {
-        int index = vertexPosition.x * 3;
+	int index = vertexPosition.x * 3;
 
-        int indexA = index;
-        int indexB = index + 1;
-        int indexC = index + 2;
+	int indexA = index;
+	int indexB = index + 1;
+	int indexC = index + 2;
 
-        TriangleIndices indices = {
-            indexA,
-            indexB,
-            indexC,
-        };
-        TriangleIndicesBuffer[vertexPosition.x] = indices;
+	TriangleIndices indices = {
+		indexA,
+		indexB,
+		indexC,
+	};
+	TriangleIndicesBuffer[vertexPosition.x] = indices;
 
-        float3 AB = VerticesBuffer[indexB] - VerticesBuffer[indexA];
-        float3 AC = VerticesBuffer[indexC] - VerticesBuffer[indexA];
-        float3 surfaceNormal = normalize(cross(AB, AC));
+	float3 AB = VerticesBuffer[indexB] - VerticesBuffer[indexA];
+	float3 AC = VerticesBuffer[indexC] - VerticesBuffer[indexA];
+	float3 surfaceNormal = normalize(cross(AB, AC));
 
-        SurfaceNormalsBuffer[indexA] = surfaceNormal;
-        SurfaceNormalsBuffer[indexB] = surfaceNormal;
-        SurfaceNormalsBuffer[indexC] = surfaceNormal;
+	SurfaceNormalsBuffer[indexA] = surfaceNormal;
+	SurfaceNormalsBuffer[indexB] = surfaceNormal;
+	SurfaceNormalsBuffer[indexC] = surfaceNormal;
 }
