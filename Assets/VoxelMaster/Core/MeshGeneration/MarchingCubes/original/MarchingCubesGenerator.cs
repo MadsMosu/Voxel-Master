@@ -1,111 +1,111 @@
-// using System;
-// using System.Collections.Generic;
-// using UnityEngine;
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using VoxelMaster.Chunk;
 
-// public class MarchingCubes : VoxelMeshGenerator {
-//     private float isoLevel;
-//     public override void Init (MeshGeneratorSettings settings) {
-//         this.isoLevel = settings.isoLevel;
-//     }
+public class MarchingCubes {
 
-//     public override MeshData GenerateMesh (IVoxelData voxelData, Vector3Int origin, int size, int lod) {
-//         int numCells = size * size * size;
-//         List<Vector3> vertices = new List<Vector3> (5 * numCells * 3);
-//         List<int> triangleIndices = new List<int> (5 * numCells * 3);
+    float isoLevel = .5f;
 
-//         for (int x = 0; x < size - 1; x++)
-//             for (int y = 0; y < size - 1; y++)
-//                 for (int z = 0; z < size - 1; z++) {
+    public MeshData GenerateMesh (VoxelChunk chunk) => GenerateMesh (chunk.voxels.ToArray (), chunk.size, chunk.voxelScale, 1 << 0);
 
-//                     Vector3Int cellPos = new Vector3Int (x, y, z);
-//                     PolygonizeCell (voxelData, origin, cellPos, ref vertices, ref triangleIndices, lod);
+    public MeshData GenerateMesh (Voxel[] voxels, Vector3Int size, float voxelScale, int step) {
+        int numCells = size.x * size.y * size.z;
+        List<Vector3> vertices = new List<Vector3> (5 * numCells * 3);
+        List<int> triangleIndices = new List<int> (5 * numCells * 3);
 
-//                 }
-//         Vector3[] surfaceNormals = CalculateSurfaceNormals (vertices.ToArray (), triangleIndices.ToArray ());
-//         var normals = CalculateVertexNormals (vertices.ToArray (), surfaceNormals);
+        for (int x = 0; x < size.x - 1; x++)
+            for (int y = 0; y < size.y - 1; y++)
+                for (int z = 0; z < size.z - 1; z++) {
 
-//         return new MeshData (vertices.ToArray (), triangleIndices.ToArray (), normals);
-//     }
+                    Vector3Int cellPos = new Vector3Int (x, y, z);
+                    PolygonizeCell (voxels, cellPos, size, ref vertices, ref triangleIndices, step, voxelScale);
 
-//     internal void PolygonizeCell (IVoxelData volume, Vector3Int offsetPos, Vector3Int cellPos, ref List<Vector3> vertices, ref List<int> triangleIndices, int lod) {
-//         offsetPos += cellPos;
+                }
+        Vector3[] surfaceNormals = CalculateSurfaceNormals (vertices.ToArray (), triangleIndices.ToArray ());
+        // var normals = CalculateVertexNormals (vertices.ToArray (), surfaceNormals);
 
-//         float[] cubeDensities = new float[8];
-//         byte caseCode = 0;
-//         byte addToCaseCode = 1;
-//         for (int i = 0; i < cubeDensities.Length; i++) {
-//             cubeDensities[i] = volume[offsetPos + Lookup.cubeVertOffsets[i]].density;
-//             if (cubeDensities[i] < isoLevel) {
-//                 caseCode |= addToCaseCode;
-//             }
-//             addToCaseCode *= 2;
-//         }
+        return new MeshData (vertices.ToArray (), triangleIndices.ToArray (), surfaceNormals);
+    }
 
-//         if (caseCode == 0 || caseCode == 255) return;
-//         int triangleIndex = 0;
+    internal void PolygonizeCell (Voxel[] voxels, Vector3Int cellPos, Vector3Int size, ref List<Vector3> vertices, ref List<int> triangleIndices, int step, float voxelScale) {
 
-//         int[] triangulation = Lookup.triTable[caseCode];
-//         for (int i = 0; triangulation[i] != -1; i += 3) {
-//             for (int j = 0; j < 3; j++) {
-//                 var a = Lookup.cornerIndexAFromEdge[triangulation[i + j]];
-//                 var b = Lookup.cornerIndexBFromEdge[triangulation[i + j]];
+        float[] cubeDensities = new float[8];
+        byte caseCode = 0;
+        byte addToCaseCode = 1;
+        for (int i = 0; i < cubeDensities.Length; i++) {
+            cubeDensities[i] = voxels[Util.Map3DTo1D (cellPos + Lookup.cubeVertOffsets[i], size)].density;
+            if (cubeDensities[i] < isoLevel) {
+                caseCode |= addToCaseCode;
+            }
+            addToCaseCode *= 2;
+        }
 
-//                 Vector3Int aPos = cellPos + Lookup.cubeVertOffsets[a];
-//                 Vector3Int bPos = cellPos + Lookup.cubeVertOffsets[b];
-//                 float lerp = (isoLevel - cubeDensities[a]) / (cubeDensities[b] - cubeDensities[a]);
-//                 var vertex = Vector3.Lerp (aPos, bPos, lerp);
+        if (caseCode == 0 || caseCode == 255) return;
+        int triangleIndex = 0;
 
-//                 vertices.Add (vertex);
-//                 triangleIndices.Add (triangleIndex++);
-//             }
-//         }
-//     }
+        int[] triangulation = Lookup.triTable[caseCode];
+        for (int i = 0; triangulation[i] != -1; i += 3) {
+            for (int j = 0; j < 3; j++) {
+                var a = Lookup.cornerIndexAFromEdge[triangulation[i + j]];
+                var b = Lookup.cornerIndexBFromEdge[triangulation[i + j]];
 
-//     private Vector3[] CalculateSurfaceNormals (Vector3[] vertices, int[] triangleIndices) {
-//         Vector3[] surfaceNormals = new Vector3[vertices.Length];
-//         for (int i = 0; i < vertices.Length / 3; i++) {
-//             int index = i * 3;
-//             int indexA = triangleIndices[index];
-//             int indexB = triangleIndices[index + 1];
-//             int indexC = triangleIndices[index + 2];
+                Vector3Int aPos = cellPos + Lookup.cubeVertOffsets[a] * step;
+                Vector3Int bPos = cellPos + Lookup.cubeVertOffsets[b] * step;
+                float lerp = (isoLevel - cubeDensities[a]) / (cubeDensities[b] - cubeDensities[a]);
+                var vertex = Vector3.Lerp (aPos, bPos, lerp) * voxelScale;
 
-//             Vector3 surfaceNormal = Vector3.Normalize (SurfaceNormalFromIndices (vertices, indexA, indexB, indexC));
-//             surfaceNormals[indexA] = surfaceNormal;
-//             surfaceNormals[indexB] = surfaceNormal;
-//             surfaceNormals[indexC] = surfaceNormal;
-//         }
-//         return surfaceNormals;
-//     }
+                vertices.Add (vertex);
+                triangleIndices.Add (triangleIndex++);
+            }
+        }
+    }
 
-//     private Vector3 SurfaceNormalFromIndices (Vector3[] vertices, int indexA, int indexB, int indexC) {
-//         Vector3 AB = vertices[indexB] - vertices[indexA];
-//         Vector3 AC = vertices[indexC] - vertices[indexA];
-//         return Vector3.Cross (AB, AC);
-//     }
+    private Vector3[] CalculateSurfaceNormals (Vector3[] vertices, int[] triangleIndices) {
+        Vector3[] surfaceNormals = new Vector3[vertices.Length];
+        for (int i = 0; i < vertices.Length / 3; i++) {
+            int index = i * 3;
+            int indexA = triangleIndices[index];
+            int indexB = triangleIndices[index + 1];
+            int indexC = triangleIndices[index + 2];
 
-//     private Vector3[] CalculateVertexNormals (Vector3[] vertices, Vector3[] surfaceNormals) {
-//         Vector3[] vertexNormals = new Vector3[surfaceNormals.Length];
-//         Dictionary<int, Vector3> sums = new Dictionary<int, Vector3> ();
-//         Dictionary<int, int> sharedVertices = new Dictionary<int, int> ();
+            Vector3 surfaceNormal = Vector3.Normalize (SurfaceNormalFromIndices (vertices, indexA, indexB, indexC));
+            surfaceNormals[indexA] = surfaceNormal;
+            surfaceNormals[indexB] = surfaceNormal;
+            surfaceNormals[indexC] = surfaceNormal;
+        }
+        return surfaceNormals;
+    }
 
-//         for (int i = 0; i < vertices.Length; i++) {
-//             if (sharedVertices.ContainsKey (i)) continue;
+    private Vector3 SurfaceNormalFromIndices (Vector3[] vertices, int indexA, int indexB, int indexC) {
+        Vector3 AB = vertices[indexB] - vertices[indexA];
+        Vector3 AC = vertices[indexC] - vertices[indexA];
+        return Vector3.Cross (AB, AC);
+    }
 
-//             Vector3 pos = vertices[i];
-//             Vector3 sum = surfaceNormals[i];
-//             sums[i] = sum;
-//             for (int j = i + 1; j < vertices.Length; j++) {
-//                 if (pos == vertices[j]) {
-//                     sums[i] += surfaceNormals[j];
-//                     sharedVertices[j] = i;
-//                 }
-//             }
-//             vertexNormals[i] = sums[i].normalized;
-//         }
+    // private Vector3[] CalculateVertexNormals (Vector3[] vertices, Vector3[] surfaceNormals) {
+    //     Vector3[] vertexNormals = new Vector3[surfaceNormals.Length];
+    //     Dictionary<int, Vector3> sums = new Dictionary<int, Vector3> ();
+    //     Dictionary<int, int> sharedVertices = new Dictionary<int, int> ();
 
-//         foreach (KeyValuePair<int, int> entry in sharedVertices) {
-//             vertexNormals[entry.Key] = sums[entry.Value].normalized;
-//         }
-//         return vertexNormals;
-//     }
-// }
+    //     for (int i = 0; i < vertices.Length; i++) {
+    //         if (sharedVertices.ContainsKey (i)) continue;
+
+    //         Vector3 pos = vertices[i];
+    //         Vector3 sum = surfaceNormals[i];
+    //         sums[i] = sum;
+    //         for (int j = i + 1; j < vertices.Length; j++) {
+    //             if (pos == vertices[j]) {
+    //                 sums[i] += surfaceNormals[j];
+    //                 sharedVertices[j] = i;
+    //             }
+    //         }
+    //         vertexNormals[i] = sums[i].normalized;
+    //     }
+
+    //     foreach (KeyValuePair<int, int> entry in sharedVertices) {
+    //         vertexNormals[entry.Key] = sums[entry.Value].normalized;
+    //     }
+    //     return vertexNormals;
+    // }
+}

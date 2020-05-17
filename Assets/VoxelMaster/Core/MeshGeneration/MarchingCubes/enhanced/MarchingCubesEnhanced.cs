@@ -2,18 +2,12 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class MarchingCubesEnhanced : VoxelMeshGenerator {
-    private float isoLevel;
+public class MarchingCubesEnhanced {
+    private float isoLevel = 0f;
     private int chunkSize;
     private static float shiftFactor = 0.30f;
 
-    public override void Init (MeshGeneratorSettings settings) {
-        this.isoLevel = settings.isoLevel;
-        this.chunkSize = settings.chunkSize;
-
-    }
-
-    public override MeshData GenerateMesh (IVoxelData volume, Vector3 origin, int step, float scale) {
+    public MeshData GenerateMesh (IVoxelData volume, Vector3 origin, int step, float scale, int chunkSize) {
         List<Vector3> vertices = new List<Vector3> ();
         List<int> triangleIndices = new List<int> ();
         List<Vector3> normals = new List<Vector3> ();
