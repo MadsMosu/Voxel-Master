@@ -70,7 +70,7 @@ public class DualContouring : VoxelMeshGenerator {
     }
 
     private void GenerateCellVertex (Vector3Int cellPos, VoxelChunk chunk, Func<Vector3, float> densityFunction) {
-        if (cellPos.x + 1 >= chunk.size.x || cellPos.y + 1 >= chunk.size.y || cellPos.z + 1 >= chunk.size.z) return;
+        if (cellPos.x + 2 >= chunk.size.x || cellPos.y + 2 >= chunk.size.y || cellPos.z + 2 >= chunk.size.z) return;
 
         int corners = 0;
         for (int i = 0; i < 8; i++) {

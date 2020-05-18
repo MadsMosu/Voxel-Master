@@ -11,7 +11,7 @@ public class MarchingCubes : VoxelMeshGenerator {
 
         chunk.voxels.Traverse (delegate (int x, int y, int z, Voxel v) {
             var cellPos = new Vector3Int (x, y, z);
-            if (cellPos.x + 1 >= chunk.size.x || cellPos.y + 1 >= chunk.size.y || cellPos.z + 1 >= chunk.size.z) return;
+            if (cellPos.x + 2 >= chunk.size.x || cellPos.y + 2 >= chunk.size.y || cellPos.z + 2 >= chunk.size.z) return;
 
             float[] cubeDensity = new float[8] {
                 chunk.voxels.GetVoxel (cellPos + Lookup.cubeVertOffsets[0]).density,

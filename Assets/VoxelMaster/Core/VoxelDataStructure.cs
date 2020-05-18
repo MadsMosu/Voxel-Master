@@ -7,4 +7,5 @@ public abstract class VoxelDataStructure {
     public abstract void Traverse (Action<int, int, int, Voxel> function);
     public abstract Voxel GetVoxel (Vector3Int coords);
     public abstract void SetVoxel (Vector3Int coords, Voxel voxel);
+    public abstract Voxel[] ToArray ();
 }

@@ -26,4 +26,7 @@ public class SimpleDataStructure : VoxelDataStructure {
             function.Invoke (coord.x, coord.y, coord.z, voxels[i]);
         }
     }
+    public override Voxel[] ToArray () {
+        return voxels;
+    }
 }
