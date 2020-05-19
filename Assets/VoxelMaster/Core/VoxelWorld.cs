@@ -12,7 +12,7 @@ public class VoxelWorld : MonoBehaviour {
     #region Parameters
     public float voxelScale = 1;
     public float isoLevel = 0;
-    public Vector3Int chunkSize = new Vector3Int (16, 16, 16);
+    public Vector3Int chunkSize = new Vector3Int (32, 32, 32);
     #endregion
 
     private Dictionary<Vector3Int, VoxelChunk> chunks = new Dictionary<Vector3Int, VoxelChunk> ();
@@ -47,6 +47,28 @@ public class VoxelWorld : MonoBehaviour {
         return k + l;
 
     }
+
+    private float SDFBox (Vector3 p, Vector3 c, Vector3 s) {
+        float xx = Mathf.Max (
+            p.x - c.x - new Vector3 (s.x / 2f, 0, 0).magnitude,
+            c.x - p.x - new Vector3 (s.x / 2f, 0, 0).magnitude
+        );
+
+        float yx = Mathf.Max (
+            p.y - c.y - new Vector3 (s.y / 2f, 0, 0).magnitude,
+            c.y - p.y - new Vector3 (s.y / 2f, 0, 0).magnitude
+        );
+
+        float zx = Mathf.Max (
+            p.z - c.z - new Vector3 (s.z / 2f, 0, 0).magnitude,
+            c.z - p.z - new Vector3 (s.z / 2f, 0, 0).magnitude
+        );
+
+        float d = xx;
+        d = Mathf.Max (d, yx);
+        d = Mathf.Max (d, zx);
+        return d;
+    }
     void Start () {
 
         meshGenerator = Util.CreateInstance<VoxelMeshGenerator> (meshGeneratorType);
@@ -66,7 +88,7 @@ public class VoxelWorld : MonoBehaviour {
         for (int x = 0; x < chunkSize.x; x++)
             for (int y = 0; y < chunkSize.y; y++)
                 for (int z = 0; z < chunkSize.z; z++) {
-                    chunk.voxels.SetVoxel (new Vector3Int (x, y, z), new Voxel { density = SignedDistanceCube (new Vector3 (x, y, z)) });
+                    chunk.voxels.SetVoxel (new Vector3Int (x, y, z), new Voxel { density = SDFBox (new Vector3 (x, y, z), new Vector3 (16, 16, 16), new Vector3 (12, 12, 12)) });
                 }
 
         var meshData = meshGenerator.GenerateMesh (chunk, SignedDistanceCube);
