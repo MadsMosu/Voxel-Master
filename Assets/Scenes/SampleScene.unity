@@ -569,8 +569,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 900113269}
-  m_LocalRotation: {x: -0.056137137, y: 0.88882434, z: -0.113281, w: -0.4404627}
-  m_LocalPosition: {x: 16.387945, y: 11.418857, z: 15.822159}
+  m_LocalRotation: {x: 0.03884213, y: 0.9115343, z: 0.08858424, w: -0.3996866}
+  m_LocalPosition: {x: 25.103756, y: 19.310152, z: 23.501541}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -681,7 +681,7 @@ MonoBehaviour:
   chunkSize: {x: 32, y: 32, z: 32}
   dataStructureType: SimpleDataStructure, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
     PublicKeyToken=null
-  meshGeneratorType: DualContouring, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+  meshGeneratorType: MarchingCubes, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
     PublicKeyToken=null
   material: {fileID: 2100000, guid: 40539cd6d3ae1104d8a518d7abb86a33, type: 2}
 --- !u!4 &1114245770
