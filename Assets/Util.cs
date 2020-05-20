@@ -24,7 +24,7 @@ public static class Util {
     }
 
     public static int Map3DTo1D (Vector3Int coords, int size) {
-        return (size * size * coords.z) + (size * coords.y) + coords.x;
+        return coords.x + coords.y * size + coords.z * size * size;
     }
 
     public static int Map3DTo1D (Vector3Int coords, Vector3Int size) {
