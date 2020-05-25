@@ -31,8 +31,9 @@ public class BenchmarkTests {
     TestVoxelWorld world32, world16, world8, world4;
     Voxel[] voxels1D = new Voxel[16 * 16 * 16];
     Voxel[, , ] voxels3D = new Voxel[16, 16, 16];
+    Voxel[][][] voxelsJagged = new Voxel[16][][];
 
-    [OneTimeSetUp]
+    [Test]
     public void Init () {
         chunk32 = MakeChunk (chunkSize32, dataStructure32);
         chunk16 = MakeChunk (chunkSize16, dataStructure16);
@@ -43,6 +44,13 @@ public class BenchmarkTests {
         world16 = MakeWorld (chunkSize16, chunk16);
         world8 = MakeWorld (chunkSize8, chunk8);
         world4 = MakeWorld (chunkSize4, chunk4);
+
+        for (int x = 0; x < voxelsJagged.Length; x++) {
+            voxelsJagged[x] = new Voxel[16][];
+            for (int y = 0; y < voxelsJagged.Length; y++) {
+                voxelsJagged[x][y] = new Voxel[16];
+            }
+        }
     }
 
     [Test]
@@ -230,6 +238,36 @@ public class BenchmarkTests {
                     for (int z = 0; z < size.z; z++) {
                         voxels3D[x, y, z] = new Voxel { };
                     }
+        }
+        watch.Stop ();
+        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
+    }
+
+    [Test]
+    public void JaggedGet () {
+        Stopwatch watch = new Stopwatch ();
+        for (int i = 0; i < cycles; i++) {
+            for (int x = 0; x < voxelsJagged.Length; x++)
+                for (int y = 0; y < voxelsJagged.Length; y++)
+                    for (int z = 0; z < voxelsJagged.Length; z++) {
+                        Voxel voxel = voxelsJagged[x][y][z];
+                    }
+        }
+        watch.Stop ();
+        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
+    }
+
+    [Test]
+    public void JaggedSet () {
+        Stopwatch watch = new Stopwatch ();
+        for (int i = 0; i < cycles; i++) {
+            for (int x = 0; x < voxelsJagged.Length; x++) {
+                for (int y = 0; y < voxelsJagged.Length; y++) {
+                    for (int z = 0; z < voxelsJagged.Length; z++) {
+                        voxelsJagged[x][y][z] = new Voxel { };
+                    }
+                }
+            }
         }
         watch.Stop ();
         UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
