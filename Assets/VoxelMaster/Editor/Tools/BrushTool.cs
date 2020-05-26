@@ -18,7 +18,8 @@ public class BrushTool : VoxelTool {
 
     public override void ToolDrag (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, VoxelWorld voxelWorld) {
         if (inverse) intensity = 0 - intensity;
-        Vector3Int chunkWorldPosition = chunk.coords * (chunk.size - Vector3Int.one);
+        Vector3Int chunkWorldPosition = chunk.coords * chunk.size;
+        chunk.dirty = true;
 
         chunk.voxels.Traverse ((x, y, z, v) => {
             Vector3Int voxelCoord = new Vector3Int (x, y, z);
@@ -34,7 +35,7 @@ public class BrushTool : VoxelTool {
                     tempIntensity /= scaleFactor;
                 }
 
-                v.density += tempIntensity;
+                v.density += tempIntensity * Time.deltaTime;
                 chunk.voxels.SetVoxel (voxelCoord, v);
             }
         });

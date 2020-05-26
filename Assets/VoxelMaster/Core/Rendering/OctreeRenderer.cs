@@ -21,14 +21,14 @@ namespace VoxelMaster.Core.Rendering {
 
         Vector3Int[] neighbourOffsets = new Vector3Int[26];
 
-        private Dictionary<uint, Mesh> renderMeshes = new Dictionary<uint, Mesh> ();
         Queue<uint> generationQueue = new Queue<uint> ();
         List<uint> destructionQueue = new List<uint> ();
+        Dictionary<uint, List<VoxelChunk>> regionChunkMap = new Dictionary<uint, List<VoxelChunk>> ();
 
         private WorldGeneratorSettings settings;
         private WorldHeightmapGenerator generator;
 
-        private Dictionary<uint, MeshCollider> colliders = new Dictionary<uint, MeshCollider> ();
+        private Dictionary<uint, GameObject> regions = new Dictionary<uint, GameObject> ();
 
         private const int CHUNK_SIZE = 16;
 
@@ -50,20 +50,28 @@ namespace VoxelMaster.Core.Rendering {
         private bool HasRenderParent (uint child) {
             uint loc = child;
             while (loc > 1) {
-                if (renderMeshes.ContainsKey (loc) && !generationQueue.Contains (child)) return true;
+                if (regions.ContainsKey (loc) && !generationQueue.Contains (child)) return true;
                 loc >>= 3;
             }
             return false;
         }
 
+        private bool CanRemoveRegion (uint node) {
+            var parent = node << 3;
+            if (HasRenderParent (node)) return true;
+            var children = octree.GetChildren (node);
+            if (children.All (c => regions.ContainsKey (c.locationCode))) return true;
+            return false;
+        }
+
         public void Update () {
             generationQueue.Clear ();
-            renderMeshes.Clear ();
+            regions.Clear ();
 
             var newLeafNodes = octree.GetLeafChildren (0b1).Select (n => n.locationCode).ToList ();
             Debug.Log (newLeafNodes.Count);
 
-            foreach (var renderMesh in renderMeshes) {
+            foreach (var renderMesh in regions) {
                 var key = renderMesh.Key;
                 if (!newLeafNodes.Contains (key)) {
                     destructionQueue.Add (key);
@@ -76,13 +84,21 @@ namespace VoxelMaster.Core.Rendering {
         }
 
         public IEnumerator ProcessGenerationQueue () {
-            while (generationQueue.Count > 0) {
-                var n = octree.GetNode (generationQueue.Dequeue ());
-                if (n == null) continue;
-                var nodeDepth = Octree<Vector3>.GetDepth (n.locationCode);
-                var voxels = GetNodeVoxels (n.locationCode);
-                var mesh = meshGenerator.GenerateMesh (voxels, Vector3Int.one * (world.chunkSize + 1), 1, 1 << (octree.GetMaxDepth () - nodeDepth)).BuildMesh ();
-                renderMeshes[n.locationCode] = mesh;
+            while (true) {
+                for (int i = 0; i < 9; i++) {
+                    if (generationQueue.Count <= 0) break;
+                    var n = octree.GetNode (generationQueue.Dequeue ());
+                    if (n == null) continue;
+                    var nodeDepth = Octree<Vector3>.GetDepth (n.locationCode);
+                    var voxels = GetNodeVoxels (n.locationCode);
+                    var mesh = meshGenerator.GenerateMesh (voxels, Vector3Int.one * (world.chunkSize + 1), 1, 1 << (octree.GetMaxDepth () - nodeDepth)).BuildMesh ();
+                    if (regions.ContainsKey (n.locationCode)) {
+                        var meshFilter = regions[n.locationCode].GetComponent<MeshFilter> ();
+                        meshFilter.mesh = mesh;
+                    } else {
+                        regions[n.locationCode] = CreateCollisionObject (new Vector3Int ((int) n.bounds.min.x, (int) n.bounds.min.y, (int) n.bounds.min.z), mesh);
+                    }
+                }
                 yield return new WaitForEndOfFrame ();
             }
         }
@@ -90,6 +106,7 @@ namespace VoxelMaster.Core.Rendering {
         private Voxel[] GetNodeVoxels (uint nodeLocation) {
             var node = octree.GetNode (nodeLocation);
             var nodeDepth = Octree<Vector3>.GetDepth (nodeLocation);
+            List<VoxelChunk> regionChunks = new List<VoxelChunk> ();
 
             var result = new Voxel[(world.chunkSize + 1) * (world.chunkSize + 1) * (world.chunkSize + 1)];
             var chunkExtents = (1 << (octree.GetMaxDepth () - nodeDepth));
@@ -114,6 +131,7 @@ namespace VoxelMaster.Core.Rendering {
                         if (world.chunkDictionary.ContainsKey (startingChunkCoord + new Vector3Int (chunkX, chunkY, chunkZ))) {
 
                             var chunk = world.chunkDictionary[startingChunkCoord + new Vector3Int (chunkX, chunkY, chunkZ)];
+                            regionChunks.Add (chunk);
 
                             for (int vx = 0; vx < voxelXAmount; vx += voxelIncrementer)
                                 for (int vy = 0; vy < voxelYAmount; vy += voxelIncrementer)
@@ -151,6 +169,7 @@ namespace VoxelMaster.Core.Rendering {
             }
 
             if (nodeLocation == 0b1) testArrayVoxels = result;
+            regionChunkMap[nodeLocation] = regionChunks;
             return result;
         }
 
@@ -158,20 +177,34 @@ namespace VoxelMaster.Core.Rendering {
 
             for (int i = destructionQueue.Count - 1; i >= 0; i--) {
                 var loc = destructionQueue[i];
-                if (true || HasRenderParent (loc)) {
-                    renderMeshes.Remove (loc);
+                if (CanRemoveRegion (loc)) {
+                    regions.Remove (loc);
+                    regionChunkMap.Remove (loc);
                     destructionQueue.RemoveAt (i);
                 }
             }
 
-            foreach (KeyValuePair<uint, Mesh> entry in renderMeshes) {
-                var meshNode = octree.GetNode (entry.Key);
-                if (meshNode == null) continue;
-                Mesh mesh = entry.Value;
-
-                Graphics.DrawMesh (mesh, meshNode.bounds.min, Quaternion.identity, material, 0);
+            foreach (var region in regionChunkMap) {
+                if (region.Value.Any (c => c.dirty)) {
+                    if (!generationQueue.Contains (region.Key)) {
+                        generationQueue.Enqueue (region.Key);
+                    }
+                    region.Value.ForEach (c => c.dirty = false);
+                }
             }
+            Debug.Log (generationQueue.Count ());
+        }
+        public GameObject CreateCollisionObject (Vector3Int coord, Mesh mesh) {
+            GameObject go = new GameObject ($"Chunk {coord}", typeof (MeshCollider), typeof (MeshFilter), typeof (MeshRenderer));
+            go.transform.position = coord;
+            go.GetComponent<MeshCollider> ().sharedMesh = mesh;
+            go.GetComponent<MeshFilter> ().mesh = mesh;
+            go.GetComponent<MeshRenderer> ().material = material;
+
+            // gameObjects.Add (coord, go);
+            return go;
         }
 
     }
+
 }

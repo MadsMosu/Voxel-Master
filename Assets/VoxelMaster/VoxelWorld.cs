@@ -72,7 +72,7 @@ namespace VoxelMaster {
 
         void ExpandChunkGeneration () {
             chunkGenerationQueue.Clear ();
-            for (int y = -1; y < 2; y++) {
+            for (int y = -1; y < 8; y++) {
 
                 // The following is a spiral algorithm inspired by a StackOverflow post
                 // https://stackoverflow.com/questions/398299/looping-in-a-spiral
@@ -223,16 +223,6 @@ namespace VoxelMaster {
 
         private void AddChunk (Vector3Int coord, VoxelChunk chunk) {
             chunkDictionary.Add (coord, chunk);
-        }
-
-        public Dictionary<Vector3Int, GameObject> gameObjects = new Dictionary<Vector3Int, GameObject> ();
-
-        public void CreateCollisionObject (Vector3Int coord, Mesh mesh) {
-            GameObject go = new GameObject ($"Chunk {coord}", typeof (MeshCollider));
-            go.transform.position = coord * chunkSize;
-            go.GetComponent<MeshCollider> ().sharedMesh = mesh;
-
-            gameObjects.Add (coord, go);
         }
 
         public bool drawOctree = false;
