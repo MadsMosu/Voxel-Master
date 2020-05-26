@@ -10,7 +10,7 @@ public class FlattenTool : VoxelTool {
 
     public override void OnToolGUI () { }
 
-    public override void ToolDrag (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, VoxelWorld voxelWorld) {
+    public override void ToolDrag (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, TestVoxelWorld voxelWorld) {
         Vector3Int chunkWorldPosition = chunk.coords * (chunk.size - Vector3Int.one);
 
         chunk.voxels.Traverse ((x, y, z, v) => {
@@ -34,11 +34,11 @@ public class FlattenTool : VoxelTool {
         });
     }
 
-    public override void ToolEnd (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, VoxelWorld voxelWorld) {
+    public override void ToolEnd (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, TestVoxelWorld voxelWorld) {
         planeLocked = false;
     }
 
-    public override void ToolStart (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, VoxelWorld voxelWorld) {
+    public override void ToolStart (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, TestVoxelWorld voxelWorld) {
         if (planeLocked == false)
             plane = new Plane (surfaceNormal, position);
         planeLocked = true;

@@ -16,7 +16,7 @@ public class BrushTool : VoxelTool {
         GUILayout.EndVertical ();
     }
 
-    public override void ToolDrag (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, VoxelWorld voxelWorld) {
+    public override void ToolDrag (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, TestVoxelWorld voxelWorld) {
         if (inverse) intensity = 0 - intensity;
         Vector3Int chunkWorldPosition = chunk.coords * (chunk.size - Vector3Int.one);
 
@@ -40,7 +40,7 @@ public class BrushTool : VoxelTool {
         });
     }
 
-    public override void ToolEnd (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, VoxelWorld voxelWorld) { }
+    public override void ToolEnd (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, TestVoxelWorld voxelWorld) { }
 
-    public override void ToolStart (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, VoxelWorld voxelWorld) { }
+    public override void ToolStart (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, TestVoxelWorld voxelWorld) { }
 }

@@ -33,12 +33,19 @@ public class BenchmarkTests {
     Voxel[, , ] voxels3D = new Voxel[16, 16, 16];
     Voxel[][][] voxelsJagged = new Voxel[16][][];
 
-    [Test]
+    List<VoxelChunk> affectedChunks1;
+    List<VoxelChunk> affectedChunks2;
+
+    BrushTool brushTool = new BrushTool ();
+    SmoothTool smoothTool = new SmoothTool ();
+    FlattenTool flattenTool = new FlattenTool ();
+
+    [OneTimeSetUp]
     public void Init () {
-        chunk32 = MakeChunk (chunkSize32, dataStructure32);
-        chunk16 = MakeChunk (chunkSize16, dataStructure16);
-        chunk8 = MakeChunk (chunkSize8, dataStructure8);
-        chunk4 = MakeChunk (chunkSize4, dataStructure4);
+        chunk32 = MakeChunk (chunkSize32, dataStructure32, Vector3Int.zero);
+        chunk16 = MakeChunk (chunkSize16, dataStructure16, Vector3Int.zero);
+        chunk8 = MakeChunk (chunkSize8, dataStructure8, Vector3Int.zero);
+        chunk4 = MakeChunk (chunkSize4, dataStructure4, Vector3Int.zero);
 
         world32 = MakeWorld (chunkSize32, chunk32);
         world16 = MakeWorld (chunkSize16, chunk16);
@@ -51,6 +58,20 @@ public class BenchmarkTests {
                 voxelsJagged[x][y] = new Voxel[16];
             }
         }
+        affectedChunks1 = new List<VoxelChunk> ();
+        affectedChunks2 = new List<VoxelChunk> ();
+
+        for (int x = -1; x <= 1; x++)
+            for (int y = -1; y <= 1; y++)
+                for (int z = -1; z <= 1; z++) {
+                    affectedChunks1.Add (MakeChunk (chunkSize16, new SimpleDataStructure (), new Vector3Int (x, y, z)));
+                }
+
+        for (int x = -2; x <= 2; x++)
+            for (int y = -2; y <= 2; y++)
+                for (int z = -2; z <= 2; z++) {
+                    affectedChunks2.Add (MakeChunk (chunkSize16, new SimpleDataStructure (), new Vector3Int (x, y, z)));
+                }
     }
 
     [Test]
@@ -343,7 +364,163 @@ public class BenchmarkTests {
         UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
     }
 
-    private VoxelChunk MakeChunk (Vector3Int size, VoxelDataStructure dataStructure) {
+    [Test]
+    public void BrushToolTest4 () {
+        Stopwatch watch = new Stopwatch ();
+        watch.Start ();
+        for (int i = 0; i < cycles; i++) {
+            foreach (var chunk in affectedChunks1) {
+                brushTool.ToolDrag (chunk, Vector3.zero, Vector3.zero, 0.04f, 4, 0.5f, world16);
+            }
+        }
+        watch.Stop ();
+        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
+    }
+
+    [Test]
+    public void BrushToolTest8 () {
+        Stopwatch watch = new Stopwatch ();
+        watch.Start ();
+        for (int i = 0; i < cycles; i++) {
+            foreach (var chunk in affectedChunks1) {
+                brushTool.ToolDrag (chunk, Vector3.zero, Vector3.zero, 0.04f, 8, 0.5f, world16);
+            }
+        }
+        watch.Stop ();
+        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
+    }
+
+    [Test]
+    public void BrushToolTest12 () {
+        Stopwatch watch = new Stopwatch ();
+        watch.Start ();
+        for (int i = 0; i < cycles; i++) {
+            foreach (var chunk in affectedChunks2) {
+                brushTool.ToolDrag (chunk, Vector3.zero, Vector3.zero, 0.04f, 12, 0.5f, world16);
+            }
+        }
+        watch.Stop ();
+        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
+    }
+
+    [Test]
+    public void BrushToolTest16 () {
+        Stopwatch watch = new Stopwatch ();
+        watch.Start ();
+        for (int i = 0; i < cycles; i++) {
+            foreach (var chunk in affectedChunks2) {
+                brushTool.ToolDrag (chunk, Vector3.zero, Vector3.zero, 0.04f, 16, 0.5f, world16);
+            }
+        }
+        watch.Stop ();
+        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
+    }
+
+    [Test]
+    public void SmoothToolTest4 () {
+        Stopwatch watch = new Stopwatch ();
+        watch.Start ();
+        for (int i = 0; i < cycles; i++) {
+            foreach (var chunk in affectedChunks1) {
+                smoothTool.ToolDrag (chunk, Vector3.zero, Vector3.zero, 0.04f, 4, 0.5f, world16);
+            }
+        }
+        watch.Stop ();
+        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
+    }
+
+    [Test]
+    public void SmoothToolTest8 () {
+        Stopwatch watch = new Stopwatch ();
+        watch.Start ();
+        for (int i = 0; i < cycles; i++) {
+            foreach (var chunk in affectedChunks1) {
+                smoothTool.ToolDrag (chunk, Vector3.zero, Vector3.zero, 0.04f, 8, 0.5f, world16);
+            }
+        }
+        watch.Stop ();
+        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
+    }
+
+    [Test]
+    public void SmoothToolTest12 () {
+        Stopwatch watch = new Stopwatch ();
+        watch.Start ();
+        for (int i = 0; i < cycles; i++) {
+            foreach (var chunk in affectedChunks2) {
+                smoothTool.ToolDrag (chunk, Vector3.zero, Vector3.zero, 0.04f, 12, 0.5f, world16);
+            }
+        }
+        watch.Stop ();
+        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
+    }
+
+    [Test]
+    public void SmoothToolTest16 () {
+        Stopwatch watch = new Stopwatch ();
+        watch.Start ();
+        for (int i = 0; i < cycles; i++) {
+            foreach (var chunk in affectedChunks2) {
+                smoothTool.ToolDrag (chunk, Vector3.zero, Vector3.zero, 0.04f, 16, 0.5f, world16);
+            }
+        }
+        watch.Stop ();
+        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
+    }
+
+    [Test]
+    public void FlattenToolTest4 () {
+        Stopwatch watch = new Stopwatch ();
+        watch.Start ();
+        for (int i = 0; i < cycles; i++) {
+            foreach (var chunk in affectedChunks2) {
+                flattenTool.ToolDrag (chunk, Vector3.zero, Vector3.zero, 0.04f, 4, 0.5f, world16);
+            }
+        }
+        watch.Stop ();
+        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
+    }
+
+    [Test]
+    public void FlattenToolTest8 () {
+        Stopwatch watch = new Stopwatch ();
+        watch.Start ();
+        for (int i = 0; i < cycles; i++) {
+            foreach (var chunk in affectedChunks2) {
+                flattenTool.ToolDrag (chunk, Vector3.zero, Vector3.zero, 0.04f, 8, 0.5f, world16);
+            }
+        }
+        watch.Stop ();
+        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
+    }
+
+    [Test]
+    public void FlattenToolTest12 () {
+        Stopwatch watch = new Stopwatch ();
+        watch.Start ();
+        for (int i = 0; i < cycles; i++) {
+            foreach (var chunk in affectedChunks2) {
+                flattenTool.ToolDrag (chunk, Vector3.zero, Vector3.zero, 0.04f, 12, 0.5f, world16);
+            }
+        }
+        watch.Stop ();
+        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
+    }
+
+    [Test]
+    public void FlattenToolTest16 () {
+        Stopwatch watch = new Stopwatch ();
+        watch.Start ();
+        for (int i = 0; i < cycles; i++) {
+            foreach (var chunk in affectedChunks2) {
+                flattenTool.ToolDrag (chunk, Vector3.zero, Vector3.zero, 0.04f, 16, 0.5f, world16);
+            }
+        }
+        watch.Stop ();
+        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
+    }
+
+    private VoxelChunk MakeChunk (Vector3Int size, VoxelDataStructure dataStructure, Vector3Int chunkCoord) {
         Voxel[] voxels = new Voxel[size.x * size.y * size.z];
 
         for (int i = 0; i < voxels.Length; i++) {
@@ -353,16 +530,17 @@ public class BenchmarkTests {
         }
 
         dataStructure.SetVoxels (voxels);
-        return new VoxelChunk (Vector3Int.zero, size, voxelScale, dataStructure);
+        var chunk = new VoxelChunk (chunkCoord, size, voxelScale, dataStructure);
+        return chunk;
 
     }
 
     private TestVoxelWorld MakeWorld (Vector3Int size, VoxelChunk chunk) {
         TestVoxelWorld world = new TestVoxelWorld ();
         world.chunkSize = size.x;
-        for (int x = -1; x <= 1; x++)
-            for (int y = -1; y <= 1; y++)
-                for (int z = -1; z <= 1; z++) {
+        for (int x = -3; x <= 3; x++)
+            for (int y = -3; y <= 3; y++)
+                for (int z = -3; z <= 3; z++) {
                     world.chunkDictionary.Add (new Vector3Int (x, y, z), chunk);
                 }
         return world;

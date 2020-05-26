@@ -7,11 +7,11 @@ public class SmoothTool : VoxelTool {
     public override string name => "Smooth Terrain";
 
     public override void OnToolGUI () { }
-    public override void ToolStart (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, VoxelWorld voxelWorld) {
+    public override void ToolStart (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, TestVoxelWorld voxelWorld) {
 
     }
 
-    public override void ToolDrag (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, VoxelWorld voxelWorld) {
+    public override void ToolDrag (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, TestVoxelWorld voxelWorld) {
         Vector3Int chunkWorldPosition = chunk.coords * (chunk.size - Vector3Int.one);
 
         chunk.voxels.Traverse ((x, y, z, v) => {
@@ -36,11 +36,11 @@ public class SmoothTool : VoxelTool {
 
     }
 
-    public override void ToolEnd (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, VoxelWorld voxelWorld) {
+    public override void ToolEnd (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, TestVoxelWorld voxelWorld) {
         // Do nothing
     }
 
-    private float getAvgDensity (VoxelChunk chunk, Vector3Int voxelCoord, VoxelWorld voxelWorld, Vector3Int chunkWorldPosition) {
+    private float getAvgDensity (VoxelChunk chunk, Vector3Int voxelCoord, TestVoxelWorld voxelWorld, Vector3Int chunkWorldPosition) {
         int i = 0;
         float sumDensity = 0f;
         for (int x = -1; x <= 1; x++)
