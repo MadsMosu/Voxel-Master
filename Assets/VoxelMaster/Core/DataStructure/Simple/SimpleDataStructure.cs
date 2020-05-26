@@ -34,8 +34,12 @@ public class SimpleDataStructure : VoxelDataStructure {
 
     public override void Traverse (Action<int, int, int, Voxel> function) {
 
+        int sizeX = size.x;
+        int sizeY = size.y;
+        int sizeZ = size.z;
+
         for (int i = 0; i < voxels.Length; i++) {
-            var coord = Util.Map1DTo3D (i, size);
+            var coord = Util.Map1DTo3D (i, size.x,size.x,size.z);
             function.Invoke (coord.x, coord.y, coord.z, voxels[i]);
         }
     }
