@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,6 +7,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using VoxelMaster.Chunk;
 using VoxelMaster.Core.MeshProviders;
+using VoxelMaster.WorldGeneration;
 
 namespace VoxelMaster.Core.Rendering {
     class OctreeRenderer {
@@ -19,7 +21,18 @@ namespace VoxelMaster.Core.Rendering {
 
         Vector3Int[] neighbourOffsets = new Vector3Int[26];
 
-        public OctreeRenderer (Octree<Vector3> octree, VoxelWorld world, Material material) {
+        private Dictionary<uint, Mesh> renderMeshes = new Dictionary<uint, Mesh> ();
+        Queue<uint> generationQueue = new Queue<uint> ();
+        List<uint> destructionQueue = new List<uint> ();
+
+        private WorldGeneratorSettings settings;
+        private WorldHeightmapGenerator generator;
+
+        private Dictionary<uint, MeshCollider> colliders = new Dictionary<uint, MeshCollider> ();
+
+        private const int CHUNK_SIZE = 16;
+
+        public OctreeRenderer (Octree<Vector3> octree, VoxelWorld world, Material material, WorldGeneratorSettings settings) {
             this.octree = octree;
             this.world = world;
             var meshGeneratorSettings = new MeshGeneratorSettings {
@@ -29,18 +42,49 @@ namespace VoxelMaster.Core.Rendering {
             };
 
             this.material = material;
+            this.settings = settings;
+            generator = new WorldHeightmapGenerator (settings);
 
         }
 
+        private bool HasRenderParent (uint child) {
+            uint loc = child;
+            while (loc > 1) {
+                if (renderMeshes.ContainsKey (loc) && !generationQueue.Contains (child)) return true;
+                loc >>= 3;
+            }
+            return false;
+        }
+
         public void Update () {
+            generationQueue.Clear ();
             renderMeshes.Clear ();
-            octree.GetLeafChildren (0b1).ForEach (n => {
-                if (renderMeshes.ContainsKey (n.locationCode)) return;
-                var nodeDepth = Octree<Vector3>.GetDepth (n.locationCode);
-                Mesh mesh = meshGenerator.GenerateMesh (GetNodeVoxels (n.locationCode), Vector3Int.one * (world.chunkSize + 1), 1, 1 << (octree.GetMaxDepth () - nodeDepth)).BuildMesh ();
-                renderMeshes[n.locationCode] = mesh;
-                collisionMeshes[n.locationCode] = world.CreateCollisionObject (new Vector3Int ((int) n.bounds.min.x, (int) n.bounds.min.y, (int) n.bounds.min.z), mesh);
+
+            var newLeafNodes = octree.GetLeafChildren (0b1).Select (n => n.locationCode).ToList ();
+            Debug.Log (newLeafNodes.Count);
+
+            foreach (var renderMesh in renderMeshes) {
+                var key = renderMesh.Key;
+                if (!newLeafNodes.Contains (key)) {
+                    destructionQueue.Add (key);
+                }
+            }
+            newLeafNodes.OrderByDescending (n => n).ToList ().ForEach (n => {
+                generationQueue.Enqueue (n);
             });
+
+        }
+
+        public IEnumerator ProcessGenerationQueue () {
+            while (generationQueue.Count > 0) {
+                var n = octree.GetNode (generationQueue.Dequeue ());
+                if (n == null) continue;
+                var nodeDepth = Octree<Vector3>.GetDepth (n.locationCode);
+                var voxels = GetNodeVoxels (n.locationCode);
+                var mesh = meshGenerator.GenerateMesh (voxels, Vector3Int.one * (world.chunkSize + 1), 1, 1 << (octree.GetMaxDepth () - nodeDepth)).BuildMesh ();
+                renderMeshes[n.locationCode] = mesh;
+                yield return new WaitForEndOfFrame ();
+            }
         }
 
         private Voxel[] GetNodeVoxels (uint nodeLocation) {
@@ -87,11 +131,18 @@ namespace VoxelMaster.Core.Rendering {
                             for (int vx = 0; vx < voxelXAmount; vx += voxelIncrementer)
                                 for (int vy = 0; vy < voxelYAmount; vy += voxelIncrementer)
                                     for (int vz = 0; vz < voxelZAmount; vz += voxelIncrementer) {
+
+                                        var density = generator.SampleDensity (
+                                            (startingChunkCoord.x + chunkX) * CHUNK_SIZE + vx * settings.voxelScale,
+                                            (startingChunkCoord.y + chunkY) * CHUNK_SIZE + vy * settings.voxelScale,
+                                            (startingChunkCoord.z + chunkZ) * CHUNK_SIZE + vz * settings.voxelScale
+                                        );
+
                                         result[Util.Map3DTo1D (new Vector3Int (
                                             (vx / voxelIncrementer) + (chunkX * (world.chunkSize / voxelIncrementer)),
                                             (vy / voxelIncrementer) + (chunkY * (world.chunkSize / voxelIncrementer)),
                                             (vz / voxelIncrementer) + (chunkZ * (world.chunkSize / voxelIncrementer))
-                                        ), world.chunkSize + 1)] = new Voxel (-1);
+                                        ), world.chunkSize + 1)] = new Voxel { density = -1 };
 
                                     }
                         }
@@ -104,29 +155,22 @@ namespace VoxelMaster.Core.Rendering {
         }
 
         public void Render () {
-            // foreach (KeyValuePair<uint, Mesh> entry in renderMeshes) {
-            //     var meshNode = octree.GetNode (entry.Key);
-            //     Graphics.DrawMesh (entry.Value, meshNode.bounds.min, Quaternion.identity, material, 0);
-            // }
-        }
 
-        private Dictionary<uint, Mesh> renderMeshes = new Dictionary<uint, Mesh> ();
-        private Dictionary<uint, GameObject> collisionMeshes = new Dictionary<uint, GameObject> ();
-        private Dictionary<uint, MeshCollider> colliders = new Dictionary<uint, MeshCollider> ();
-        private void OnChunkMesh (MeshGenerationResult res) {
-            Debug.Log ($"Got mesh: {res.locationCode}");
-            var mesh = res.meshData.BuildMesh ();
-            renderMeshes[res.locationCode] = mesh;
+            for (int i = destructionQueue.Count - 1; i >= 0; i--) {
+                var loc = destructionQueue[i];
+                if (true || HasRenderParent (loc)) {
+                    renderMeshes.Remove (loc);
+                    destructionQueue.RemoveAt (i);
+                }
+            }
 
-            //MeshCollider collider;
-            //if (colliders.ContainsKey(res.locationCode))
-            //    collider = colliders[res.locationCode];
-            //else
-            //    colliders[res.locationCode] = new GameObject().AddComponent<MeshCollider>();
+            foreach (KeyValuePair<uint, Mesh> entry in renderMeshes) {
+                var meshNode = octree.GetNode (entry.Key);
+                if (meshNode == null) continue;
+                Mesh mesh = entry.Value;
 
-            //colliders[res.locationCode].sharedMesh = mesh;
-            //colliders[res.locationCode].transform.position = octree.GetNode(res.locationCode).bounds.min;
-
+                Graphics.DrawMesh (mesh, meshNode.bounds.min, Quaternion.identity, material, 0);
+            }
         }
 
     }

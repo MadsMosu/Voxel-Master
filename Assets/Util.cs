@@ -38,10 +38,10 @@ public static class Util {
         return new Vector3Int (x, y, z);
     }
 
-    public static Vector3Int Map1DTo3D (int i, Vector3Int size) {
-        var x = i % size.x;
-        var y = (i / size.x) % size.y;
-        var z = i / (size.x * size.y);
+    public static Vector3Int Map1DTo3D (int i, int sizeX, int sizeY , int sizeZ) {
+        var x = i % sizeX;
+        var y = (i / sizeX) % sizeY;
+        var z = i / (sizeX * sizeY);
         return new Vector3Int (x, y, z);
     }
 
