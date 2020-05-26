@@ -51,7 +51,7 @@ namespace VoxelMaster {
 
             chunkRenderer = new ChunkRenderer (chunkDictionary, material);
 
-            renderOctree = new Octree<Vector3> (chunkSize, 5);
+            renderOctree = new Octree<Vector3> (chunkSize, 9);
             renderOctree.Reset ();
             octreeRenderer = new OctreeRenderer (renderOctree, this, material, worldGeneratorSettings);
 
@@ -63,6 +63,7 @@ namespace VoxelMaster {
                 while (true) {
                     if (chunkGenerationQueue.Count > 0) {
                         var coord = chunkGenerationQueue.Dequeue ();
+                        Debug.Log ("Chunk " + chunkGenerationQueue.Count);
                         RequestChunk (coord);
                     }
                     Thread.Sleep (5);
@@ -72,7 +73,7 @@ namespace VoxelMaster {
 
         void ExpandChunkGeneration () {
             chunkGenerationQueue.Clear ();
-            for (int y = -1; y < 8; y++) {
+            for (int y = -1; y < 3; y++) {
 
                 // The following is a spiral algorithm inspired by a StackOverflow post
                 // https://stackoverflow.com/questions/398299/looping-in-a-spiral

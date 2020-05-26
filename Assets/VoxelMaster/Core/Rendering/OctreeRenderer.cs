@@ -85,7 +85,7 @@ namespace VoxelMaster.Core.Rendering {
 
         public IEnumerator ProcessGenerationQueue () {
             while (true) {
-                for (int i = 0; i < 9; i++) {
+                for (int i = 0; i < 8; i++) {
                     if (generationQueue.Count <= 0) break;
                     var n = octree.GetNode (generationQueue.Dequeue ());
                     if (n == null) continue;
@@ -93,8 +93,9 @@ namespace VoxelMaster.Core.Rendering {
                     var voxels = GetNodeVoxels (n.locationCode);
                     var mesh = meshGenerator.GenerateMesh (voxels, Vector3Int.one * (world.chunkSize + 1), 1, 1 << (octree.GetMaxDepth () - nodeDepth)).BuildMesh ();
                     if (regions.ContainsKey (n.locationCode)) {
-                        var meshFilter = regions[n.locationCode].GetComponent<MeshFilter> ();
-                        meshFilter.mesh = mesh;
+                        var region = regions[n.locationCode];
+                        region.GetComponent<MeshFilter> ().mesh = mesh;
+                        region.GetComponent<MeshCollider> ().sharedMesh = mesh;
                     } else {
                         regions[n.locationCode] = CreateCollisionObject (new Vector3Int ((int) n.bounds.min.x, (int) n.bounds.min.y, (int) n.bounds.min.z), mesh);
                     }
@@ -145,25 +146,26 @@ namespace VoxelMaster.Core.Rendering {
                                         ), world.chunkSize + 1)] = chunk.voxels.GetVoxel (voxelIndex);
 
                                     }
-                        } else {
-                            for (int vx = 0; vx < voxelXAmount; vx += voxelIncrementer)
-                                for (int vy = 0; vy < voxelYAmount; vy += voxelIncrementer)
-                                    for (int vz = 0; vz < voxelZAmount; vz += voxelIncrementer) {
-
-                                        var density = generator.SampleDensity (
-                                            (startingChunkCoord.x + chunkX) * CHUNK_SIZE + vx * settings.voxelScale,
-                                            (startingChunkCoord.y + chunkY) * CHUNK_SIZE + vy * settings.voxelScale,
-                                            (startingChunkCoord.z + chunkZ) * CHUNK_SIZE + vz * settings.voxelScale
-                                        );
-
-                                        result[Util.Map3DTo1D (new Vector3Int (
-                                            (vx / voxelIncrementer) + (chunkX * (world.chunkSize / voxelIncrementer)),
-                                            (vy / voxelIncrementer) + (chunkY * (world.chunkSize / voxelIncrementer)),
-                                            (vz / voxelIncrementer) + (chunkZ * (world.chunkSize / voxelIncrementer))
-                                        ), world.chunkSize + 1)] = new Voxel { density = -1 };
-
-                                    }
                         }
+                        // else {
+                        //     for (int vx = 0; vx < voxelXAmount; vx += voxelIncrementer)
+                        //         for (int vy = 0; vy < voxelYAmount; vy += voxelIncrementer)
+                        //             for (int vz = 0; vz < voxelZAmount; vz += voxelIncrementer) {
+
+                        //                 var density = generator.SampleDensity (
+                        //                     (startingChunkCoord.x + chunkX) * CHUNK_SIZE + vx * settings.voxelScale,
+                        //                     (startingChunkCoord.y + chunkY) * CHUNK_SIZE + vy * settings.voxelScale,
+                        //                     (startingChunkCoord.z + chunkZ) * CHUNK_SIZE + vz * settings.voxelScale
+                        //                 );
+
+                        //                 result[Util.Map3DTo1D (new Vector3Int (
+                        //                     (vx / voxelIncrementer) + (chunkX * (world.chunkSize / voxelIncrementer)),
+                        //                     (vy / voxelIncrementer) + (chunkY * (world.chunkSize / voxelIncrementer)),
+                        //                     (vz / voxelIncrementer) + (chunkZ * (world.chunkSize / voxelIncrementer))
+                        //                 ), world.chunkSize + 1)] = new Voxel { density = -1 };
+
+                        //             }
+                        // }
                     }
                 }
             }
@@ -192,7 +194,7 @@ namespace VoxelMaster.Core.Rendering {
                     region.Value.ForEach (c => c.dirty = false);
                 }
             }
-            Debug.Log (generationQueue.Count ());
+            // Debug.Log (generationQueue.Count ());
         }
         public GameObject CreateCollisionObject (Vector3Int coord, Mesh mesh) {
             GameObject go = new GameObject ($"Chunk {coord}", typeof (MeshCollider), typeof (MeshFilter), typeof (MeshRenderer));
@@ -201,7 +203,6 @@ namespace VoxelMaster.Core.Rendering {
             go.GetComponent<MeshFilter> ().mesh = mesh;
             go.GetComponent<MeshRenderer> ().material = material;
 
-            // gameObjects.Add (coord, go);
             return go;
         }
 
