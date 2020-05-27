@@ -23,12 +23,12 @@ public static class Util {
         Where (field => field.FieldType.ToString () == propertyType.ToString ()).ToArray ();
     }
 
-    public static int Map3DTo1D (Vector3Int coords, int size) {
-        return coords.x + coords.y * size + coords.z * size * size;
+    public static int Map3DTo1D (int x, int y, int z, int size) {
+        return x + y * size + z * size * size;
     }
 
-    public static int Map3DTo1D (Vector3Int coords, Vector3Int size) {
-        return (size.x * size.y * coords.z) + (size.x * coords.y) + coords.x;
+    public static int Map3DTo1D (int x, int y, int z, int sizeX, int sizeY, int sizeZ) {
+        return (sizeX * sizeY * z) + (sizeX * y) + x;
     }
 
     public static Vector3Int Map1DTo3D (int i, int size) {
@@ -38,7 +38,7 @@ public static class Util {
         return new Vector3Int (x, y, z);
     }
 
-    public static Vector3Int Map1DTo3D (int i, int sizeX, int sizeY , int sizeZ) {
+    public static Vector3Int Map1DTo3D (int i, int sizeX, int sizeY, int sizeZ) {
         var x = i % sizeX;
         var y = (i / sizeX) % sizeY;
         var z = i / (sizeX * sizeY);

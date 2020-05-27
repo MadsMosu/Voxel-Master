@@ -73,13 +73,13 @@ public static class VoxelSplitter {
                     Mathf.CeilToInt (bound.size.x / chunk.voxelScale) + 2, Mathf.CeilToInt (bound.size.y / chunk.voxelScale) + 2, Mathf.CeilToInt (bound.size.z / chunk.voxelScale) + 2
                 );
 
-                Voxel[] regionVoxels = chunk.voxels.ExtractRegion (voxelSpaceBound, labels, i);
+                Voxel[][][] regionVoxels = chunk.voxels.ExtractRegion (voxelSpaceBound, labels, i);
                 GameObject go = new GameObject ();
                 go.layer = 8;
                 go.transform.position = transform.TransformPoint (new Vector3 (voxelSpaceBound.min.x * 2.2f, voxelSpaceBound.min.y * 2.2f, voxelSpaceBound.min.z * 2.2f));
                 VoxelObject voxelObject = go.AddComponent<VoxelObject> ();
                 voxelObject.chunkSize = voxelSpaceBound.size + Vector3Int.one;
-                voxelObject.chunk = new VoxelChunk (Vector3Int.zero, voxelSpaceBound.size + Vector3Int.one, chunk.voxelScale, new SimpleDataStructure ());
+                voxelObject.chunk = new VoxelChunk (Vector3Int.zero, voxelSpaceBound.size + Vector3Int.one, chunk.voxelScale, new JaggedDataStructure ());
                 voxelObject.chunk.voxels.SetVoxels (regionVoxels);
                 voxelObject.material = material;
                 voxelObject.original = false;
@@ -93,9 +93,14 @@ public static class VoxelSplitter {
     }
 
     public static void SeparateIslands (VoxelChunk chunk, Transform transform, Material material, Vector3 rbVel, Dictionary<Vector3Int, Voxel> fractureVoxels) {
-        int voxelCount = chunk.size.x * chunk.size.y * chunk.size.z;
-        DisjointSet linked = new DisjointSet (voxelCount);
-        int[] labels = new int[voxelCount];
+        DisjointSet linked = new DisjointSet (chunk.size.x * chunk.size.y * chunk.size.z);
+        int[][][] labels = new int[chunk.size.x][][];
+        for (int i = 0; i < chunk.size.x; i++) {
+            labels[i] = new int[chunk.size.y][];
+            for (int j = 0; j < chunk.size.z; j++) {
+                labels[i][j] = new int[chunk.size.z];
+            }
+        }
         int currentLabel = 1;
 
         chunk.voxels.Traverse ((x, y, z, voxel) => {
@@ -113,26 +118,28 @@ public static class VoxelSplitter {
                             (z + nz < 0 || z + nz >= chunk.size.z)
                         ) continue;
 
-                        var neighborLabel = labels[Util.Map3DTo1D (new Vector3Int (x + nx, y + ny, z + nz), chunk.size)];
+                        var neighborLabel = labels[x + nx][y + ny][z + nz];
                         if (neighborLabel > 0) neighborLabels.Add (neighborLabel);
 
                     }
             if (neighborLabels.Count == 0) {
                 linked.MakeSet (currentLabel);
-                labels[Util.Map3DTo1D (new Vector3Int (x, y, z), chunk.size)] = currentLabel;
+                labels[x][y][z] = currentLabel;
                 currentLabel++;
             } else {
                 int smallestLabel = neighborLabels.OrderBy (label => label).First ();
-                labels[Util.Map3DTo1D (new Vector3Int (x, y, z), chunk.size)] = smallestLabel;
+                labels[x][y][z] = smallestLabel;
                 for (int n = 0; n < neighborLabels.Count; n++) {
                     linked.Union (neighborLabels[n], neighborLabels.ToArray ());
                 }
             }
         });
 
-        for (int i = 0; i < labels.Length; i++) {
-            labels[i] = linked.Find (labels[i]);
-        }
+        for (int x = 0; x < chunk.size.x; x++)
+            for (int y = 0; y < chunk.size.y; y++)
+                for (int z = 0; z < chunk.size.z; z++) {
+                    labels[x][y][z] = linked.Find (labels[x][y][z]);
+                }
 
     }
 

@@ -49,7 +49,7 @@ namespace VoxelMaster.WorldGeneration {
 
                 var density = SampleDensity (worldX, worldY, worldZ);
 
-                chunk.voxels.SetVoxel (new Vector3Int (x, y, z), new Voxel { density = density });
+                chunk.voxels.SetVoxel (x, y, z, new Voxel { density = density });
 
                 if (hasChecked) {
                     if (prevVoxelSign != density < .5f) chunk.hasSolids = true;

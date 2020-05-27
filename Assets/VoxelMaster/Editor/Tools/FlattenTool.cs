@@ -30,7 +30,7 @@ public class FlattenTool : VoxelTool {
                 }
                 v.density = Mathf.MoveTowards (v.density, dist, tempIntensity * Time.deltaTime);
 
-                chunk.voxels.SetVoxel (voxelCoord, v);
+                chunk.voxels.SetVoxel (voxelCoord.x, voxelCoord.y, voxelCoord.z, v);
             }
         });
     }

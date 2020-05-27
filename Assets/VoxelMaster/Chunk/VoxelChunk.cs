@@ -69,8 +69,8 @@ namespace VoxelMaster.Chunk {
             throw new NotImplementedException ();
         }
 
-        private Voxel GetVoxel (Vector3Int coord) => voxels.GetVoxel (coord);
-        private void SetVoxel (Vector3Int coord, Voxel voxel) => voxels.SetVoxel (coord, voxel);
+        private Voxel GetVoxel (Vector3Int coord) => voxels.GetVoxel (coord.x, coord.y, coord.z);
+        private void SetVoxel (Vector3Int coord, Voxel voxel) => voxels.SetVoxel (coord.x, coord.y, coord.z, voxel);
 
         public void setHasData () {
             this.hasData = true;

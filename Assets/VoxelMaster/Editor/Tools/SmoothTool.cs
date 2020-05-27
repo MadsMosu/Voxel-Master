@@ -30,7 +30,7 @@ public class SmoothTool : VoxelTool {
                 float avgDensity = getAvgDensity (chunk, voxelCoord, voxelWorld, chunkWorldPosition);
                 if (Mathf.Abs (avgDensity - v.density) > 0.20f) {
                     v.density = Mathf.MoveTowards (v.density, avgDensity, (tempIntensity / 2 + 0.02f * Mathf.Abs (avgDensity - v.density)) * Time.deltaTime);
-                    chunk.voxels.SetVoxel (voxelCoord, v);
+                    chunk.voxels.SetVoxel (voxelCoord.x, voxelCoord.y, voxelCoord.z, v);
                 }
             }
         });
@@ -56,7 +56,7 @@ public class SmoothTool : VoxelTool {
                         (voxelCoord.z + z < 0 || voxelCoord.z + z >= chunk.size.z)
                     ) neighborVoxel = voxelWorld[chunkWorldPosition + voxelCoord + neighborCoord];
                     else
-                        neighborVoxel = chunk.voxels.GetVoxel (voxelCoord + neighborCoord);
+                        neighborVoxel = chunk.voxels.GetVoxel (voxelCoord.x + neighborCoord.x, voxelCoord.y + neighborCoord.y, voxelCoord.z + neighborCoord.z);
 
                     sumDensity += neighborVoxel.density;
                     i++;

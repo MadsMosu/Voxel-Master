@@ -36,7 +36,7 @@ public class BrushTool : VoxelTool {
                 }
 
                 v.density += tempIntensity * Time.deltaTime;
-                chunk.voxels.SetVoxel (voxelCoord, v);
+                chunk.voxels.SetVoxel (voxelCoord.x, voxelCoord.y, voxelCoord.z, v);
             }
         });
     }

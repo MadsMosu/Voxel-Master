@@ -5,7 +5,7 @@ using UnityEngine;
 using VoxelMaster.Chunk;
 using VoxelMaster.Core.Rendering;
 
-[RequireComponent(typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider))]
+[RequireComponent (typeof (MeshFilter), typeof (MeshRenderer), typeof (MeshCollider))]
 public class VoxelObject : MonoBehaviour {
     public Material material;
     public float size = 10;
@@ -22,63 +22,63 @@ public class VoxelObject : MonoBehaviour {
     new Rigidbody rigidbody;
     private bool needsUpdate = true;
 
-    void Start() {
-        meshGenerator = new MarchingCubesGPU();
+    void Start () {
+        meshGenerator = new MarchingCubesGPU ();
         voxelScale = size / chunkSize.x;
 
         if (original) {
-            chunk = new VoxelChunk(Vector3Int.zero, chunkSize, voxelScale, new SimpleDataStructure());
-            chunk.voxels.Init(chunkSize);
+            chunk = new VoxelChunk (Vector3Int.zero, chunkSize, voxelScale, new JaggedDataStructure ());
+            chunk.voxels.Init (chunkSize);
             float radius = (chunkSize.x / 3f);
 
             Vector3 sphere1Center = chunkSize / 2;
-            GenerateSDF(sphere1Center, radius);
+            GenerateSDF (sphere1Center, radius);
 
         }
 
-        meshFilter = gameObject.GetComponent<MeshFilter>();
-        meshRenderer = gameObject.GetComponent<MeshRenderer>();
-        meshCollider = gameObject.GetComponent<MeshCollider>();
+        meshFilter = gameObject.GetComponent<MeshFilter> ();
+        meshRenderer = gameObject.GetComponent<MeshRenderer> ();
+        meshCollider = gameObject.GetComponent<MeshCollider> ();
         meshRenderer.material = material;
-        rigidbody = GetComponent<Rigidbody>();
+        rigidbody = GetComponent<Rigidbody> ();
 
-        UpdateMesh();
-        if (mesh.triangles.Length == 0) GameObject.Destroy(gameObject);
+        UpdateMesh ();
+        if (mesh.triangles.Length == 0) GameObject.Destroy (gameObject);
 
     }
 
-    private void GenerateSDF(Vector3 center, float radius) {
-        chunk.voxels.Traverse((x, y, z, voxel) => {
+    private void GenerateSDF (Vector3 center, float radius) {
+        chunk.voxels.Traverse ((x, y, z, voxel) => {
             // if (chunk.voxels.GetVoxel (new Vector3Int (x, y, z)).density > isoLevel) return;
-            Vector3 voxelPos = (new Vector3(x, y, z));
-            float density = Vector3.Distance(voxelPos, center) - radius;
-            chunk.voxels.SetVoxel(new Vector3Int(x, y, z), new Voxel { density = -density });
+            Vector3 voxelPos = (new Vector3 (x, y, z));
+            float density = Vector3.Distance (voxelPos, center) - radius;
+            chunk.voxels.SetVoxel (x, y, z, new Voxel { density = -density });
         });
 
     }
 
     public Vector3 prevVelocity = Vector3.zero;
-    private void FixedUpdate() {
+    private void FixedUpdate () {
         prevVelocity = rigidbody.velocity;
     }
 
-    private void OnCollisionEnter(Collision collision) {
+    private void OnCollisionEnter (Collision collision) {
         if (collision.impulse.magnitude > 25) {
             // Debug.Log (rigidbody.velocity);
             // Debug.Log (prevVelocity);
-            VoxelSplitter.Split(this, transform.InverseTransformPoint(collision.GetContact(0).point));
+            VoxelSplitter.Split (this, transform.InverseTransformPoint (collision.GetContact (0).point));
         }
     }
 
-    public void UpdateMesh() {
-        mesh = meshGenerator.GenerateMesh(chunk).BuildMesh();
+    public void UpdateMesh () {
+        mesh = meshGenerator.GenerateMesh (chunk).BuildMesh ();
         meshFilter.mesh = mesh;
         meshCollider.convex = true;
         meshCollider.sharedMesh = mesh;
         needsUpdate = false;
     }
 
-    private void OnDrawGizmosSelected() {
+    private void OnDrawGizmosSelected () {
         if (chunk == null || chunk.voxels == null) return;
         //var gizmoColors = new Color[] {
         //    // new Color (0, 1, 0, .25f),
@@ -104,7 +104,7 @@ public class VoxelObject : MonoBehaviour {
         // BoundsInt bounds = new BoundsInt (new Vector3Int ((int) transform.position.x, (int) transform.position.y, (int) transform.position.z), new Vector3Int ((int) size.x, (int) size.y, (int) size.z));
         Gizmos.matrix = transform.localToWorldMatrix;
         Gizmos.color = Color.magenta;
-        Gizmos.DrawWireCube((new Vector3(chunkSize.x, chunkSize.y, chunkSize.z) * voxelScale) / 2, new Vector3(chunkSize.x, chunkSize.y, chunkSize.z) * voxelScale);
+        Gizmos.DrawWireCube ((new Vector3 (chunkSize.x, chunkSize.y, chunkSize.z) * voxelScale) / 2, new Vector3 (chunkSize.x, chunkSize.y, chunkSize.z) * voxelScale);
         //Gizmos.color = Color.cyan;
         //Gizmos.DrawWireCube(transform.position + VoxelSplitter.voxelSpaceBound.center, VoxelSplitter.voxelSpaceBound.size);
 
@@ -122,16 +122,16 @@ class DisjointSet {
     int[] parent;
     int[] rank; // height of tree
 
-    public DisjointSet(int arrayLength) {
+    public DisjointSet (int arrayLength) {
         parent = new int[arrayLength];
         rank = new int[arrayLength];
     }
 
-    public void MakeSet(int i) {
+    public void MakeSet (int i) {
         parent[i] = i;
     }
 
-    public int Find(int i) {
+    public int Find (int i) {
         while (i != parent[i]) // If i is not root of tree we set i to his parent until we reach root (parent of all parents)
         {
             i = parent[i];
@@ -140,16 +140,16 @@ class DisjointSet {
     }
 
     // Path compression, O(log*n). For practical values of n, log* n <= 5
-    public int FindPath(int i) {
+    public int FindPath (int i) {
         if (i != parent[i]) {
-            parent[i] = FindPath(parent[i]);
+            parent[i] = FindPath (parent[i]);
         }
         return parent[i];
     }
 
-    public void Union(int i, int j) {
-        int i_id = Find(i); // Find the root of first tree (set) and store it in i_id
-        int j_id = Find(j); // // Find the root of second tree (set) and store it in j_id
+    public void Union (int i, int j) {
+        int i_id = Find (i); // Find the root of first tree (set) and store it in i_id
+        int j_id = Find (j); // // Find the root of second tree (set) and store it in j_id
 
         if (i_id == j_id) // If roots are equal (they have same parents) than they are in same tree (set)
         {
@@ -159,8 +159,7 @@ class DisjointSet {
         if (rank[i_id] > rank[j_id]) // If height of first tree is larger than second tree
         {
             parent[j_id] = i_id; // We hang second tree under first, parent of second tree is same as first tree
-        }
-        else {
+        } else {
             parent[i_id] = j_id; // We hang first tree under second, parent of first tree is same as second tree
             if (rank[i_id] == rank[j_id]) // If heights are same
             {
@@ -169,7 +168,7 @@ class DisjointSet {
         }
     }
 
-    public void Union(int index, int[] ints) {
-        for (int i = 0; i < ints.Length; i++) Union(ints[i], index);
+    public void Union (int index, int[] ints) {
+        for (int i = 0; i < ints.Length; i++) Union (ints[i], index);
     }
 }
