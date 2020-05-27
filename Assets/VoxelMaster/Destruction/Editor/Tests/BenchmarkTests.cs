@@ -473,7 +473,7 @@ public class BenchmarkTests {
         Stopwatch watch = new Stopwatch ();
         watch.Start ();
         for (int i = 0; i < cycles; i++) {
-            foreach (var chunk in affectedChunks2) {
+            foreach (var chunk in affectedChunks1) {
                 flattenTool.ToolDrag (chunk, Vector3.zero, Vector3.zero, 0.04f, 4, 0.5f, world16);
             }
         }
@@ -486,7 +486,7 @@ public class BenchmarkTests {
         Stopwatch watch = new Stopwatch ();
         watch.Start ();
         for (int i = 0; i < cycles; i++) {
-            foreach (var chunk in affectedChunks2) {
+            foreach (var chunk in affectedChunks1) {
                 flattenTool.ToolDrag (chunk, Vector3.zero, Vector3.zero, 0.04f, 8, 0.5f, world16);
             }
         }
