@@ -66,11 +66,10 @@ namespace VoxelMaster.Core.Rendering {
 
         public void Update () {
             generationQueue.Clear ();
-            regions.Clear ();
+            // regions.Clear ();
 
             var newLeafNodes = octree.GetLeafChildren (0b1).Select (n => n.locationCode).ToList ();
             // Debug.Log (newLeafNodes.Count);
-
             foreach (var renderMesh in regions) {
                 var key = renderMesh.Key;
                 if (!newLeafNodes.Contains (key)) {
@@ -170,10 +169,12 @@ namespace VoxelMaster.Core.Rendering {
         }
 
         public void Render () {
-
+            Debug.Log (destructionQueue.Count);
             for (int i = destructionQueue.Count - 1; i >= 0; i--) {
                 var loc = destructionQueue[i];
                 if (CanRemoveRegion (loc)) {
+                    Debug.Log ("removed");
+                    GameObject.Destroy (regions[loc]);
                     regions.Remove (loc);
                     regionChunkMap.Remove (loc);
                     destructionQueue.RemoveAt (i);

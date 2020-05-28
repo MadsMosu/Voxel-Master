@@ -18,7 +18,7 @@ public class BenchmarkCameraMover : MonoBehaviour {
 
     // Start is called before the first frame update
     void Start () {
-        writer = new StreamWriter (Application.dataPath + "/Data/" + "constant_optimized.csv");
+        writer = new StreamWriter (Application.dataPath + "/Data/" + "increasing_optimized.csv");
         writer.WriteLine ("FPS,Seconds,Speed");
     }
 
