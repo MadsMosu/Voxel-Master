@@ -17,7 +17,7 @@ public class MarchingCubesGPU {
 
     float isoLevel = .5f;
 
-    public MeshData GenerateMesh (VoxelChunk chunk) => GenerateMesh (chunk.voxels.ToArray (), chunk.size, chunk.voxelScale, 1 << 0);
+    public MeshData GenerateMesh (VoxelChunk chunk) => GenerateMesh (chunk.voxels.ToArray (chunk.size.x, chunk.size.y, chunk.size.z), chunk.size, chunk.voxelScale, 1 << 0);
 
     public MeshData GenerateMesh (Voxel[] voxels, Vector3Int size, float voxelScale, int step) {
         int numCells = size.x * size.y * size.z;

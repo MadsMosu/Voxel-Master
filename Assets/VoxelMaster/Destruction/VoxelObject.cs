@@ -40,7 +40,7 @@ public class VoxelObject : MonoBehaviour {
         meshRenderer = gameObject.GetComponent<MeshRenderer> ();
         meshCollider = gameObject.GetComponent<MeshCollider> ();
         meshRenderer.material = material;
-        rigidbody = GetComponent<Rigidbody> ();
+        // rigidbody = GetComponent<Rigidbody> ();
 
         UpdateMesh ();
         if (mesh.triangles.Length == 0) GameObject.Destroy (gameObject);
@@ -59,14 +59,14 @@ public class VoxelObject : MonoBehaviour {
 
     public Vector3 prevVelocity = Vector3.zero;
     private void FixedUpdate () {
-        prevVelocity = rigidbody.velocity;
+        // prevVelocity = rigidbody.velocity;
     }
 
     private void OnCollisionEnter (Collision collision) {
         if (collision.impulse.magnitude > 25) {
             // Debug.Log (rigidbody.velocity);
             // Debug.Log (prevVelocity);
-            VoxelSplitter.Split (this, transform.InverseTransformPoint (collision.GetContact (0).point));
+            // VoxelSplitter.Split (this, transform.InverseTransformPoint (collision.GetContact (0).point));
         }
     }
 
@@ -104,7 +104,7 @@ public class VoxelObject : MonoBehaviour {
         // BoundsInt bounds = new BoundsInt (new Vector3Int ((int) transform.position.x, (int) transform.position.y, (int) transform.position.z), new Vector3Int ((int) size.x, (int) size.y, (int) size.z));
         Gizmos.matrix = transform.localToWorldMatrix;
         Gizmos.color = Color.magenta;
-        Gizmos.DrawWireCube ((new Vector3 (chunkSize.x, chunkSize.y, chunkSize.z) * voxelScale) / 2, new Vector3 (chunkSize.x, chunkSize.y, chunkSize.z) * voxelScale);
+        Gizmos.DrawWireCube (transform.position + (new Vector3 (chunkSize.x, chunkSize.y, chunkSize.z) * voxelScale) / 2, new Vector3 (chunkSize.x, chunkSize.y, chunkSize.z) * voxelScale);
         //Gizmos.color = Color.cyan;
         //Gizmos.DrawWireCube(transform.position + VoxelSplitter.voxelSpaceBound.center, VoxelSplitter.voxelSpaceBound.size);
 

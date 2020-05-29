@@ -15,13 +15,13 @@ public static class VoxelSplitter {
         Dictionary<Vector3Int, Voxel> fractureVoxels = new Dictionary<Vector3Int, Voxel> ();
 
         var chunkSize = voxelObject.chunk.size;
-        // List<Vector3Int> samples = PoissonSampler.GeneratePoints (voxelObject.chunk.size, 4f, impactPoint, 10).Select (sample => new Vector3Int ((int) sample.x, (int) sample.y, (int) sample.z)).ToList ();
-        List<Vector3Int> samples = new List<Vector3Int> () {
-            new Vector3Int (chunkSize.x, chunkSize.y, chunkSize.z) / 2 + Vector3Int.up * 5,
-            new Vector3Int (chunkSize.x, chunkSize.y, chunkSize.z) / 2 + Vector3Int.down * 5,
-            new Vector3Int (chunkSize.x, chunkSize.y, chunkSize.z) / 2 + Vector3Int.right * 5,
-            //new Vector3Int(chunkSize.x,chunkSize.y,chunkSize.z)/2 + Vector3Int.left*5,
-        };
+        List<Vector3Int> samples = PoissonSampler.GeneratePoints (voxelObject.chunk.size, 4f, impactPoint, 10).Select (sample => new Vector3Int ((int) sample.x, (int) sample.y, (int) sample.z)).ToList ();
+        // List<Vector3Int> samples = new List<Vector3Int> () {
+        //     new Vector3Int (chunkSize.x, chunkSize.y, chunkSize.z) / 2 + Vector3Int.up * 5,
+        //     new Vector3Int (chunkSize.x, chunkSize.y, chunkSize.z) / 2 + Vector3Int.down * 5,
+        //     new Vector3Int (chunkSize.x, chunkSize.y, chunkSize.z) / 2 + Vector3Int.right * 5,
+        //     //new Vector3Int(chunkSize.x,chunkSize.y,chunkSize.z)/2 + Vector3Int.left*5,
+        // };
         lastSplitSamples = samples;
         // int[] labels = new int[voxelObject.chunk.size.x * voxelObject.chunk.size.y * voxelObject.chunk.size.z];
         Dictionary<Vector3Int, List<int>> labels = new Dictionary<Vector3Int, List<int>> ();
@@ -76,7 +76,7 @@ public static class VoxelSplitter {
                 Voxel[][][] regionVoxels = chunk.voxels.ExtractRegion (voxelSpaceBound, labels, i);
                 GameObject go = new GameObject ();
                 go.layer = 8;
-                go.transform.position = transform.TransformPoint (new Vector3 (voxelSpaceBound.min.x * 2.2f, voxelSpaceBound.min.y * 2.2f, voxelSpaceBound.min.z * 2.2f));
+                go.transform.position = transform.position + voxelSpaceBound.min;
                 VoxelObject voxelObject = go.AddComponent<VoxelObject> ();
                 voxelObject.chunkSize = voxelSpaceBound.size + Vector3Int.one;
                 voxelObject.chunk = new VoxelChunk (Vector3Int.zero, voxelSpaceBound.size + Vector3Int.one, chunk.voxelScale, new JaggedDataStructure ());
@@ -84,8 +84,8 @@ public static class VoxelSplitter {
                 voxelObject.material = material;
                 voxelObject.original = false;
 
-                var rb = go.AddComponent<Rigidbody> ();
-                rb.isKinematic = true;
+                // var rb = go.AddComponent<Rigidbody> ();
+                // rb.isKinematic = true;
                 //rb.velocity = rbVel / 2;
             };
             GameObject.Destroy (transform.gameObject);

@@ -72,12 +72,12 @@ public class JaggedDataStructure : VoxelDataStructure {
 
     }
 
-    public override Voxel[] ToArray () {
+    public override Voxel[] ToArray (int sizeX, int sizeY, int sizeZ) {
         var temp = new Voxel[size.x * size.y * size.z];
         for (int x = 0; x < size.x; x++)
             for (int y = 0; y < size.y; y++)
                 for (int z = 0; z < size.z; z++) {
-                    var index = Util.Map3DTo1D (x, y, z, size.x);
+                    var index = Util.Map3DTo1D (x, y, z, sizeX, sizeY, sizeZ);
                     temp[index] = voxels[x][y][z];
                 }
         return temp;

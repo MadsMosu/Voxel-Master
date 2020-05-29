@@ -15,7 +15,7 @@ public abstract class VoxelDataStructure {
     public abstract void SetVoxel (int index, Voxel voxel);
 
     public abstract void SetVoxels (Voxel[][][] voxels);
-    public abstract Voxel[] ToArray ();
+    public abstract Voxel[] ToArray (int sizeX, int sizeY, int sizeZ);
 
     public abstract Voxel[][][] ExtractRegion (BoundsInt bound, Dictionary<Vector3Int, List<int>> labels, int labelFilter);
 
