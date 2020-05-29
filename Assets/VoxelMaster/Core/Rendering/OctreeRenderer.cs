@@ -139,26 +139,25 @@ namespace VoxelMaster.Core.Rendering {
                                         int z = (vz / voxelIncrementer) + (chunkZ * (world.chunkSize / voxelIncrementer));
                                         result[Util.Map3DTo1D (x, y, z, world.chunkSize + 1)] = chunk.voxels.GetVoxel (vx, vy, vz);
                                     }
+                        } else {
+                            for (int vx = 0; vx < voxelXAmount; vx += voxelIncrementer)
+                                for (int vy = 0; vy < voxelYAmount; vy += voxelIncrementer)
+                                    for (int vz = 0; vz < voxelZAmount; vz += voxelIncrementer) {
+
+                                        var density = generator.SampleDensity (
+                                            (startingChunkX + chunkX) * CHUNK_SIZE + vx * settings.voxelScale,
+                                            (startingChunkY + chunkY) * CHUNK_SIZE + vy * settings.voxelScale,
+                                            (startingChunkZ + chunkZ) * CHUNK_SIZE + vz * settings.voxelScale
+                                        );
+
+                                        result[Util.Map3DTo1D (
+                                            (vx / voxelIncrementer) + (chunkX * (world.chunkSize / voxelIncrementer)),
+                                            (vy / voxelIncrementer) + (chunkY * (world.chunkSize / voxelIncrementer)),
+                                            (vz / voxelIncrementer) + (chunkZ * (world.chunkSize / voxelIncrementer)),
+                                            world.chunkSize + 1)] = new Voxel { density = density };
+
+                                    }
                         }
-                        // else {
-                        //     for (int vx = 0; vx < voxelXAmount; vx += voxelIncrementer)
-                        //         for (int vy = 0; vy < voxelYAmount; vy += voxelIncrementer)
-                        //             for (int vz = 0; vz < voxelZAmount; vz += voxelIncrementer) {
-
-                        //                 var density = generator.SampleDensity (
-                        //                     (startingChunkCoord.x + chunkX) * CHUNK_SIZE + vx * settings.voxelScale,
-                        //                     (startingChunkCoord.y + chunkY) * CHUNK_SIZE + vy * settings.voxelScale,
-                        //                     (startingChunkCoord.z + chunkZ) * CHUNK_SIZE + vz * settings.voxelScale
-                        //                 );
-
-                        //                 result[Util.Map3DTo1D (new Vector3Int (
-                        //                     (vx / voxelIncrementer) + (chunkX * (world.chunkSize / voxelIncrementer)),
-                        //                     (vy / voxelIncrementer) + (chunkY * (world.chunkSize / voxelIncrementer)),
-                        //                     (vz / voxelIncrementer) + (chunkZ * (world.chunkSize / voxelIncrementer))
-                        //                 ), world.chunkSize + 1)] = new Voxel { density = -1 };
-
-                        //             }
-                        // }
                     }
                 }
             }
