@@ -135,8 +135,7 @@ namespace VoxelMaster.Core {
             if (depth >= maxDepth + 1) {
                 return;
             }
-            Gizmos.DrawWireCube (node.bounds.center, node.bounds.size);
-            Handles.Label (node.bounds.center, depth.ToString ());
+            
 
             for (int i = 0; i < 8; i++) {
                 if (isBitSet (node.childrenFlags, i)) {

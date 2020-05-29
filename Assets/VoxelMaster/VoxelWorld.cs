@@ -69,11 +69,15 @@ namespace VoxelMaster {
                     Thread.Sleep (5);
                 }
             })).Start ();
+
+            DebugGUI.AddVariable("Chunk Generation Queue", () => chunkGenerationQueue.Count);
+            DebugGUI.AddVariable("Player coordinates", () => viewerCoordinates);
+            ExpandChunkGeneration();
         }
 
         void ExpandChunkGeneration () {
             chunkGenerationQueue.Clear ();
-            for (int y = -1; y < 4; y++) {
+            for (int y = -4; y < 3; y++) {
 
                 // The following is a spiral algorithm inspired by a StackOverflow post
                 // https://stackoverflow.com/questions/398299/looping-in-a-spiral

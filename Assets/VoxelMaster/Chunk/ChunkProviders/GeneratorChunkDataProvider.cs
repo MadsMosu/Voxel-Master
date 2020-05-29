@@ -25,7 +25,7 @@ namespace VoxelMaster.Chunk.ChunkProviders {
                 var chunk = new VoxelChunk (coord, new Vector3Int (16, 16, 16), 1, new JaggedDataStructure ());
                 float[] heightmap = new float[chunk.size.x * chunk.size.z];
                 generator.Generate (settings, chunk, out heightmap);
-                //caveGenerator.Generate(heightmap, chunk, settings);
+                caveGenerator.Generate(heightmap, chunk, settings);
                 onChunk (chunk);
             });
 
