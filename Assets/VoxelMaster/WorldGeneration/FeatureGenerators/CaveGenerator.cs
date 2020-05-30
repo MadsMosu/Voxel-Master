@@ -15,7 +15,7 @@ namespace VoxelMaster.WorldGeneration.FeatureGenerators {
         FastNoise caveTunnelNoise = new FastNoise();
 
         const float caveNoiseScale = .4f;
-        const float caveRadius = 20f;
+        const float caveRadius = 30f;
 
 
         float map(float s, float a1, float a2, float b1, float b2) {
@@ -38,17 +38,17 @@ namespace VoxelMaster.WorldGeneration.FeatureGenerators {
 
             chunk.voxels.Traverse((x, y, z, voxel) => {
                 float currentTerrainHeight = heightmap[Util.Map2DTo1D(x, z, sizeX)];
-                float caveHeightModifier = caveHeightNoise.GetPerlinFractal((chunkX + x), (chunkZ + z)) * 30f;
+                float caveHeightModifier = caveHeightNoise.GetPerlinFractal((chunkX + x), (chunkZ + z)) * 100f;
                 float caveCenterY = currentTerrainHeight - caveHeightModifier;
 
                 float caveTunnel = caveTunnelNoise.GetCubicFractal((chunkX + x) / caveNoiseScale, (chunkZ + z) / caveNoiseScale);
 
-
                 //var test = 0.8f - caveTunnel;
-                var test = map(caveTunnel, -1, 1, -.1020202f, .602002f);
-                var caveDensity = (1f - Mathf.Min(1, Mathf.Abs((((chunkY + y)) - caveCenterY) / caveRadius))) * test;
+                var ampl = 1f;
+                var tunnelRemap = map(caveTunnel, -1f, 1f, -(ampl * caveRadius * 0.33f), ampl);
+                var caveDensity = tunnelRemap * (1f - Mathf.Min(1, Mathf.Abs(caveCenterY - (chunkY + y)) / (caveRadius * 0.33f)));
 
-                voxel.density *= 1f - caveDensity;
+                voxel.density -= Mathf.Max(0, caveDensity * 50f);
                 chunk.voxels.SetVoxel(x, y, z, voxel);
             });
 

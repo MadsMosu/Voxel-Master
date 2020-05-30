@@ -74,14 +74,14 @@ public class MarchingCubesGPU {
         Vector3[] surfaceNormals = new Vector3[vertices.Length];
         surfaceNormalsBuffer.GetData (surfaceNormals);
 
-        //Vector3[] normals = CalculateVertexNormals(vertices, surfaceNormals);
+        Vector3[] normals = CalculateVertexNormals(vertices, surfaceNormals);
 
         // Color[] vertexColors = new Color[vertices.Length];
         // colorBuffer.GetData (vertexColors);
 
         ReleaseBuffers ();
 
-        return new MeshData (vertices, triangleIndices, surfaceNormals);
+        return new MeshData (vertices, triangleIndices, normals);
     }
 
     private Vector3[] CalculateVertexNormals (Vector3[] vertices, Vector3[] surfaceNormals) {

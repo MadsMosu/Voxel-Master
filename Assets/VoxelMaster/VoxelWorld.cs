@@ -70,14 +70,14 @@ namespace VoxelMaster {
                 }
             })).Start ();
 
-            DebugGUI.AddVariable("Chunk Generation Queue", () => chunkGenerationQueue.Count);
-            DebugGUI.AddVariable("Player coordinates", () => viewerCoordinates);
-            ExpandChunkGeneration();
+            DebugGUI.AddVariable ("Chunk Generation Queue", () => chunkGenerationQueue.Count);
+            DebugGUI.AddVariable ("Player coordinates", () => viewerCoordinates);
+            ExpandChunkGeneration ();
         }
 
         void ExpandChunkGeneration () {
             chunkGenerationQueue.Clear ();
-            for (int y = -4; y < 3; y++) {
+            for (int y = -2; y < 4; y++) {
 
                 // The following is a spiral algorithm inspired by a StackOverflow post
                 // https://stackoverflow.com/questions/398299/looping-in-a-spiral
@@ -178,7 +178,7 @@ namespace VoxelMaster {
                 ExpandChunkGeneration ();
 
                 renderOctree.Reset ();
-                renderOctree.SplitFromDistance (viewer.position, chunkSize * 2);
+                renderOctree.SplitFromDistance (viewer.position, chunkSize * 4);
                 octreeRenderer.Update ();
 
                 if (octreeCoroutine != null) StopCoroutine (octreeCoroutine);

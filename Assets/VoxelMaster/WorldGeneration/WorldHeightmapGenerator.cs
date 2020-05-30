@@ -45,7 +45,7 @@ namespace VoxelMaster.WorldGeneration {
                 float worldY = chunkY + y;
                 float worldZ = chunkZ + z;
 
-                var density = Mathf.Clamp(SampleDensity(worldX, worldY, worldZ), -1, 1);
+                var density = SampleDensity(worldX, worldY, worldZ);
 
                 chunk.voxels.SetVoxel(x, y, z, new Voxel { density = density });
 

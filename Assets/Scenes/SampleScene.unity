@@ -667,7 +667,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!64 &545542708
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -806,7 +806,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1114245769
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -822,9 +822,9 @@ MonoBehaviour:
   chunkSize: 16
   isoLevel: 0.5
   viewer: {fileID: 287161456}
-  viewerRadius: 24
+  viewerRadius: 16
   material: {fileID: 2100000, guid: f4a082d0cf9dba842808c8f8020e1ecf, type: 2}
-  drawOctree: 1
+  drawOctree: 0
 --- !u!4 &1114245770
 Transform:
   m_ObjectHideFlags: 0
@@ -1041,5 +1041,5 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 7
+  m_RootOrder: 8
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
