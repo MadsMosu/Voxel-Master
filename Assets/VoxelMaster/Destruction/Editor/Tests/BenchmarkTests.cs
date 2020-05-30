@@ -39,6 +39,7 @@ public class BenchmarkTests {
     BrushTool brushTool = new BrushTool ();
     SmoothTool smoothTool = new SmoothTool ();
     FlattenTool flattenTool = new FlattenTool ();
+    TestVoxelObject voxelObject64, voxelObject32, voxelObject16, voxelObject8;
 
     [OneTimeSetUp]
     public void Init () {
@@ -72,6 +73,31 @@ public class BenchmarkTests {
                 for (int z = -2; z <= 2; z++) {
                     affectedChunks2.Add (MakeChunk (chunkSize16, new SimpleDataStructure (), new Vector3Int (x, y, z)));
                 }
+
+        voxelObject64 = new TestVoxelObject ();
+        voxelObject64.size = 32;
+        voxelObject64.chunkSize = new Vector3Int (64, 64, 64);
+        voxelObject64.original = true;
+        voxelObject64.Start ();
+
+        voxelObject32 = new TestVoxelObject ();
+        voxelObject32.size = 32;
+        voxelObject32.chunkSize = new Vector3Int (32, 32, 32);
+        voxelObject32.original = true;
+        voxelObject32.Start ();
+
+        voxelObject16 = new TestVoxelObject ();
+        voxelObject16.size = 32;
+        voxelObject16.chunkSize = new Vector3Int (16, 16, 16);
+        voxelObject16.original = true;
+        voxelObject16.Start ();
+
+        voxelObject8 = new TestVoxelObject ();
+        voxelObject8.size = 32;
+        voxelObject8.chunkSize = new Vector3Int (8, 8, 8);
+        voxelObject8.original = true;
+        voxelObject8.Start ();
+
     }
 
     [Test]
@@ -515,6 +541,50 @@ public class BenchmarkTests {
             foreach (var chunk in affectedChunks2) {
                 flattenTool.ToolDrag (chunk, Vector3.zero, Vector3.zero, 0.04f, 16, 0.5f, world16);
             }
+        }
+        watch.Stop ();
+        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
+    }
+
+    [Test]
+    public void VoxelObjectFracture64 () {
+        Stopwatch watch = new Stopwatch ();
+        watch.Start ();
+        for (int i = 0; i < cycles; i++) {
+            VoxelSplitter.Split (voxelObject64, Vector3.zero);
+        }
+        watch.Stop ();
+        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
+    }
+
+    [Test]
+    public void VoxelObjectFracture32 () {
+        Stopwatch watch = new Stopwatch ();
+        watch.Start ();
+        for (int i = 0; i < cycles; i++) {
+            VoxelSplitter.Split (voxelObject32, Vector3.zero);
+        }
+        watch.Stop ();
+        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
+    }
+
+    [Test]
+    public void VoxelObjectFracture16 () {
+        Stopwatch watch = new Stopwatch ();
+        watch.Start ();
+        for (int i = 0; i < cycles; i++) {
+            VoxelSplitter.Split (voxelObject16, Vector3.zero);
+        }
+        watch.Stop ();
+        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
+    }
+
+    [Test]
+    public void VoxelObjectFracture8 () {
+        Stopwatch watch = new Stopwatch ();
+        watch.Start ();
+        for (int i = 0; i < cycles; i++) {
+            VoxelSplitter.Split (voxelObject8, Vector3.zero);
         }
         watch.Stop ();
         UnityEngine.Debug.Log (watch.ElapsedMilliseconds);

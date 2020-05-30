@@ -40,7 +40,7 @@ public class VoxelObject : MonoBehaviour {
         meshRenderer = gameObject.GetComponent<MeshRenderer> ();
         meshCollider = gameObject.GetComponent<MeshCollider> ();
         meshRenderer.material = material;
-        rigidbody = GetComponent<Rigidbody> ();
+        // rigidbody = GetComponent<Rigidbody> ();
 
         UpdateMesh ();
         if (mesh.triangles.Length == 0) GameObject.Destroy (gameObject);
@@ -59,14 +59,14 @@ public class VoxelObject : MonoBehaviour {
 
     public Vector3 prevVelocity = Vector3.zero;
     private void FixedUpdate () {
-        prevVelocity = rigidbody.velocity;
+        // prevVelocity = rigidbody.velocity;
     }
 
     private void OnCollisionEnter (Collision collision) {
         if (collision.impulse.magnitude > 25) {
             // Debug.Log (rigidbody.velocity);
             // Debug.Log (prevVelocity);
-            VoxelSplitter.Split (this, transform.InverseTransformPoint (collision.GetContact (0).point));
+            // VoxelSplitter.Split (this, transform.InverseTransformPoint (collision.GetContact (0).point));
         }
     }
 

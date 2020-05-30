@@ -10,18 +10,18 @@ public static class VoxelSplitter {
 
     public static BoundsInt voxelSpaceBound;
     static FastNoise noise = new FastNoise ();
-    public static void Split (VoxelObject voxelObject, Vector3 impactPoint) {
+    public static void Split (TestVoxelObject voxelObject, Vector3 impactPoint) {
         Vector3Int pointOfImpact = Vector3Int.zero;
         Dictionary<Vector3Int, Voxel> fractureVoxels = new Dictionary<Vector3Int, Voxel> ();
 
         var chunkSize = voxelObject.chunk.size;
-        // List<Vector3Int> samples = PoissonSampler.GeneratePoints (voxelObject.chunk.size, 4f, impactPoint, 10).Select (sample => new Vector3Int ((int) sample.x, (int) sample.y, (int) sample.z)).ToList ();
-        List<Vector3Int> samples = new List<Vector3Int> () {
-            new Vector3Int (chunkSize.x, chunkSize.y, chunkSize.z) / 2 + Vector3Int.up * 5,
-            new Vector3Int (chunkSize.x, chunkSize.y, chunkSize.z) / 2 + Vector3Int.down * 5,
-            new Vector3Int (chunkSize.x, chunkSize.y, chunkSize.z) / 2 + Vector3Int.right * 5,
-            //new Vector3Int(chunkSize.x,chunkSize.y,chunkSize.z)/2 + Vector3Int.left*5,
-        };
+        List<Vector3Int> samples = PoissonSampler.GeneratePoints (voxelObject.chunk.size, 4f, impactPoint, 10).Select (sample => new Vector3Int ((int) sample.x, (int) sample.y, (int) sample.z)).ToList ();
+        // List<Vector3Int> samples = new List<Vector3Int> () {
+        //     new Vector3Int (chunkSize.x, chunkSize.y, chunkSize.z) / 2 + Vector3Int.up * 5,
+        //     new Vector3Int (chunkSize.x, chunkSize.y, chunkSize.z) / 2 + Vector3Int.down * 5,
+        //     new Vector3Int (chunkSize.x, chunkSize.y, chunkSize.z) / 2 + Vector3Int.right * 5,
+        //     //new Vector3Int(chunkSize.x,chunkSize.y,chunkSize.z)/2 + Vector3Int.left*5,
+        // };
         lastSplitSamples = samples;
         // int[] labels = new int[voxelObject.chunk.size.x * voxelObject.chunk.size.y * voxelObject.chunk.size.z];
         Dictionary<Vector3Int, List<int>> labels = new Dictionary<Vector3Int, List<int>> ();
@@ -43,14 +43,14 @@ public static class VoxelSplitter {
             }
         });
 
-        ExtractLabelSegments (labels, voxelObject.chunk, voxelObject.transform, voxelObject.material, voxelObject.prevVelocity);
+        ExtractLabelSegments (labels, voxelObject.chunk, voxelObject.material, voxelObject.prevVelocity);
 
         voxelObject.UpdateMesh ();
 
-        // SeparateIslands (voxelObject.chunk, voxelObject.transform, voxelObject.material, voxelObject.prevVelocity, fractureVoxels);
+        SeparateIslands (voxelObject.chunk, voxelObject.material, voxelObject.prevVelocity, fractureVoxels);
     }
 
-    private static void ExtractLabelSegments (Dictionary<Vector3Int, List<int>> labels, VoxelChunk chunk, Transform transform, Material material, Vector3 rbVel) {
+    private static void ExtractLabelSegments (Dictionary<Vector3Int, List<int>> labels, VoxelChunk chunk, Material material, Vector3 rbVel) {
         //EXTRACT VOXELS BASED ON LABELS AND ASSIGN TO NEW CHUNKS
         int highestLabel = labels.Max (entry => entry.Value.Max ());
         if (highestLabel >= 1) {
@@ -74,32 +74,33 @@ public static class VoxelSplitter {
                 );
 
                 Voxel[] regionVoxels = chunk.voxels.ExtractRegion (voxelSpaceBound, labels, i);
-                GameObject go = new GameObject ();
-                go.layer = 8;
-                go.transform.position = transform.TransformPoint (new Vector3 (voxelSpaceBound.min.x * 2.2f, voxelSpaceBound.min.y * 2.2f, voxelSpaceBound.min.z * 2.2f));
-                VoxelObject voxelObject = go.AddComponent<VoxelObject> ();
+                // GameObject go = new GameObject ();
+                // go.layer = 8;
+                // go.transform.position = transform.position + voxelSpaceBound.min;
+                TestVoxelObject voxelObject = new TestVoxelObject ();
                 voxelObject.chunkSize = voxelSpaceBound.size + Vector3Int.one;
                 voxelObject.chunk = new VoxelChunk (Vector3Int.zero, voxelSpaceBound.size + Vector3Int.one, chunk.voxelScale, new SimpleDataStructure ());
                 voxelObject.chunk.voxels.SetVoxels (regionVoxels);
                 voxelObject.material = material;
                 voxelObject.original = false;
+                voxelObject.Start ();
 
-                var rb = go.AddComponent<Rigidbody> ();
-                rb.isKinematic = true;
+                // var rb = go.AddComponent<Rigidbody> ();
+                // rb.isKinematic = true;
                 //rb.velocity = rbVel / 2;
             };
-            GameObject.Destroy (transform.gameObject);
+            // GameObject.Destroy (transform.gameObject);
         }
     }
 
-    public static void SeparateIslands (VoxelChunk chunk, Transform transform, Material material, Vector3 rbVel, Dictionary<Vector3Int, Voxel> fractureVoxels) {
+    public static void SeparateIslands (VoxelChunk chunk, Material material, Vector3 rbVel, Dictionary<Vector3Int, Voxel> fractureVoxels) {
         int voxelCount = chunk.size.x * chunk.size.y * chunk.size.z;
         DisjointSet linked = new DisjointSet (voxelCount);
         int[] labels = new int[voxelCount];
         int currentLabel = 1;
 
         chunk.voxels.Traverse ((x, y, z, voxel) => {
-            if (voxel.density < .5f) return;
+            if (voxel.density < .0f) return;
 
             List<int> neighborLabels = new List<int> ();
             for (int nx = -1; nx <= 1; nx++)
