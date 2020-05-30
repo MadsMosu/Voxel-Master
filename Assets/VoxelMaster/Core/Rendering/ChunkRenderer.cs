@@ -81,9 +81,9 @@ namespace VoxelMaster.Core.Rendering {
                             negativeOrientation[side][0].y * (chunk.size.y - 1) + u * negativeOrientation[side][1].y + v * negativeOrientation[side][2].y,
                             negativeOrientation[side][0].z * (chunk.size.z - 1) + u * negativeOrientation[side][1].z + v * negativeOrientation[side][2].z
                         );
-                        Voxel neighborVoxel = neighborChunk.voxels.GetVoxel (neighborVoxelCoord);
+                        Voxel neighborVoxel = neighborChunk.voxels.GetVoxel (neighborVoxelCoord.x, neighborVoxelCoord.y, neighborVoxelCoord.z);
 
-                        chunk.voxels.SetVoxel (voxelCoord, neighborVoxel);
+                        chunk.voxels.SetVoxel (voxelCoord.x, voxelCoord.y, voxelCoord.z, neighborVoxel);
                     }
             }
         }

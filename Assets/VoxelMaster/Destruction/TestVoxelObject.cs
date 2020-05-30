@@ -24,7 +24,7 @@ public class TestVoxelObject {
         voxelScale = size / chunkSize.x;
 
         if (original) {
-            chunk = new VoxelChunk (Vector3Int.zero, chunkSize, voxelScale, new SimpleDataStructure ());
+            chunk = new VoxelChunk (Vector3Int.zero, chunkSize, voxelScale, new JaggedDataStructure ());
             chunk.voxels.Init (chunkSize);
             float radius = (chunkSize.x / 3f);
 
@@ -41,7 +41,7 @@ public class TestVoxelObject {
             // if (chunk.voxels.GetVoxel (new Vector3Int (x, y, z)).density > isoLevel) return;
             Vector3 voxelPos = (new Vector3 (x, y, z));
             float density = Vector3.Distance (voxelPos, center) - radius;
-            chunk.voxels.SetVoxel (new Vector3Int (x, y, z), new Voxel { density = -density });
+            chunk.voxels.SetVoxel (x, y, z, new Voxel { density = -density });
         });
 
     }

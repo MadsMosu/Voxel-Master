@@ -7,12 +7,13 @@ public class SmoothTool : VoxelTool {
     public override string name => "Smooth Terrain";
 
     public override void OnToolGUI () { }
-    public override void ToolStart (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, TestVoxelWorld voxelWorld) {
+    public override void ToolStart (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, VoxelWorld voxelWorld) {
 
     }
 
-    public override void ToolDrag (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, TestVoxelWorld voxelWorld) {
-        Vector3Int chunkWorldPosition = chunk.coords * (chunk.size - Vector3Int.one);
+    public override void ToolDrag (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, VoxelWorld voxelWorld) {
+        Vector3Int chunkWorldPosition = chunk.coords * (chunk.size);
+        chunk.dirty = true;
 
         chunk.voxels.Traverse ((x, y, z, v) => {
             Vector3Int voxelCoord = new Vector3Int (x, y, z);
@@ -28,19 +29,19 @@ public class SmoothTool : VoxelTool {
                 }
                 float avgDensity = getAvgDensity (chunk, voxelCoord, voxelWorld, chunkWorldPosition);
                 if (Mathf.Abs (avgDensity - v.density) > 0.20f) {
-                    v.density = Mathf.MoveTowards (v.density, avgDensity, tempIntensity / 2 + 0.02f * Mathf.Abs (avgDensity - v.density));
-                    chunk.voxels.SetVoxel (voxelCoord, v);
+                    v.density = Mathf.MoveTowards (v.density, avgDensity, (tempIntensity / 2 + 0.02f * Mathf.Abs (avgDensity - v.density)) * Time.deltaTime);
+                    chunk.voxels.SetVoxel (voxelCoord.x, voxelCoord.y, voxelCoord.z, v);
                 }
             }
         });
 
     }
 
-    public override void ToolEnd (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, TestVoxelWorld voxelWorld) {
+    public override void ToolEnd (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, VoxelWorld voxelWorld) {
         // Do nothing
     }
 
-    private float getAvgDensity (VoxelChunk chunk, Vector3Int voxelCoord, TestVoxelWorld voxelWorld, Vector3Int chunkWorldPosition) {
+    private float getAvgDensity (VoxelChunk chunk, Vector3Int voxelCoord, VoxelWorld voxelWorld, Vector3Int chunkWorldPosition) {
         int i = 0;
         float sumDensity = 0f;
         for (int x = -1; x <= 1; x++)
@@ -55,7 +56,7 @@ public class SmoothTool : VoxelTool {
                         (voxelCoord.z + z < 0 || voxelCoord.z + z >= chunk.size.z)
                     ) neighborVoxel = voxelWorld[chunkWorldPosition + voxelCoord + neighborCoord];
                     else
-                        neighborVoxel = chunk.voxels.GetVoxel (voxelCoord + neighborCoord);
+                        neighborVoxel = chunk.voxels.GetVoxel (voxelCoord.x + neighborCoord.x, voxelCoord.y + neighborCoord.y, voxelCoord.z + neighborCoord.z);
 
                     sumDensity += neighborVoxel.density;
                     i++;

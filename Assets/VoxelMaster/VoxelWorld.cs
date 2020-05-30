@@ -37,37 +37,47 @@ namespace VoxelMaster {
         OctreeRenderer octreeRenderer;
         public Material material;
 
+        private WorldGeneratorSettings worldGeneratorSettings;
+
         void Start () {
+
+            worldGeneratorSettings = new WorldGeneratorSettings {
+                baseHeight = 2,
+                heightAmplifier = 2,
+                noiseScale = 1,
+                seed = 23342,
+                voxelScale = 1
+            };
+
             chunkRenderer = new ChunkRenderer (chunkDictionary, material);
 
-            renderOctree = new Octree<Vector3> (chunkSize, 5);
+            renderOctree = new Octree<Vector3> (chunkSize, 9);
             renderOctree.Reset ();
-            octreeRenderer = new OctreeRenderer (renderOctree, this, material);
+            octreeRenderer = new OctreeRenderer (renderOctree, this, material, worldGeneratorSettings);
 
             chunkSerializer = new ChunkSerializer ("world");
             //chunkProviders.Add(new FileChunkDataProvider("world"));
-            chunkProviders.Add (new GeneratorChunkDataProvider (new WorldGeneratorSettings {
-                baseHeight = 2,
-                    heightAmplifier = 2,
-                    noiseScale = 1,
-                    seed = 23342,
-                    voxelScale = 1
-            }));
+            chunkProviders.Add (new GeneratorChunkDataProvider (worldGeneratorSettings));
 
             new Thread (new ThreadStart (delegate {
                 while (true) {
                     if (chunkGenerationQueue.Count > 0) {
                         var coord = chunkGenerationQueue.Dequeue ();
+                        // Debug.Log ("Chunk " + chunkGenerationQueue.Count);
                         RequestChunk (coord);
                     }
                     Thread.Sleep (5);
                 }
             })).Start ();
+
+            DebugGUI.AddVariable ("Chunk Generation Queue", () => chunkGenerationQueue.Count);
+            DebugGUI.AddVariable ("Player coordinates", () => viewerCoordinates);
+            ExpandChunkGeneration ();
         }
 
         void ExpandChunkGeneration () {
             chunkGenerationQueue.Clear ();
-            for (int y = -viewerRadius / 2; y < viewerRadius / 2; y++) {
+            for (int y = -2; y < 4; y++) {
 
                 // The following is a spiral algorithm inspired by a StackOverflow post
                 // https://stackoverflow.com/questions/398299/looping-in-a-spiral
@@ -160,18 +170,30 @@ namespace VoxelMaster {
             chunkDictionary[chunkCoord][voxelCoordInChunk] = voxel;
         }
 
+        Coroutine octreeCoroutine;
+
         void Update () {
             UpdateViewerCoordinates ();
             if (viewerCoordinatesChanged) {
                 ExpandChunkGeneration ();
 
                 renderOctree.Reset ();
-                renderOctree.SplitFromDistance (viewer.position, chunkSize * 2);
+                renderOctree.SplitFromDistance (viewer.position, chunkSize * 4);
                 octreeRenderer.Update ();
+
+                if (octreeCoroutine != null) StopCoroutine (octreeCoroutine);
+                octreeCoroutine = StartCoroutine (octreeRenderer.ProcessGenerationQueue ());
 
                 //renderOctree.GetLeafChildren(0b1).ForEach(n => {
                 //    if (Octree<Vector3>.GetDepth(n.locationCode) == renderOctree.GetMaxDepth()) {
-
+                //        Debug.Log("i am leaf node bro");
+                //        var chunkCoord = new Vector3Int(
+                //            Util.Int_floor_division((int)n.bounds.min.x, (chunkSize)),
+                //            Util.Int_floor_division((int)n.bounds.min.y, (chunkSize)),
+                //            Util.Int_floor_division((int)n.bounds.min.z, (chunkSize))
+                //        );
+                //        if (chunkDictionary.ContainsKey(chunkCoord)) return;
+                //        chunkGenerationQueue.Enqueue(chunkCoord);
                 //    }
                 //});
             }
@@ -208,39 +230,14 @@ namespace VoxelMaster {
             chunkDictionary.Add (coord, chunk);
         }
 
-        public Dictionary<Vector3Int, GameObject> gameObjects = new Dictionary<Vector3Int, GameObject> ();
-
-        public void CreateCollisionObject (Vector3Int coord, Mesh mesh) {
-            GameObject go = new GameObject ($"Chunk {coord}", typeof (MeshCollider));
-            go.transform.position = coord * chunkSize;
-            go.GetComponent<MeshCollider> ().sharedMesh = mesh;
-
-            gameObjects.Add (coord, go);
-        }
-
         public bool drawOctree = false;
         private void OnDrawGizmos () {
-            //lock (chunkDictionary) {
-            //    foreach (KeyValuePair<Vector3Int, VoxelChunk> entry in chunkDictionary) {
-            //        var pos = entry.Key * chunkSize;
-            //        Gizmos.color = entry.Value.hasSolids ? Color.blue : Color.white;
-            //        if (entry.Value.hasSolids)
-            //            Gizmos.DrawWireCube(pos - (Vector3.one * (-chunkSize / 2)), chunkSize * Vector3.one);
-            //    }
-            //}
-
-            // if (OctreeRenderer.testArrayVoxels != null)
-            //     for (int i = 0; i < OctreeRenderer.testArrayVoxels.Length; i++) {
-            //         Gizmos.color = OctreeRenderer.testArrayVoxels[i].density > 0 ? Color.green : Color.red;
-            //         Gizmos.DrawWireSphere(Util.Map1DTo3D(i, chunkSize) * 16 - Vector3Int.one * ((chunkSize * 16) / 2), .25f);
-            //     }
 
             // if (drawOctree && renderOctree != null) {
 
-            //     Gizmos.color = Color.red;
-            //     renderOctree.DrawLeafNodes();
-            // }
+            Gizmos.color = Color.red;
+            renderOctree.DrawLeafNodes ();
         }
-
     }
+
 }

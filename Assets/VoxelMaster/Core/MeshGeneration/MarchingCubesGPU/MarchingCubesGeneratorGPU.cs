@@ -17,7 +17,7 @@ public class MarchingCubesGPU {
 
     float isoLevel = .5f;
 
-    public MeshData GenerateMesh (VoxelChunk chunk) => GenerateMesh (chunk.voxels.ToArray (), chunk.size, chunk.voxelScale, 1 << 0);
+    public MeshData GenerateMesh (VoxelChunk chunk) => GenerateMesh (chunk.voxels.ToArray (chunk.size.x, chunk.size.y, chunk.size.z), chunk.size, chunk.voxelScale, 1 << 0);
 
     public MeshData GenerateMesh (Voxel[] voxels, Vector3Int size, float voxelScale, int step) {
         int numCells = size.x * size.y * size.z;
@@ -74,14 +74,14 @@ public class MarchingCubesGPU {
         Vector3[] surfaceNormals = new Vector3[vertices.Length];
         surfaceNormalsBuffer.GetData (surfaceNormals);
 
-        //Vector3[] normals = CalculateVertexNormals(vertices, surfaceNormals);
+        Vector3[] normals = CalculateVertexNormals(vertices, surfaceNormals);
 
         // Color[] vertexColors = new Color[vertices.Length];
         // colorBuffer.GetData (vertexColors);
 
         ReleaseBuffers ();
 
-        return new MeshData (vertices, triangleIndices, surfaceNormals);
+        return new MeshData (vertices, triangleIndices, normals);
     }
 
     private Vector3[] CalculateVertexNormals (Vector3[] vertices, Vector3[] surfaceNormals) {

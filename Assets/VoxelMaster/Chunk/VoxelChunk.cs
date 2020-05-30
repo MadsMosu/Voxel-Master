@@ -22,6 +22,7 @@ namespace VoxelMaster.Chunk {
         public bool hasData { get; private set; } = false;
 
         public bool hasSolids = false;
+        public bool dirty = false;
 
         public Voxel this [Vector3 v] {
             get => this [new Vector3Int ((int) v.x, (int) v.y, (int) v.z)];
@@ -68,8 +69,8 @@ namespace VoxelMaster.Chunk {
             throw new NotImplementedException ();
         }
 
-        private Voxel GetVoxel (Vector3Int coord) => voxels.GetVoxel (coord);
-        private void SetVoxel (Vector3Int coord, Voxel voxel) => voxels.SetVoxel (coord, voxel);
+        private Voxel GetVoxel (Vector3Int coord) => voxels.GetVoxel (coord.x, coord.y, coord.z);
+        private void SetVoxel (Vector3Int coord, Voxel voxel) => voxels.SetVoxel (coord.x, coord.y, coord.z, voxel);
 
         public void setHasData () {
             this.hasData = true;

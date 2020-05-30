@@ -16,16 +16,16 @@ public class BenchmarkTests {
     Vector3Int chunkSize8 = new Vector3Int (8, 8, 8);
     Vector3Int chunkSize4 = new Vector3Int (4, 4, 4);
     float voxelScale = 1f;
-    VoxelDataStructure dataStructure32 = new SimpleDataStructure ();
-    VoxelDataStructure dataStructure16 = new SimpleDataStructure ();
-    VoxelDataStructure dataStructure8 = new SimpleDataStructure ();
-    VoxelDataStructure dataStructure4 = new SimpleDataStructure ();
+    VoxelDataStructure dataStructure32 = new JaggedDataStructure ();
+    VoxelDataStructure dataStructure16 = new JaggedDataStructure ();
+    VoxelDataStructure dataStructure8 = new JaggedDataStructure ();
+    VoxelDataStructure dataStructure4 = new JaggedDataStructure ();
     int step = 1;
 
     FastNoise noise = new FastNoise ();
 
     MarchingCubesGPU mcGPU = new MarchingCubesGPU ();
-    MarchingCubes mc = new MarchingCubes ();
+
     MarchingCubesEnhanced transvoxel = new MarchingCubesEnhanced ();
     VoxelChunk chunk32, chunk16, chunk8, chunk4;
     TestVoxelWorld world32, world16, world8, world4;
@@ -62,18 +62,6 @@ public class BenchmarkTests {
         affectedChunks1 = new List<VoxelChunk> ();
         affectedChunks2 = new List<VoxelChunk> ();
 
-        for (int x = -1; x <= 1; x++)
-            for (int y = -1; y <= 1; y++)
-                for (int z = -1; z <= 1; z++) {
-                    affectedChunks1.Add (MakeChunk (chunkSize16, new SimpleDataStructure (), new Vector3Int (x, y, z)));
-                }
-
-        for (int x = -2; x <= 2; x++)
-            for (int y = -2; y <= 2; y++)
-                for (int z = -2; z <= 2; z++) {
-                    affectedChunks2.Add (MakeChunk (chunkSize16, new SimpleDataStructure (), new Vector3Int (x, y, z)));
-                }
-
         voxelObject64 = new TestVoxelObject ();
         voxelObject64.size = 32;
         voxelObject64.chunkSize = new Vector3Int (64, 64, 64);
@@ -98,94 +86,6 @@ public class BenchmarkTests {
         voxelObject8.original = true;
         voxelObject8.Start ();
 
-    }
-
-    [Test]
-    public void MarchingCubesGPUTest32 () {
-        Stopwatch watch = new Stopwatch ();
-        watch.Start ();
-        for (int i = 0; i < cycles; i++) {
-            mcGPU.GenerateMesh (chunk32.voxels.ToArray (), chunk32.size, chunk32.voxelScale, step);
-        }
-        watch.Stop ();
-        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
-    }
-
-    [Test]
-    public void MarchingCubesGPUTest16 () {
-        Stopwatch watch = new Stopwatch ();
-        watch.Start ();
-        for (int i = 0; i < cycles; i++) {
-            mcGPU.GenerateMesh (chunk16.voxels.ToArray (), chunk16.size, chunk16.voxelScale, step);
-        }
-        watch.Stop ();
-        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
-    }
-
-    [Test]
-    public void MarchingCubesGPUTest8 () {
-        Stopwatch watch = new Stopwatch ();
-        watch.Start ();
-        for (int i = 0; i < cycles; i++) {
-            mcGPU.GenerateMesh (chunk8.voxels.ToArray (), chunk8.size, chunk8.voxelScale, step);
-        }
-        watch.Stop ();
-        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
-    }
-
-    [Test]
-    public void MarchingCubesGPUTest4 () {
-        Stopwatch watch = new Stopwatch ();
-        watch.Start ();
-        for (int i = 0; i < cycles; i++) {
-            mcGPU.GenerateMesh (chunk4.voxels.ToArray (), chunk4.size, chunk4.voxelScale, step);
-        }
-        watch.Stop ();
-        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
-    }
-
-    [Test]
-    public void MarchingCubesCPUTest32 () {
-        Stopwatch watch = new Stopwatch ();
-        watch.Start ();
-        for (int i = 0; i < cycles; i++) {
-            mc.GenerateMesh (chunk32.voxels.ToArray (), chunk32.size, chunk32.voxelScale, step);
-        }
-        watch.Stop ();
-        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
-    }
-
-    [Test]
-    public void MarchingCubesCPUTest16 () {
-        Stopwatch watch = new Stopwatch ();
-        watch.Start ();
-        for (int i = 0; i < cycles; i++) {
-            mc.GenerateMesh (chunk16.voxels.ToArray (), chunk16.size, chunk16.voxelScale, step);
-        }
-        watch.Stop ();
-        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
-    }
-
-    [Test]
-    public void MarchingCubesCPUTest8 () {
-        Stopwatch watch = new Stopwatch ();
-        watch.Start ();
-        for (int i = 0; i < cycles; i++) {
-            mc.GenerateMesh (chunk8.voxels.ToArray (), chunk8.size, chunk8.voxelScale, step);
-        }
-        watch.Stop ();
-        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
-    }
-
-    [Test]
-    public void MarchingCubesCPUTest4 () {
-        Stopwatch watch = new Stopwatch ();
-        watch.Start ();
-        for (int i = 0; i < cycles; i++) {
-            mc.GenerateMesh (chunk4.voxels.ToArray (), chunk4.size, chunk4.voxelScale, step);
-        }
-        watch.Stop ();
-        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
     }
 
     [Test]
@@ -321,38 +221,6 @@ public class BenchmarkTests {
     }
 
     [Test]
-    public void UtilMap3DTo1DTest () {
-        Vector3Int size = new Vector3Int (voxels3D.GetLength (0), voxels3D.GetLength (1), voxels3D.GetLength (2));
-        Stopwatch watch = new Stopwatch ();
-        watch.Start ();
-        for (int i = 0; i < cycles; i++) {
-            for (int x = 0; x < size.x; x++)
-                for (int y = 0; y < size.y; y++)
-                    for (int z = 0; z < size.z; z++) {
-                        int index = Util.Map3DTo1D (new Vector3Int (x, y, z), size);
-                        Voxel voxel = voxels1D[index];
-                    }
-        }
-        watch.Stop ();
-        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
-    }
-
-    [Test]
-    public void UtilMap1DTo3DTest () {
-        Vector3Int size = new Vector3Int (voxels3D.GetLength (0), voxels3D.GetLength (1), voxels3D.GetLength (2));
-        Stopwatch watch = new Stopwatch ();
-        watch.Start ();
-        for (int i = 0; i < cycles; i++) {
-            for (int j = 0; j < voxels3D.Length; j++) {
-                Vector3Int coord = Util.Map1DTo3D (j, size);
-                Voxel voxel = voxels3D[coord.x, coord.y, coord.z];
-            }
-        }
-        watch.Stop ();
-        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
-    }
-
-    [Test]
     public void Map3DTo1DTest () {
         Vector3Int size = new Vector3Int (16, 16, 16);
         int sizeX = size.x;
@@ -390,213 +258,14 @@ public class BenchmarkTests {
         UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
     }
 
-    [Test]
-    public void BrushToolTest4 () {
-        Stopwatch watch = new Stopwatch ();
-        watch.Start ();
-        for (int i = 0; i < cycles; i++) {
-            foreach (var chunk in affectedChunks1) {
-                brushTool.ToolDrag (chunk, Vector3.zero, Vector3.zero, 0.04f, 4, 0.5f, world16);
-            }
-        }
-        watch.Stop ();
-        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
-    }
-
-    [Test]
-    public void BrushToolTest8 () {
-        Stopwatch watch = new Stopwatch ();
-        watch.Start ();
-        for (int i = 0; i < cycles; i++) {
-            foreach (var chunk in affectedChunks1) {
-                brushTool.ToolDrag (chunk, Vector3.zero, Vector3.zero, 0.04f, 8, 0.5f, world16);
-            }
-        }
-        watch.Stop ();
-        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
-    }
-
-    [Test]
-    public void BrushToolTest12 () {
-        Stopwatch watch = new Stopwatch ();
-        watch.Start ();
-        for (int i = 0; i < cycles; i++) {
-            foreach (var chunk in affectedChunks2) {
-                brushTool.ToolDrag (chunk, Vector3.zero, Vector3.zero, 0.04f, 12, 0.5f, world16);
-            }
-        }
-        watch.Stop ();
-        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
-    }
-
-    [Test]
-    public void BrushToolTest16 () {
-        Stopwatch watch = new Stopwatch ();
-        watch.Start ();
-        for (int i = 0; i < cycles; i++) {
-            foreach (var chunk in affectedChunks2) {
-                brushTool.ToolDrag (chunk, Vector3.zero, Vector3.zero, 0.04f, 16, 0.5f, world16);
-            }
-        }
-        watch.Stop ();
-        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
-    }
-
-    [Test]
-    public void SmoothToolTest4 () {
-        Stopwatch watch = new Stopwatch ();
-        watch.Start ();
-        for (int i = 0; i < cycles; i++) {
-            foreach (var chunk in affectedChunks1) {
-                smoothTool.ToolDrag (chunk, Vector3.zero, Vector3.zero, 0.04f, 4, 0.5f, world16);
-            }
-        }
-        watch.Stop ();
-        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
-    }
-
-    [Test]
-    public void SmoothToolTest8 () {
-        Stopwatch watch = new Stopwatch ();
-        watch.Start ();
-        for (int i = 0; i < cycles; i++) {
-            foreach (var chunk in affectedChunks1) {
-                smoothTool.ToolDrag (chunk, Vector3.zero, Vector3.zero, 0.04f, 8, 0.5f, world16);
-            }
-        }
-        watch.Stop ();
-        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
-    }
-
-    [Test]
-    public void SmoothToolTest12 () {
-        Stopwatch watch = new Stopwatch ();
-        watch.Start ();
-        for (int i = 0; i < cycles; i++) {
-            foreach (var chunk in affectedChunks2) {
-                smoothTool.ToolDrag (chunk, Vector3.zero, Vector3.zero, 0.04f, 12, 0.5f, world16);
-            }
-        }
-        watch.Stop ();
-        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
-    }
-
-    [Test]
-    public void SmoothToolTest16 () {
-        Stopwatch watch = new Stopwatch ();
-        watch.Start ();
-        for (int i = 0; i < cycles; i++) {
-            foreach (var chunk in affectedChunks2) {
-                smoothTool.ToolDrag (chunk, Vector3.zero, Vector3.zero, 0.04f, 16, 0.5f, world16);
-            }
-        }
-        watch.Stop ();
-        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
-    }
-
-    [Test]
-    public void FlattenToolTest4 () {
-        Stopwatch watch = new Stopwatch ();
-        watch.Start ();
-        for (int i = 0; i < cycles; i++) {
-            foreach (var chunk in affectedChunks1) {
-                flattenTool.ToolDrag (chunk, Vector3.zero, Vector3.zero, 0.04f, 4, 0.5f, world16);
-            }
-        }
-        watch.Stop ();
-        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
-    }
-
-    [Test]
-    public void FlattenToolTest8 () {
-        Stopwatch watch = new Stopwatch ();
-        watch.Start ();
-        for (int i = 0; i < cycles; i++) {
-            foreach (var chunk in affectedChunks1) {
-                flattenTool.ToolDrag (chunk, Vector3.zero, Vector3.zero, 0.04f, 8, 0.5f, world16);
-            }
-        }
-        watch.Stop ();
-        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
-    }
-
-    [Test]
-    public void FlattenToolTest12 () {
-        Stopwatch watch = new Stopwatch ();
-        watch.Start ();
-        for (int i = 0; i < cycles; i++) {
-            foreach (var chunk in affectedChunks2) {
-                flattenTool.ToolDrag (chunk, Vector3.zero, Vector3.zero, 0.04f, 12, 0.5f, world16);
-            }
-        }
-        watch.Stop ();
-        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
-    }
-
-    [Test]
-    public void FlattenToolTest16 () {
-        Stopwatch watch = new Stopwatch ();
-        watch.Start ();
-        for (int i = 0; i < cycles; i++) {
-            foreach (var chunk in affectedChunks2) {
-                flattenTool.ToolDrag (chunk, Vector3.zero, Vector3.zero, 0.04f, 16, 0.5f, world16);
-            }
-        }
-        watch.Stop ();
-        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
-    }
-
-    [Test]
-    public void VoxelObjectFracture64 () {
-        Stopwatch watch = new Stopwatch ();
-        watch.Start ();
-        for (int i = 0; i < cycles; i++) {
-            VoxelSplitter.Split (voxelObject64, Vector3.zero);
-        }
-        watch.Stop ();
-        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
-    }
-
-    [Test]
-    public void VoxelObjectFracture32 () {
-        Stopwatch watch = new Stopwatch ();
-        watch.Start ();
-        for (int i = 0; i < cycles; i++) {
-            VoxelSplitter.Split (voxelObject32, Vector3.zero);
-        }
-        watch.Stop ();
-        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
-    }
-
-    [Test]
-    public void VoxelObjectFracture16 () {
-        Stopwatch watch = new Stopwatch ();
-        watch.Start ();
-        for (int i = 0; i < cycles; i++) {
-            VoxelSplitter.Split (voxelObject16, Vector3.zero);
-        }
-        watch.Stop ();
-        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
-    }
-
-    [Test]
-    public void VoxelObjectFracture8 () {
-        Stopwatch watch = new Stopwatch ();
-        watch.Start ();
-        for (int i = 0; i < cycles; i++) {
-            VoxelSplitter.Split (voxelObject8, Vector3.zero);
-        }
-        watch.Stop ();
-        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
-    }
-
     private VoxelChunk MakeChunk (Vector3Int size, VoxelDataStructure dataStructure, Vector3Int chunkCoord) {
-        Voxel[] voxels = new Voxel[size.x * size.y * size.z];
+        Voxel[][][] voxels = new Voxel[size.x][][];
 
-        for (int i = 0; i < voxels.Length; i++) {
-            Vector3Int coord = Util.Map1DTo3D (i, size);
-            float density = noise.GetPerlinFractal (coord.x * 4, coord.y * 4, coord.z * 4);
-            voxels[i] = new Voxel { density = density };
+        for (int x = 0; x < size.x; x++) {
+            voxels[x] = new Voxel[size.y][];
+            for (int y = 0; y < size.y; y++) {
+                voxels[x][y] = new Voxel[size.z];
+            }
         }
 
         dataStructure.SetVoxels (voxels);

@@ -13,15 +13,15 @@ public class MaterialTool : VoxelTool {
         throw new System.NotImplementedException ();
     }
 
-    public override void ToolDrag (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, TestVoxelWorld voxelWorld) {
+    public override void ToolDrag (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, VoxelWorld voxelWorld) {
         throw new System.NotImplementedException ();
     }
 
-    public override void ToolEnd (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, TestVoxelWorld voxelWorld) {
+    public override void ToolEnd (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, VoxelWorld voxelWorld) {
         throw new System.NotImplementedException ();
     }
 
-    public override void ToolStart (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, TestVoxelWorld voxelWorld) {
+    public override void ToolStart (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, VoxelWorld voxelWorld) {
         throw new System.NotImplementedException ();
     }
 }
