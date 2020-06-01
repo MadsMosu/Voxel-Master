@@ -7,6 +7,8 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using VoxelMaster;
 using VoxelMaster.Chunk;
+using VoxelMaster.WorldGeneration;
+using VoxelMaster.WorldGeneration.FeatureGenerators;
 
 public class BenchmarkTests {
 
@@ -32,6 +34,10 @@ public class BenchmarkTests {
     Voxel[] voxels1D = new Voxel[16 * 16 * 16];
     Voxel[, , ] voxels3D = new Voxel[16, 16, 16];
     Voxel[][][] voxelsJagged = new Voxel[16][][];
+
+    WorldGeneratorSettings settings;
+    WorldHeightmapGenerator heightmapGenerator;
+    CaveGenerator caveGenerator;
 
     List<VoxelChunk> affectedChunks1;
     List<VoxelChunk> affectedChunks2;
@@ -86,6 +92,30 @@ public class BenchmarkTests {
         voxelObject8.original = true;
         voxelObject8.Start ();
 
+        settings = new WorldGeneratorSettings {
+            baseHeight = 2,
+            heightAmplifier = 2,
+            noiseScale = 1,
+            seed = 23342,
+            voxelScale = 1
+        };
+        heightmapGenerator = new WorldHeightmapGenerator (settings);
+        caveGenerator = new CaveGenerator ();
+
+    }
+
+    [Test]
+    public void TestTerrainGeneration16 () {
+        Stopwatch watch = new Stopwatch ();
+        watch.Start ();
+        for (int i = 0; i < cycles; i++) {
+            float[] heights;
+
+            heightmapGenerator.Generate (settings, chunk16, out heights);
+            caveGenerator.Generate (heights, chunk16, settings);
+        }
+        watch.Stop ();
+        UnityEngine.Debug.Log (watch.ElapsedMilliseconds);
     }
 
     [Test]

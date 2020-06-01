@@ -178,7 +178,7 @@ namespace VoxelMaster {
                 ExpandChunkGeneration ();
 
                 renderOctree.Reset ();
-                renderOctree.SplitFromDistance (viewer.position, chunkSize * 4);
+                renderOctree.SplitFromDistance (viewer.position, chunkSize * 10);
                 octreeRenderer.Update ();
 
                 if (octreeCoroutine != null) StopCoroutine (octreeCoroutine);
