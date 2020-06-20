@@ -13,7 +13,6 @@ public class SmoothTool : VoxelTool {
 
     public override void ToolDrag (VoxelChunk chunk, Vector3 position, Vector3 surfaceNormal, float intensity, int radius, float falloff, VoxelWorld voxelWorld) {
         Vector3Int chunkWorldPosition = chunk.coords * (chunk.size);
-        chunk.dirty = true;
 
         chunk.voxels.Traverse ((x, y, z, v) => {
             Vector3Int voxelCoord = new Vector3Int (x, y, z);
@@ -22,6 +21,7 @@ public class SmoothTool : VoxelTool {
                 (voxelWorldPosition.x <= position.x + radius && voxelWorldPosition.y <= position.y + radius && voxelWorldPosition.z <= position.z + radius) &&
                 (voxelWorldPosition.x >= position.x - radius && voxelWorldPosition.y >= position.y - radius && voxelWorldPosition.z >= position.z - radius)
             ) {
+                chunk.dirty = true;
                 float tempIntensity = intensity;
                 if (falloff > 0) {
                     float scaleFactor = Vector3.Distance (voxelWorldPosition, position) * falloff;

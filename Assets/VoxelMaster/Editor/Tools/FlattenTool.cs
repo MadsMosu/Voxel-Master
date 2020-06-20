@@ -16,12 +16,13 @@ public class FlattenTool : VoxelTool {
         chunk.voxels.Traverse ((x, y, z, v) => {
             Vector3Int voxelCoord = new Vector3Int (x, y, z);
             Vector3Int voxelWorldPosition = chunkWorldPosition + voxelCoord;
-            chunk.dirty = true;
             //if within radius
             if (
                 (voxelWorldPosition.x <= position.x + radius && voxelWorldPosition.y <= position.y + radius && voxelWorldPosition.z <= position.z + radius) &&
                 (voxelWorldPosition.x >= position.x - radius && voxelWorldPosition.y >= position.y - radius && voxelWorldPosition.z >= position.z - radius)
             ) {
+
+                chunk.dirty = true;
                 float dist = plane.GetDistanceToPoint (voxelWorldPosition);
                 float tempIntensity = intensity;
                 if (falloff > 0) {
