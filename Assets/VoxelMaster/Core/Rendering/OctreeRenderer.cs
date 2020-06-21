@@ -94,7 +94,8 @@ namespace VoxelMaster.Core.Rendering {
                     if (n == null) continue;
                     var nodeDepth = Octree<Vector3>.GetDepth (n.locationCode);
                     var voxels = GetNodeVoxels (n.locationCode);
-                    var mesh = meshGenerator.GenerateMesh (voxels, Vector3Int.one * (world.chunkSize + 1), 1, 1 << (octree.GetMaxDepth () - nodeDepth)).BuildMesh ();
+                    var meshData = meshGenerator.GenerateMesh (voxels, Vector3Int.one * (world.chunkSize + 1), 1, 1 << (octree.GetMaxDepth () - nodeDepth));
+                    var mesh = meshData.BuildMesh ();
                     if (regions.ContainsKey (n.locationCode)) {
                         var region = regions[n.locationCode];
                         region.GetComponent<MeshFilter> ().mesh = mesh;
@@ -120,8 +121,8 @@ namespace VoxelMaster.Core.Rendering {
             int startingChunkZ = Util.Int_floor_division ((int) node.bounds.min.z, world.chunkSize);
 
             var voxelIncrementer = 1 << (octree.GetMaxDepth () - nodeDepth);
-            var chunkDivVoxelIncrementer = world.chunkSize / voxelIncrementer;
             var chunkIncrementer = Mathf.Max (1, voxelIncrementer / world.chunkSize);
+            float chunkDivVoxelIncrementer = (float) world.chunkSize / (float) voxelIncrementer;
 
             for (int chunkX = 0; chunkX <= chunkExtents; chunkX += chunkIncrementer) {
                 for (int chunkY = 0; chunkY <= chunkExtents; chunkY += chunkIncrementer) {
@@ -139,9 +140,9 @@ namespace VoxelMaster.Core.Rendering {
                             for (int vx = 0; vx < voxelXAmount; vx += voxelIncrementer)
                                 for (int vy = 0; vy < voxelYAmount; vy += voxelIncrementer)
                                     for (int vz = 0; vz < voxelZAmount; vz += voxelIncrementer) {
-                                        int x = (vx / voxelIncrementer) + (chunkX * chunkDivVoxelIncrementer);
-                                        int y = (vy / voxelIncrementer) + (chunkY * chunkDivVoxelIncrementer);
-                                        int z = (vz / voxelIncrementer) + (chunkZ * chunkDivVoxelIncrementer);
+                                        int x = (vx / voxelIncrementer) + (int) (chunkX * chunkDivVoxelIncrementer);
+                                        int y = (vy / voxelIncrementer) + (int) (chunkY * chunkDivVoxelIncrementer);
+                                        int z = (vz / voxelIncrementer) + (int) (chunkZ * chunkDivVoxelIncrementer);
                                         result[Util.Map3DTo1D (x, y, z, world.chunkSize + 1)] = chunk.voxels.GetVoxel (vx, vy, vz);
                                     }
                         } else {
@@ -155,9 +156,9 @@ namespace VoxelMaster.Core.Rendering {
                                             (startingChunkZ + chunkZ) * CHUNK_SIZE + vz * settings.voxelScale
                                         );
 
-                                        int x = (vx / voxelIncrementer) + (chunkX * chunkDivVoxelIncrementer);
-                                        int y = (vy / voxelIncrementer) + (chunkY * chunkDivVoxelIncrementer);
-                                        int z = (vz / voxelIncrementer) + (chunkZ * chunkDivVoxelIncrementer);
+                                        int x = (vx / voxelIncrementer) + (int) (chunkX * chunkDivVoxelIncrementer);
+                                        int y = (vy / voxelIncrementer) + (int) (chunkY * chunkDivVoxelIncrementer);
+                                        int z = (vz / voxelIncrementer) + (int) (chunkZ * chunkDivVoxelIncrementer);
                                         result[Util.Map3DTo1D (x, y, z, world.chunkSize + 1)] = new Voxel { density = density };
 
                                     }

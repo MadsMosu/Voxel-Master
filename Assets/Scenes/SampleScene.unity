@@ -822,7 +822,7 @@ MonoBehaviour:
   chunkSize: 16
   isoLevel: 0.5
   viewer: {fileID: 287161456}
-  viewerRadius: 16
+  viewerRadius: 30
   material: {fileID: 2100000, guid: f4a082d0cf9dba842808c8f8020e1ecf, type: 2}
   drawOctree: 0
 --- !u!4 &1114245770
