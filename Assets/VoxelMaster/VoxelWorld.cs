@@ -73,6 +73,7 @@ namespace VoxelMaster {
             DebugGUI.AddVariable ("Chunk Generation Queue", () => chunkGenerationQueue.Count);
             DebugGUI.AddVariable ("Player coordinates", () => viewerCoordinates);
             ExpandChunkGeneration ();
+            InvokeRepeating ("Render", 0.0001f, 0.02f);
         }
 
         void ExpandChunkGeneration () {
@@ -204,7 +205,11 @@ namespace VoxelMaster {
             //    CreateCollisionObject(coord, chunkRenderer.GetChunkMesh(coord));
             //}
 
+            octreeRenderer.Render ();
             //chunkRenderer.Render();
+        }
+
+        void Render () {
             octreeRenderer.Render ();
         }
 
