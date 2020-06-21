@@ -66,7 +66,7 @@ namespace VoxelMaster {
                         // Debug.Log ("Chunk " + chunkGenerationQueue.Count);
                         RequestChunk (coord);
                     }
-                    Thread.Sleep (5);
+                    Thread.Sleep (3);
                 }
             })).Start ();
 
